@@ -1,0 +1,10 @@
+{
+	"name": "conduit.deepsight.gg",
+	"version": "1.0.0",
+	"devDependencies": {
+		"typescript": "5.8.3",
+		"ts-node": "10.9.2",
+		"lint": "github:fluff4me/lint",
+		"task": "github:chirivulpes/task#package"
+	}
+}
