@@ -1,0 +1,27 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"target": "ES2024",
+		"lib": ["ES2024", "DOM", "DOM.Iterable", "ESNext.Iterator", "WebWorker"],
+		"moduleResolution": "node",
+		"outFile": "../out/index.js",
+		"module": "AMD",
+		"baseUrl": ".",
+		"incremental": true,
+		"esModuleInterop": true,
+		"noImplicitOverride": true,
+		"experimentalDecorators": true,
+		"forceConsistentCasingInFileNames": true,
+		"noUnusedLocals": true,
+		"allowJs": true,
+		"skipLibCheck": true,
+		"noErrorTruncation": true,
+		"paths": {
+		}
+	},
+	"files": [
+		"utility/amd.js",
+		"Conduit.ts",
+		"index.ts",
+	]
+}

@@ -1,1 +1,5 @@
 node_modules/
+out/
+src/utility/amd.js
+src/footer.js
+.env
