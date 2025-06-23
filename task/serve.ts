@@ -1,6 +1,12 @@
 import { Middleware, Server, Task } from 'task'
 import Env from './utility/Env'
 
+declare module 'task/server/Server' {
+	interface MessageTypeRegistry {
+		'notify:ts': null
+	}
+}
+
 const _ = undefined
 export default Task('serve', async task => {
 	if (!Env.PORT)
@@ -9,7 +15,7 @@ export default Task('serve', async task => {
 	const server = await Server({
 		port: +Env.PORT,
 		root: '.',
-		spaIndexRewrite: '(http.request.uri.path ne "/out/index.js")',
+		spaIndexRewrite: '(http.request.uri.path ne "/out/index.js" and http.request.uri.path ne "/.env")',
 		serverIndex: '/task/server/index.html',
 		router: Middleware((definition, req, res) => _
 			?? Middleware.Static(definition, req, res)
@@ -20,4 +26,8 @@ export default Task('serve', async task => {
 	await server.listen()
 	server.socket()
 	server.announce()
+
+	task.watch('out/index.js', Task(null, () => {
+		server.sendMessage('notify:ts', null)
+	}))
 })

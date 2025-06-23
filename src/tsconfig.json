@@ -22,6 +22,7 @@
 	"files": [
 		"utility/amd.js",
 		"Conduit.ts",
+		"Init.ts",
 		"index.ts",
 	]
 }

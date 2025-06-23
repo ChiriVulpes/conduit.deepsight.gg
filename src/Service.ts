@@ -1,5 +1,16 @@
-type GlobalThis = typeof globalThis
-interface ServiceWorkerGlobalBase extends ServiceWorkerGlobalScope, Omit<GlobalThis, keyof ServiceWorkerGlobalScope> { }
+interface Service extends ServiceWorkerGlobalScope {
+	onInstall (event: Event): Promise<unknown>
+	onActivate (event: Event): Promise<unknown>
+	setRegistered (): void
+	postMessageAll (message: any, options?: StructuredSerializeOptions): void
+}
+
+const service: Service = Object.assign(self as any as Service, {
+	async postMessageAll (message: any, options?: StructuredSerializeOptions) {
+		for (const client of await service.clients.matchAll({ includeUncontrolled: true, type: 'window' }))
+			client.postMessage(message, options)
+	},
+})
 
 interface ServiceDefinition {
 	/**
@@ -14,29 +25,10 @@ interface ServiceDefinition {
 	onActivate (service: Service, event: Event): Promise<unknown>
 }
 
-interface Service extends ServiceWorkerGlobalBase {
-	postMessageAll (message: any, options?: StructuredSerializeOptions): void
-}
-
 function Service (definition: ServiceDefinition): Service {
-	const service: Service = Object.assign(self as any as ServiceWorkerGlobalBase, {
-		async postMessageAll (message: any, options?: StructuredSerializeOptions) {
-			for (const client of await service.clients.matchAll({ includeUncontrolled: true, type: 'window' }))
-				client.postMessage(message, options)
-		},
-	})
-
-	service.addEventListener('install', event => {
-		event.waitUntil(definition.onInstall(service, event))
-	})
-
-	service.addEventListener('activate', event => {
-		event.waitUntil((async () => {
-			await definition.onActivate(service, event)
-			await service.clients.claim()
-		})())
-	})
-
+	service.onInstall = event => definition.onInstall(service, event)
+	service.onActivate = event => definition.onActivate(service, event)
+	service.setRegistered()
 	return service
 }
 
