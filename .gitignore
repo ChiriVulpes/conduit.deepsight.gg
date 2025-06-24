@@ -1,5 +1,6 @@
 node_modules/
 out/
-src/utility/amd.js
+src/bundle/amd.js
+src/bundle/entrypoint.js
 src/footer.js
 .env

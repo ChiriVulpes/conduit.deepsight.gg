@@ -19,10 +19,11 @@
 		"paths": {
 		}
 	},
-	"files": [
-		"utility/amd.js",
-		"Conduit.ts",
-		"Init.ts",
-		"index.ts",
+	"include": [
+		"bundle/amd.js",
+		"bundle/dexie.js",
+		"node_modules/dexie/dist/dexie.min.js",
+		"**/*.ts",
+		"bundle/init.js"
 	]
 }
