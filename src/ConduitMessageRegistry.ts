@@ -1,5 +1,5 @@
 export interface ConduitFunctionRegistry {
-	testFunction: string
+	testFunction (language: string): void
 }
 
 export interface ConduitBroadcastRegistry {

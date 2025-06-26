@@ -1,5 +1,6 @@
 interface Env {
 	ENVIRONMENT: 'dev' | 'prod'
+	BUNGIE_API_KEY: string
 }
 
 class Env {

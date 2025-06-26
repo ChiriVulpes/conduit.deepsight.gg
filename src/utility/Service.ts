@@ -32,7 +32,7 @@ interface ServiceDefinition<FUNCTIONS extends Messages = Messages, BROADCASTS ex
 	 * Until this promise resolves, the new service worker will buffer any requests it receives.
 	 */
 	onActivate (service: Service<BROADCASTS>, event: ExtendableEvent): Promise<unknown>
-	onCall: { [KEY in keyof FUNCTIONS]: (data: FUNCTIONS[KEY]) => unknown }
+	onCall: { [KEY in keyof FUNCTIONS]: (event: ExtendableMessageEvent, ...data: Parameters<FUNCTIONS[KEY]>) => ReturnType<FUNCTIONS[KEY]> | Promise<ReturnType<FUNCTIONS[KEY]>> }
 }
 
 function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (definition: NoInfer<ServiceDefinition<FUNCTIONS, BROADCASTS>>): Service<BROADCASTS> {
@@ -43,7 +43,9 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 		if (typeof event.data !== 'object' || !('type' in event.data))
 			throw new Error('Unsupported message type')
 
-		const result = await definition.onCall[event.data.type](event.data.data)
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+		const result = await definition.onCall[event.data.type](event, ...event.data.data)
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 		event.source?.postMessage({ type: `return:${event.data.type}`, data: result })
 	}
 	service.setRegistered()
