@@ -10,7 +10,7 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 	async onInstall (service, event) {
 	},
 	async onActivate (service, event) {
-		service.broadcast.testBroadcast('7')
+		service.broadcast.testBroadcast('11')
 		console.log(await Definitions.DestinySeasonDefinition.en.get())
 	},
 	onCall: {

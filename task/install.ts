@@ -34,6 +34,8 @@ export default Task('install', async task => {
 
 	await fs.promises.writeFile('./package.json', packageJsonString, 'utf8')
 
-	process.chdir('src')
+	process.chdir('src/service')
+	await task.exec('NPM:PATH:npm', 'install')
+	process.chdir('src/client')
 	await task.exec('NPM:PATH:npm', 'install')
 })

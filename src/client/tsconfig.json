@@ -1,0 +1,25 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"target": "ES2024",
+		"lib": ["ES2024", "DOM", "DOM.Iterable", "ESNext.Iterator"],
+		"moduleResolution": "node",
+		"outFile": "../../out/client/index.js",
+		"module": "amd",
+		"baseUrl": ".",
+		"incremental": true,
+		"esModuleInterop": true,
+		"noImplicitOverride": true,
+		"experimentalDecorators": true,
+		"forceConsistentCasingInFileNames": true,
+		"noUnusedLocals": true,
+		"allowJs": true,
+		"skipLibCheck": true,
+		"noErrorTruncation": true,
+		"paths": {
+		}
+	},
+	"include": [
+		"**/*.ts",
+	]
+}

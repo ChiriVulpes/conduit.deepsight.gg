@@ -16,6 +16,8 @@ service.addEventListener('install', event => {
 		await registrationPromise
 		await service.onInstall?.(event)
 	})())
+
+	void service.skipWaiting()
 })
 
 service.addEventListener('activate', event => {

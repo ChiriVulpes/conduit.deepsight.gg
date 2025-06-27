@@ -1,0 +1,32 @@
+<script>
+const parentWindow = window.parent
+if (!parentWindow)
+	throw new Error('This page must be loaded in an iframe')
+
+void (async () => {
+	const registration = await navigator.serviceWorker.register('./index.js')
+	const service = registration.active
+	navigator.serviceWorker.addEventListener('message', event => {
+		parentWindow.postMessage(event.data, '*')
+	})
+	
+	window.addEventListener('message', event => {
+		if (event.source !== parentWindow)
+			return
+		
+		if (event.data.type === '_update') {
+			registration.update().then(
+				() => {
+					event.source.postMessage({ type: 'resolve:_update' }, '*')
+				},
+				err => {
+					event.source.postMessage({ type: 'reject:_update', data: err }, '*')
+				},
+			)
+			return
+		}
+	
+		service.postMessage(event.data)
+	})
+})()
+</script>

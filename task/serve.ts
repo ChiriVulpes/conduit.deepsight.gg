@@ -12,7 +12,7 @@ export default Task('serve', async task => {
 	if (!Env.PORT || !Env.TEST_PORT)
 		throw new Error('Must set PORT and TEST_PORT environment variables')
 
-	const spaIndexRewrite = '(http.request.uri.path ne "/out/index.js" and http.request.uri.path ne "/.env")'
+	const spaIndexRewrite = '(not ends_with(http.request.uri.path, ".html") and not ends_with(http.request.uri.path, ".js") and http.request.uri.path ne "/.env")'
 	const router = Middleware((definition, req, res) => _
 		?? Middleware.Static(definition, req, res)
 		?? Middleware.E404(definition, req, res)
@@ -29,7 +29,7 @@ export default Task('serve', async task => {
 	conduitServer.socket()
 	conduitServer.announce()
 
-	task.watch('out/index.js', Task(null, () => {
+	task.watch('out/service/index.js', Task(null, () => {
 		conduitServer.sendMessage('notify:ts', null)
 	}))
 

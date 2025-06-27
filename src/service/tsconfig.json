@@ -4,7 +4,7 @@
 		"target": "ES2024",
 		"lib": ["ES2024", "DOM", "DOM.Iterable", "ESNext.Iterator", "WebWorker"],
 		"moduleResolution": "node",
-		"outFile": "../out/index.js",
+		"outFile": "../../out/service/index.js",
 		"module": "AMD",
 		"baseUrl": ".",
 		"incremental": true,
