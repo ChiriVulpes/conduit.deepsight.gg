@@ -1,5 +1,5 @@
 export interface ConduitFunctionRegistry {
-	testFunction (language: string): void
+	getNeedsAuth (origin: string): boolean
 }
 
 export interface ConduitBroadcastRegistry {

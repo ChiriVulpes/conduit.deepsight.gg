@@ -36,6 +36,6 @@ export default Task('install', async task => {
 
 	process.chdir('src/service')
 	await task.exec('NPM:PATH:npm', 'install')
-	process.chdir('src/client')
+	process.chdir('../client')
 	await task.exec('NPM:PATH:npm', 'install')
 })

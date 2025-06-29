@@ -1,4 +1,9 @@
 <script>
+/**!
+ * This file handles communication between the conduit service worker and a cross-origin window.
+ * As such, it should be loaded in a hidden iframe
+ */
+
 const parentWindow = window.parent
 if (!parentWindow)
 	throw new Error('This page must be loaded in an iframe')
@@ -7,6 +12,7 @@ void (async () => {
 	const registration = await navigator.serviceWorker.register('./index.js')
 	const service = registration.active
 	navigator.serviceWorker.addEventListener('message', event => {
+		// forward messages from the service worker to the parent window
 		parentWindow.postMessage(event.data, '*')
 	})
 	
@@ -14,6 +20,7 @@ void (async () => {
 		if (event.source !== parentWindow)
 			return
 		
+		// special messages that the iframe will handle
 		if (event.data.type === '_update') {
 			registration.update().then(
 				() => {
@@ -26,6 +33,7 @@ void (async () => {
 			return
 		}
 	
+		// forward messages from the parent window to the service worker
 		service.postMessage(event.data)
 	})
 })()

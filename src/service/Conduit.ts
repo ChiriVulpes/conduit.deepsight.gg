@@ -1,4 +1,5 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from 'ConduitMessageRegistry'
+import Auth from 'model/Auth'
 import Definitions from 'model/Definitions'
 import Env from 'utility/Env'
 import Service from './utility/Service'
@@ -10,12 +11,12 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 	async onInstall (service, event) {
 	},
 	async onActivate (service, event) {
-		service.broadcast.testBroadcast('11')
+		void service.broadcast.testBroadcast('21')
 		console.log(await Definitions.DestinySeasonDefinition.en.get())
 	},
 	onCall: {
-		testFunction: (event, message) => {
-			console.log(event)
+		async getNeedsAuth (event, origin) {
+			return !await Auth.isOriginAuthed(origin)
 		},
 	},
 })

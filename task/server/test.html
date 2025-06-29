@@ -7,10 +7,13 @@
 <script src="../../out/client/index.js"></script>
 <script>
 void (async () => {
-	const serviceRoot = new URL("https://localhost:8097/out/service")
+	const serviceRoot = new URL("https://localhost:8097")
 	const conduit = await getModule("Conduit").default({
 		service: serviceRoot.toString(),
 	})
+	
+	////////////////////////////////////
+	//#region DevServer
 	
 	const wsProtocol = serviceRoot.protocol === 'https:' ? 'wss:' : 'ws:'
 	const wsUrl = `${wsProtocol}//${serviceRoot.host}`
@@ -35,5 +38,11 @@ void (async () => {
 			console.warn('Unsupported devserver message:', event.data)
 		}
 	})
+	
+	//#endregion
+	////////////////////////////////////
+	
+	const authed = await conduit.auth()
+	console.log("authed:", authed)
 })()
 </script>

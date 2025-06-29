@@ -43,10 +43,18 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 		if (typeof event.data !== 'object' || !('type' in event.data))
 			throw new Error('Unsupported message type')
 
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
-		const result = await definition.onCall[event.data.type](event, ...event.data.data)
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		event.source?.postMessage({ type: `return:${event.data.type}`, data: result })
+		try {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+			const params: any[] = event.data.data === undefined ? [] : !Array.isArray(event.data.data) ? [event.data.data] : event.data.data
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+			const result = await definition.onCall[event.data.type](event, ...params as never)
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+			event.source?.postMessage({ type: `resolve:${event.data.type}`, data: result })
+		}
+		catch (err) {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+			event.source?.postMessage({ type: `reject:${event.data.type}`, data: err })
+		}
 	}
 	service.setRegistered()
 	return realService

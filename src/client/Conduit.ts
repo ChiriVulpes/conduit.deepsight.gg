@@ -3,21 +3,29 @@ if (!('serviceWorker' in navigator))
 
 interface ConduitOptions {
 	service?: string
+	authOptions?:
+	| 'blank'
+	| 'navigate'
+	| { type: 'popup', width?: number, height?: number }
 }
 
 interface Conduit {
 	update (): Promise<void>
+	needsAuth (): Promise<boolean>
+	auth (): Promise<boolean>
 }
 
 async function Conduit (options: ConduitOptions): Promise<Conduit> {
-	await new Promise<unknown>(resolve => window.addEventListener('DOMContentLoaded', resolve))
+	await new Promise<unknown>(resolve => window.addEventListener('DOMContentLoaded', resolve, { once: true }))
 
 	const iframe = document.createElement('iframe')
-	const serviceRoot = options.service ?? 'https://conduit.deepsight.gg'
-	const serviceOrigin = new URL(serviceRoot).origin
-	iframe.src = `${serviceRoot}/index.html`
+	const serviceRoot = new URL(options.service ?? 'https://conduit.deepsight.gg')
+	const serviceOrigin = serviceRoot.origin
+	iframe.src = `${serviceRoot}service`
 	iframe.style.display = 'none'
 	document.body.appendChild(iframe)
+
+	await new Promise<unknown>(resolve => iframe.addEventListener('load', resolve, { once: true }))
 
 	interface MessageListener {
 		id: string
@@ -56,6 +64,11 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		})
 	}
 
+	function callPromiseFunction<T> (type: string, ...params: any[]): Promise<T> {
+		iframe.contentWindow?.postMessage({ type, data: params }, serviceOrigin)
+		return addPromiseListener<T>(type)
+	}
+
 	window.addEventListener('message', event => {
 		if (event.source !== iframe.contentWindow)
 			return
@@ -92,11 +105,55 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 	})
 
 	return {
-		update () {
-			iframe.contentWindow?.postMessage({ type: '_update' }, serviceOrigin)
-			return addPromiseListener('_update')
+		async update () {
+			return callPromiseFunction('_update')
 		},
-	}
+		async needsAuth () {
+			return callPromiseFunction<boolean>('getNeedsAuth', window.origin).catch(() => true)
+		},
+		async auth () {
+			if (!await this.needsAuth())
+				return true
+
+			let proxy: WindowProxy | null = null
+			const authURL = `${serviceRoot}auth?origin=${encodeURIComponent(window.origin)}`
+			switch (options.authOptions) {
+				case 'blank':
+					proxy = window.open(authURL, '_blank')
+					break
+				case 'navigate':
+					window.location.href = `${authURL}&redirect=${encodeURIComponent(window.location.href)}`
+					break
+
+				default: {
+					const width = options.authOptions?.width ?? 600
+					const height = options.authOptions?.height ?? 800
+
+					const screenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX
+					const screenTop = window.screenTop !== undefined ? window.screenTop : window.screenY
+
+					const screenWidth = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : screen.width
+					const screenHeight = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height
+
+					const left = ((screenWidth - width) / 2) + screenLeft
+					const top = ((screenHeight - height) / 2) + screenTop
+					proxy = window.open(authURL, '_blank', `width=${width},height=${height},left=${left},top=${top}`)
+					break
+				}
+			}
+
+			if (proxy)
+				await new Promise<void>(resolve => {
+					const interval = setInterval(() => {
+						if (proxy?.closed) {
+							clearInterval(interval)
+							resolve()
+						}
+					}, 10)
+				})
+			return !await this.needsAuth()
+		},
+	} satisfies Conduit
 }
 
 export default Conduit
