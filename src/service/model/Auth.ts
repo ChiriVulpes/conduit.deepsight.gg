@@ -6,7 +6,7 @@ declare module 'utility/Store' {
 	}
 }
 
-interface AuthedOrigin {
+export interface AuthedOrigin {
 	origin: string
 	authTimestamp: number
 }

@@ -26,7 +26,7 @@ export default Task('serve', async task => {
 	const conduitServer = await Server({
 		port: +Env.PORT,
 		root: 'out/service',
-		serverIndex: '/task/server/conduit.html',
+		serverIndex: '/index.html',
 		spaIndexRewrite,
 		router,
 	})

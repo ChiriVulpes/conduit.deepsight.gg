@@ -109,7 +109,7 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 			return callPromiseFunction('_update')
 		},
 		async needsAuth () {
-			return callPromiseFunction<boolean>('getNeedsAuth', window.origin).catch(() => true)
+			return callPromiseFunction<boolean>('getOriginNeedsAuth', window.origin).catch(() => true)
 		},
 		async auth () {
 			if (!await this.needsAuth())

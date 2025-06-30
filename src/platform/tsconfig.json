@@ -4,8 +4,7 @@
 		"target": "ES2024",
 		"lib": ["ES2024", "DOM", "DOM.Iterable", "ESNext.Iterator"],
 		"moduleResolution": "node",
-		"outFile": "../../out/client/index.js",
-		"declaration": true,
+		"outFile": "../../out/service/platform.js",
 		"module": "amd",
 		"baseUrl": ".",
 		"incremental": true,
@@ -17,11 +16,18 @@
 		"allowJs": true,
 		"skipLibCheck": true,
 		"noErrorTruncation": true,
-		"composite": true,
 		"paths": {
+			"*": [
+				"./*",
+				"../client/*"
+			]
 		}
 	},
+	"references": [
+		{ "path": "../client" }
+	],
 	"include": [
-		"**/*.ts",
+		"bundle/amd.js",
+		"**/*.ts"
 	]
 }

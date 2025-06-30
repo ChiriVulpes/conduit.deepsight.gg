@@ -17,8 +17,14 @@
 		"skipLibCheck": true,
 		"noErrorTruncation": true,
 		"paths": {
+			"@shared/*": [
+				"../shared/*"
+			],
 		}
 	},
+	"references": [
+		{"path": "../shared" }
+	],
 	"include": [
 		"bundle/amd.js",
 		"bundle/dexie.js",

@@ -1,4 +1,4 @@
 node_modules/
 out/
-src/service/bundle/amd.js
+**/bundle/amd.js
 .env

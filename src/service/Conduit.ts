@@ -1,6 +1,7 @@
-import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from 'ConduitMessageRegistry'
+import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
 import Auth from 'model/Auth'
 import Definitions from 'model/Definitions'
+import { db } from 'utility/Database'
 import Env from 'utility/Env'
 import Service from './utility/Service'
 
@@ -15,8 +16,11 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		console.log(await Definitions.DestinySeasonDefinition.en.get())
 	},
 	onCall: {
-		async getNeedsAuth (event, origin) {
+		async getOriginNeedsAuth (event, origin) {
 			return !await Auth.isOriginAuthed(origin)
+		},
+		async getProfiles (event) {
+			return await db.profiles.toArray()
 		},
 	},
 })

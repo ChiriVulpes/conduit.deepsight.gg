@@ -8,16 +8,35 @@ const options = Env.ENVIRONMENT === 'dev'
 
 export default Task('ts', task => task.parallel(
 	task.series(
+		() => TypeScript.compile(task, 'src/shared', '--pretty', ...options),
+		// () => fs.unlink('docs/service/index.tsbuildinfo'),
+	),
+	task.series(
 		() => TypeScript.compile(task, 'src/service', '--pretty', ...options),
-		() => fs.unlink('docs/service/index.tsbuildinfo'),
+		// () => fs.unlink('docs/service/index.tsbuildinfo'),
 	),
 	task.series(
 		() => TypeScript.compile(task, 'src/client', '--pretty', ...options),
-		() => fs.unlink('docs/client/index.tsbuildinfo'),
+		// () => fs.unlink('docs/client/index.tsbuildinfo'),
+	),
+	task.series(
+		() => TypeScript.compile(task, 'src/platform', '--pretty', ...options),
+		// () => fs.unlink('docs/client/index.tsbuildinfo'),
+	),
+	copyClientToPlatform,
+))
+
+export const tsWatch = Task('ts (watch)', task => task.series(
+	copyClientToPlatform,
+	task.parallel(
+		() => TypeScript.compile(task, 'src/shared', '--watch', '--preserveWatchOutput', '--pretty', ...options),
+		() => TypeScript.compile(task, 'src/service', '--watch', '--preserveWatchOutput', '--pretty', ...options),
+		() => TypeScript.compile(task, 'src/client', '--watch', '--preserveWatchOutput', '--pretty', ...options),
+		() => TypeScript.compile(task, 'src/platform', '--watch', '--preserveWatchOutput', '--pretty', ...options),
+		() => task.watch('out/client/index.js', copyClientToPlatform),
 	),
 ))
 
-export const tsWatch = Task('ts (watch)', task => task.parallel(
-	() => TypeScript.compile(task, 'src/service', '--watch', '--preserveWatchOutput', '--pretty', ...options),
-	() => TypeScript.compile(task, 'src/client', '--watch', '--preserveWatchOutput', '--pretty', ...options),
-))
+function copyClientToPlatform () {
+	return fs.copyFile('out/client/index.js', 'out/service/client.js').catch(() => { })
+}

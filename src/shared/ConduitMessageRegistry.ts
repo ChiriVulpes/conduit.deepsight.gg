@@ -1,5 +1,8 @@
+import type { Profile } from './Profile'
+
 export interface ConduitFunctionRegistry {
-	getNeedsAuth (origin: string): boolean
+	getOriginNeedsAuth (origin: string): boolean
+	getProfiles (): Profile[]
 }
 
 export interface ConduitBroadcastRegistry {
