@@ -6,7 +6,7 @@ const options = Env.ENVIRONMENT === 'dev'
 	? ['--inlineSourceMap', '--inlineSources', '--incremental']
 	: ['--pretty']
 
-export default Task('ts', task => task.parallel(
+const ts = Task('ts', task => task.series(
 	task.series(
 		() => TypeScript.compile(task, 'src/shared', '--pretty', ...options),
 		// () => fs.unlink('docs/service/index.tsbuildinfo'),
@@ -26,8 +26,10 @@ export default Task('ts', task => task.parallel(
 	copyClientToPlatform,
 ))
 
+export default ts
+
 export const tsWatch = Task('ts (watch)', task => task.series(
-	copyClientToPlatform,
+	ts,
 	task.parallel(
 		() => TypeScript.compile(task, 'src/shared', '--watch', '--preserveWatchOutput', '--pretty', ...options),
 		() => TypeScript.compile(task, 'src/service', '--watch', '--preserveWatchOutput', '--pretty', ...options),

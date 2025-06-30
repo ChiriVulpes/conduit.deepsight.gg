@@ -1,4 +1,6 @@
 import Conduit from 'Conduit'
+import quilt from 'lang'
+import style from 'style'
 
 export default async function () {
 	const conduit = await Conduit({
@@ -6,4 +8,7 @@ export default async function () {
 	})
 
 	console.log(conduit)
+
+	console.log(quilt)
+	console.log(style)
 }

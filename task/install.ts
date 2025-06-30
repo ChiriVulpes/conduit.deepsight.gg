@@ -8,6 +8,8 @@ export default Task('install', async task => {
 	const toUpdate: [name: string, path: string, branch?: string][] = [
 		['task', 'chirivulpes/task', 'package'],
 		['lint', 'fluff4me/lint'],
+		['chiri', 'fluff4me/chiri', 'package'],
+		['weaving', 'chirivulpes/weaving', 'package'],
 	]
 
 	const packageListString = toUpdate.map(([name]) => ansi.lightCyan(name)).join(', ')

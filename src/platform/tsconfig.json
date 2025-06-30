@@ -20,7 +20,9 @@
 			"*": [
 				"./*",
 				"../client/*"
-			]
+			],
+			"lang": ["./lang/index.d.ts"],
+			"style": ["./style/index.d.ts"],
 		}
 	},
 	"references": [

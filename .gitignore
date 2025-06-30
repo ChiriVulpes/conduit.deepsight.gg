@@ -2,3 +2,4 @@ node_modules/
 out/
 **/bundle/amd.js
 .env
+src/platform/**/*.d.ts
