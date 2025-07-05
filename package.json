@@ -1,4 +1,5 @@
 {
+	"private": true,
 	"name": "conduit.deepsight.gg",
 	"version": "1.0.0",
 	"devDependencies": {

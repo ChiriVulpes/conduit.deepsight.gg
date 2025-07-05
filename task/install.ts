@@ -2,42 +2,75 @@ import ansi from 'ansicolor'
 import fs from 'fs'
 import { Log, Task } from 'task'
 
+interface Package {
+	path: string
+	dependencies: Record<string, PackageDependency>
+}
+
+interface PackageDependency {
+	path: string
+	branch?: string
+}
+
+const packages: Package[] = [
+	{
+		path: '.',
+		dependencies: {
+			task: { path: 'chirivulpes/task', branch: 'package' },
+			lint: { path: 'fluff4me/lint' },
+			chiri: { path: 'fluff4me/chiri', branch: 'package' },
+			weaving: { path: 'chirivulpes/weaving', branch: 'package' },
+		},
+	},
+	{
+		path: 'src/platform',
+		dependencies: {
+			kitsui: { path: 'fluff4me/kitsui', branch: 'package' },
+		},
+	},
+]
+
 export default Task('install', async task => {
-	const packageJsonString = await fs.promises.readFile('./package.json', 'utf8')
+	const root = process.cwd()
 
-	const toUpdate: [name: string, path: string, branch?: string][] = [
-		['task', 'chirivulpes/task', 'package'],
-		['lint', 'fluff4me/lint'],
-		['chiri', 'fluff4me/chiri', 'package'],
-		['weaving', 'chirivulpes/weaving', 'package'],
-	]
+	for (const pakige of packages) {
+		process.chdir(root)
+		process.chdir(pakige.path)
 
-	const packageListString = toUpdate.map(([name]) => ansi.lightCyan(name)).join(', ')
-	Log.info(`Fetching latest versions of ${packageListString}...`)
-	const toInstall: [name: string, path: string, sha: string][] = await Promise.all(toUpdate.map(async ([name, path, branch]) => {
-		let response = ''
-		const branchArg = branch ? `refs/heads/${branch}` : 'HEAD'
-		await task.exec({ stdout: data => response += data.toString() }, 'PATH:git', 'ls-remote', `https://github.com/${path}.git`, branchArg)
-		const sha = response.trim().split(/\s+/)[0]
-		if (!sha)
-			throw new Error(`Failed to get SHA of latest commit of ${name} repository`)
+		const packageJsonString = await fs.promises.readFile('./package.json', 'utf8')
 
-		return [name, path, sha]
-	}))
+		const toUpdate = Object.entries(pakige.dependencies)
 
-	Log.info(`Uninstalling ${packageListString}...`)
-	await task.exec('NPM:PATH:npm', 'uninstall', ...toUpdate.map(([name]) => name), '--save', '--no-audit', '--no-fund')
+		const packageListString = toUpdate.map(([name]) => ansi.lightCyan(name)).join(', ')
+		Log.info(`Fetching latest versions of ${packageListString}...`)
+		const toInstall: [name: string, path: string, sha: string][] = await Promise.all(toUpdate.map(async ([name, { path, branch }]) => {
+			let response = ''
+			const branchArg = branch ? `refs/heads/${branch}` : 'HEAD'
+			await task.exec({ stdout: data => response += data.toString() }, 'PATH:git', 'ls-remote', `https://github.com/${path}.git`, branchArg)
+			const sha = response.trim().split(/\s+/)[0]
+			if (!sha)
+				throw new Error(`Failed to get SHA of latest commit of ${name} repository`)
 
-	Log.info(`Installing ${toInstall.map(([name, , sha]) => ansi.lightCyan(`${name}#${sha.slice(0, 7)}`)).join(', ')}...`)
-	await task.exec('NPM:PATH:npm', 'install',
-		...toInstall.map(([name, path, sha]) => `github:${path}#${sha}`),
-		'--save-dev', '--no-audit', '--no-fund'
-	)
+			return [name, path, sha]
+		}))
 
-	await fs.promises.writeFile('./package.json', packageJsonString, 'utf8')
+		Log.info(`Uninstalling ${packageListString}...`)
+		await task.exec('NPM:PATH:npm', 'uninstall', ...toUpdate.map(([name]) => name), '--save', '--no-audit', '--no-fund')
 
+		Log.info(`Installing ${toInstall.map(([name, , sha]) => ansi.lightCyan(`${name}#${sha.slice(0, 7)}`)).join(', ')}...`)
+		await task.exec('NPM:PATH:npm', 'install',
+			...toInstall.map(([name, path, sha]) => `github:${path}#${sha}`),
+			'--save-dev', '--no-audit', '--no-fund'
+		)
+
+		await fs.promises.writeFile('./package.json', packageJsonString, 'utf8')
+	}
+
+	process.chdir(root)
 	process.chdir('src/service')
-	await task.exec('NPM:PATH:npm', 'install')
+	await task.exec('NPM:PATH:npm', 'install', '--no-audit', '--no-fund')
 	process.chdir('../client')
-	await task.exec('NPM:PATH:npm', 'install')
+	await task.exec('NPM:PATH:npm', 'install', '--no-audit', '--no-fund')
+	process.chdir('../platform')
+	await task.exec('NPM:PATH:npm', 'install', '--no-audit', '--no-fund')
 })

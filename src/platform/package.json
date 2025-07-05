@@ -1,0 +1,7 @@
+{
+	"name": "@conduit.deepsight.gg/platform",
+	"private": true,
+	"dependencies": {
+		"kitsui": "github:fluff4me/kitsui#package"
+	}
+}

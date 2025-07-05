@@ -23,6 +23,8 @@
 			],
 			"lang": ["./lang/index.d.ts"],
 			"style": ["./style/index.d.ts"],
+			"kitsui": ["./node_modules/kitsui/index.d.ts"],
+			"kitsui/*": ["./node_modules/kitsui/*"],
 		}
 	},
 	"references": [

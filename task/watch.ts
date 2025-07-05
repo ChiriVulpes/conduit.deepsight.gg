@@ -14,7 +14,11 @@ export default Task('watch', async task => {
 		weaving,
 	))
 
-	task.watch(['src/platform/*.html', '.env'], _static)
+	task.watch([
+		'src/platform/*.html',
+		'.env',
+		'src/platform/node_modules/**/*.js',
+	], _static)
 
 	await Promise.all([
 		task.run(tsWatch),

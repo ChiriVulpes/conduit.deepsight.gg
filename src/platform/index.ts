@@ -1,4 +1,5 @@
 import Conduit from 'Conduit'
+import { Component, Kit } from 'kitsui'
 import quilt from 'lang'
 import style from 'style'
 
@@ -11,4 +12,8 @@ export default async function () {
 
 	console.log(quilt)
 	console.log(style)
+
+	Component.allowBuilding()
+
+	Kit.Label().appendTo(document.body).text.set('hi there')
 }

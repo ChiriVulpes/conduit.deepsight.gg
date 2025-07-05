@@ -116,7 +116,7 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 				return true
 
 			let proxy: WindowProxy | null = null
-			const authURL = `${serviceRoot}auth?origin=${encodeURIComponent(window.origin)}`
+			const authURL = `${serviceRoot}?auth=${encodeURIComponent(window.origin)}`
 			switch (options.authOptions) {
 				case 'blank':
 					proxy = window.open(authURL, '_blank')
