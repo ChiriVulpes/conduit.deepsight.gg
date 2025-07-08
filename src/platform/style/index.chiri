@@ -1,1 +1,6 @@
-.test:
+#import: chiri:defaults
+
+#import:
+	var/font
+
+#import: root

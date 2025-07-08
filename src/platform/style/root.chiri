@@ -1,0 +1,10 @@
+font-size: 1.2rem
+background-image: url('https://images.contentstack.io/v3/assets/blte410e3b15535c144/blt4a94341edf1f8820/668673f3fda3920cfb663c7f/D2_TFS_Social_Wallpapers_PostCinematic_4K.jpg')
+background-image: url('../static/relic.webp')
+background-size: cover
+background-position: center
+
+.body:
+	%margin-0
+	%backdrop-blur-3
+	background: radial-gradient(#2225, #222)

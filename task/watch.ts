@@ -18,6 +18,7 @@ export default Task('watch', async task => {
 		'src/platform/*.html',
 		'.env',
 		'src/platform/node_modules/**/*.js',
+		'src/platform/static/**/*',
 	], _static)
 
 	await Promise.all([

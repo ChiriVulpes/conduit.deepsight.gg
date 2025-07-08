@@ -19,7 +19,8 @@
 		"paths": {
 			"*": [
 				"./*",
-				"../client/*"
+				"../client/*",
+				"../shared/*"
 			],
 			"lang": ["./lang/index.d.ts"],
 			"style": ["./style/index.d.ts"],
@@ -28,7 +29,8 @@
 		}
 	},
 	"references": [
-		{ "path": "../client" }
+		{ "path": "../client" },
+		{ "path": "../shared" }
 	],
 	"include": [
 		"bundle/amd.js",

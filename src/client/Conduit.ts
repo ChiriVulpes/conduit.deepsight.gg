@@ -15,8 +15,9 @@ interface Conduit {
 	auth (): Promise<boolean>
 }
 
+const loaded = new Promise<unknown>(resolve => window.addEventListener('DOMContentLoaded', resolve, { once: true }))
 async function Conduit (options: ConduitOptions): Promise<Conduit> {
-	await new Promise<unknown>(resolve => window.addEventListener('DOMContentLoaded', resolve, { once: true }))
+	await loaded
 
 	const iframe = document.createElement('iframe')
 	const serviceRoot = new URL(options.service ?? 'https://conduit.deepsight.gg')

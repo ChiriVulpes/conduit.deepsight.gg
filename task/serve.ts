@@ -4,6 +4,7 @@ import Env from './utility/Env'
 declare module 'task/server/Server' {
 	interface MessageTypeRegistry {
 		'notify:ts': null
+		'notify:css': null
 	}
 }
 
@@ -15,6 +16,12 @@ export default Task('serve', async task => {
 	const spaIndexRewrite = `(${[
 		'not ends_with(http.request.uri.path, ".html")',
 		'not ends_with(http.request.uri.path, ".js")',
+		'not ends_with(http.request.uri.path, ".css")',
+		'not ends_with(http.request.uri.path, ".woff")',
+		'not ends_with(http.request.uri.path, ".woff2")',
+		'not ends_with(http.request.uri.path, ".ttf")',
+		'not ends_with(http.request.uri.path, ".webp")',
+		'not ends_with(http.request.uri.path, ".png")',
 		'http.request.uri.path ne "/.env"',
 		'http.request.uri.path ne "/service"',
 		'http.request.uri.path ne "/auth"',
@@ -37,6 +44,10 @@ export default Task('serve', async task => {
 
 	task.watch('out/service/index.js', Task(null, () => {
 		conduitServer.sendMessage('notify:ts', null)
+	}))
+
+	task.watch('out/service/style/index.css', Task(null, () => {
+		conduitServer.sendMessage('notify:css', null)
 	}))
 
 	const testServer = await Server({
