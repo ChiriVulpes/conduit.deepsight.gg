@@ -1,12 +1,13 @@
 import { Task } from 'task'
 import Env from './utility/Env'
 
-const params = ['index.chiri', '--out', '../../../out/service/style', '--out-dts', '.']
+const params = ['index.chiri', '--out', '../../../out/service/style', '--out-dts', '../src/style']
 export default Task('chiri', task =>
 	task.exec({
 		...Env.ENVIRONMENT === 'dev' ? { env: {} } : {},
 		cwd: 'src/platform/style',
-	}, 'NPM:chiri', ...params))
+	}, 'NPM:chiri', ...params)
+)
 
 export const chiriwatch = Task('chiriwatch', task =>
 	task.exec(
@@ -20,4 +21,5 @@ export const chiriwatch = Task('chiriwatch', task =>
 			},
 			cwd: 'src/platform/style',
 		},
-		'NPM:chiri', ...params, '-w'))
+		'NPM:chiri', ...params, '-w')
+)

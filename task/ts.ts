@@ -20,7 +20,7 @@ const ts = Task('ts', task => task.series(
 		// () => fs.unlink('docs/client/index.tsbuildinfo'),
 	),
 	task.series(
-		() => TypeScript.compile(task, 'src/platform', '--pretty', ...options),
+		() => TypeScript.compile(task, 'src/platform/src', '--pretty', ...options),
 		// () => fs.unlink('docs/client/index.tsbuildinfo'),
 	),
 	copyClientToPlatform,
@@ -34,7 +34,7 @@ export const tsWatch = Task('ts (watch)', task => task.series(
 		() => TypeScript.compile(task, 'src/shared', '--watch', '--preserveWatchOutput', '--pretty', ...options),
 		() => TypeScript.compile(task, 'src/service', '--watch', '--preserveWatchOutput', '--pretty', ...options),
 		() => TypeScript.compile(task, 'src/client', '--watch', '--preserveWatchOutput', '--pretty', ...options),
-		() => TypeScript.compile(task, 'src/platform', '--watch', '--preserveWatchOutput', '--pretty', ...options),
+		() => TypeScript.compile(task, 'src/platform/src', '--watch', '--preserveWatchOutput', '--pretty', ...options),
 		() => task.watch('out/client/index.js', copyClientToPlatform),
 	),
 ))

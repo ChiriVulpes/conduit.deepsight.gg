@@ -1,3 +1,5 @@
+import type { AuthedOrigin } from '@shared/Auth'
+
 if (!('serviceWorker' in navigator))
 	throw new Error('Service Worker is not supported in this browser')
 
@@ -11,8 +13,15 @@ interface ConduitOptions {
 
 interface Conduit {
 	update (): Promise<void>
-	needsAuth (): Promise<boolean>
-	auth (): Promise<boolean>
+	getOriginAccess (origin?: string): Promise<AuthedOrigin | undefined>
+	isAuthenticated (): Promise<boolean>
+	requestGrant (): Promise<boolean>
+	/** @deprecated This function is for internal use and won't work otherwise */
+	_authenticate (code: string): Promise<boolean>
+	/** @deprecated This function is for internal use and won't work otherwise */
+	_grantAccess (origin: string): Promise<void>
+	/** @deprecated This function is for internal use and won't work otherwise */
+	_denyAccess (origin: string): Promise<void>
 }
 
 const loaded = new Promise<unknown>(resolve => window.addEventListener('DOMContentLoaded', resolve, { once: true }))
@@ -70,6 +79,9 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		return addPromiseListener<T>(type)
 	}
 
+	let setActive: (() => void) | undefined
+	const activePromise = new Promise<void>(resolve => setActive = resolve)
+
 	window.addEventListener('message', event => {
 		if (event.source !== iframe.contentWindow)
 			return
@@ -80,11 +92,16 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 			return
 		}
 
+		if (data.type === '_active') {
+			setActive?.()
+			return
+		}
+
 		let used = false
 		for (let i = 0; i < messageListeners.length; i++) {
 			const listener = messageListeners[i]
 			if (listener.type === data.type) {
-				listener.callback(data)
+				listener.callback(data.data)
 				used = true
 				if (listener.once) {
 					messageListeners.splice(i, 1)
@@ -105,15 +122,20 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		console.log('Unhandled message:', data)
 	})
 
+	await activePromise
+
 	return {
 		async update () {
 			return callPromiseFunction('_update')
 		},
-		async needsAuth () {
-			return callPromiseFunction<boolean>('getOriginNeedsAuth', window.origin).catch(() => true)
+		async getOriginAccess (origin = window.origin) {
+			return callPromiseFunction<AuthedOrigin | undefined>('getOriginAccess', origin).catch(() => undefined)
 		},
-		async auth () {
-			if (!await this.needsAuth())
+		async isAuthenticated () {
+			return callPromiseFunction<boolean>('isAuthenticated').catch(() => false)
+		},
+		async requestGrant () {
+			if (await this.getOriginAccess())
 				return true
 
 			let proxy: WindowProxy | null = null
@@ -152,7 +174,16 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 						}
 					}, 10)
 				})
-			return !await this.needsAuth()
+			return !await this.getOriginAccess()
+		},
+		async _authenticate (code) {
+			return callPromiseFunction<boolean>('authenticate', code).catch(() => false)
+		},
+		async _grantAccess (origin) {
+			return callPromiseFunction<void>('grantAccess', origin).catch(() => { })
+		},
+		async _denyAccess (origin) {
+			return callPromiseFunction<void>('denyAccess', origin).catch(() => { })
 		},
 	} satisfies Conduit
 }

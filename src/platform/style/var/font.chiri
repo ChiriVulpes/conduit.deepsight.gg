@@ -29,6 +29,7 @@
 
 #font-family
 	name="Overused Grotesk
+	vertical-align=-.08
 	letter-spacing=.03
 
 %font-overused-grotesk

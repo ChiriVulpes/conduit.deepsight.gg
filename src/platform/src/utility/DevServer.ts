@@ -1,5 +1,5 @@
-import Env from "utility/Env"
-import Style from "utility/Style"
+import Env from 'utility/Env'
+import Style from 'utility/Style'
 
 namespace DevServer {
 	export function listen () {
@@ -10,14 +10,17 @@ namespace DevServer {
 		const wsUrl = `${wsProtocol}//${location.host}`
 		const socket = new WebSocket(wsUrl)
 
-		socket.addEventListener('message', async event => {
+		socket.addEventListener('message', event => {
 			try {
+				if (typeof event.data !== 'string')
+					throw new Error('Unsupported message data')
+
 				const message = JSON.parse(event.data) as { type?: string, data?: any }
 				const { type } = typeof message === 'object' && message !== null ? message : {}
 
 				switch (type) {
 					case 'notify:css':
-						Style.reload()
+						void Style.reload()
 						break
 				}
 			}
@@ -25,7 +28,6 @@ namespace DevServer {
 				console.warn('Unsupported devserver message:', event.data)
 			}
 		})
-
 	}
 }
 

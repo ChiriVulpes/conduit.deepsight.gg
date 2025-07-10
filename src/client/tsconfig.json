@@ -19,8 +19,14 @@
 		"noErrorTruncation": true,
 		"composite": true,
 		"paths": {
+			"@shared/*": [
+				"../shared/*"
+			],
 		}
 	},
+	"references": [
+		{"path": "../shared" }
+	],
 	"include": [
 		"**/*.ts",
 	]

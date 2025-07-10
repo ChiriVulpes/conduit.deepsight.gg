@@ -1,0 +1,10 @@
+# auth-card
+header: Authentication
+loading: Checking auth state...
+description/request: {#B:{0}} has requested access to your Destiny 2 profile data through the deepsight.gg conduit.
+description/granted: {#B:{0}} currently has access to your Destiny 2 profile data, provided through the deepsight.gg conduit.
+granted-since: Access was granted {0}
+action/auth-bungie: Authenticate with Bungie.net
+action/grant: Grant access
+action/cancel: Cancel
+action/revoke-access: Revoke Access

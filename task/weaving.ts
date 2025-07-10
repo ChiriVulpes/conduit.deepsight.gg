@@ -1,6 +1,6 @@
 import { Task } from 'task'
 
-const params = ['index.quilt', '--out', '../../../../out/service/lang', '--outTypes', '..', '--outWhitespace']
+const params = ['index.quilt', '--out', '../../../../out/service/lang', '--outTypes', '../../src/lang', '--outWhitespace']
 export default Task('weave', async task => {
 	await task.exec(
 		{

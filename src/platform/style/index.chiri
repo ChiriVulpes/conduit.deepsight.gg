@@ -4,3 +4,15 @@
 	var/font
 
 #import: root
+
+#import:
+	component/core/Card
+	component/core/Paragraph
+	component/core/Loading
+	component/core/Checkbox
+	component/core/Checklist
+	component/core/Button
+	component/core/Lore
+	component/core/Footer
+	component/core/ActionRow
+	component/WordmarkLogo

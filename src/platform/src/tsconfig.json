@@ -4,7 +4,7 @@
 		"target": "ES2024",
 		"lib": ["ES2024", "DOM", "DOM.Iterable", "ESNext.Iterator"],
 		"moduleResolution": "node",
-		"outFile": "../../out/service/platform.js",
+		"outFile": "../../../out/service/platform.js",
 		"module": "amd",
 		"baseUrl": ".",
 		"incremental": true,
@@ -19,18 +19,18 @@
 		"paths": {
 			"*": [
 				"./*",
-				"../client/*",
-				"../shared/*"
+				"../../client/*",
+				"../../shared/*"
 			],
 			"lang": ["./lang/index.d.ts"],
 			"style": ["./style/index.d.ts"],
-			"kitsui": ["./node_modules/kitsui/index.d.ts"],
-			"kitsui/*": ["./node_modules/kitsui/*"],
+			"kitsui": ["../node_modules/kitsui/index.d.ts"],
+			"kitsui/*": ["../node_modules/kitsui/*"],
 		}
 	},
 	"references": [
-		{ "path": "../client" },
-		{ "path": "../shared" }
+		{ "path": "../../client" },
+		{ "path": "../../shared" }
 	],
 	"include": [
 		"bundle/amd.js",

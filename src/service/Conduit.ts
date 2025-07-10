@@ -16,11 +16,29 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		console.log(await Definitions.DestinySeasonDefinition.en.get())
 	},
 	onCall: {
-		async getOriginNeedsAuth (event, origin) {
-			return !await Auth.isOriginAuthed(origin)
+		async getOriginAccess (event, origin) {
+			return await Auth.getOriginAccess(origin)
+		},
+		async isAuthenticated (event) {
+			return await Auth.checkBungie()
 		},
 		async getProfiles (event) {
 			return await db.profiles.toArray()
+		},
+		async authenticate (event, code) {
+			if (event.origin !== self.origin)
+				throw new Error('This action can only be performed using a code provided by an iframe from the deepsight.gg conduit origin')
+			return await Auth.complete(code)
+		},
+		async grantAccess (event, origin) {
+			if (event.origin !== self.origin)
+				throw new Error('This action can only be performed using a code provided by an iframe from the deepsight.gg conduit origin')
+			return await Auth.grantAccess(origin)
+		},
+		async denyAccess (event, origin) {
+			if (event.origin !== self.origin)
+				throw new Error('This action can only be performed using a code provided by an iframe from the deepsight.gg conduit origin')
+			return await Auth.denyAccess(origin)
 		},
 	},
 })

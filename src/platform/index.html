@@ -1,11 +1,25 @@
 <style>:root { color-scheme: light dark }</style>
+<script>
+const params =new URLSearchParams(location.search)
+const code = params.get('code')
+const state = params.get('state')
+const storedState = localStorage.getItem('bungieAuthState')
+if (code && (state === 'popup' || state && storedState === decodeURIComponent(state))) {
+	localStorage.setItem('bungieCode', code)
+	localStorage.removeItem('bungieAuthState')
+	if (params.get('state') === 'popup')
+		window.close()
+	else
+		location.href = storedState
+}
+</script>
 <link rel="stylesheet" href="./style/index.css">
 <script src="./platform.js"></script>
 <script src="./client.js"></script>
 <script src="./lang/index.js"></script>
 <script src="./style/index.js"></script>
 <script src="./kitsui.js"></script>
-<script>getModule('index').default()</script>
+<script>document.addEventListener('DOMContentLoaded', () => getModule('index').default())</script>
 <noscript>
 	<p>Please enable JavaScript!</p>
 </noscript>

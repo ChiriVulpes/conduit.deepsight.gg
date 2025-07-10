@@ -5,6 +5,19 @@ background-size: cover
 background-position: center
 
 .body:
+	%relative
+	%flex
+	%flex-column
+	min-height: 100vh
+	%gap-4
+	%justify-content-centre
+	%align-items-centre
 	%margin-0
-	%backdrop-blur-3
-	background: radial-gradient(#2225, #222)
+
+	@before:
+		%absolute
+		%z-index-bg
+		%block
+		%inset-0
+		%backdrop-blur-3
+		background: radial-gradient(#222a, #111)

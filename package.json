@@ -3,6 +3,10 @@
 	"name": "conduit.deepsight.gg",
 	"version": "1.0.0",
 	"devDependencies": {
+		"eslint": "9.30.1",
+		"typescript-eslint": "8.36.0",
+		"@stylistic/eslint-plugin": "5.1.0",
+		"eslint-plugin-only-warn": "1.0.3",
 		"typescript": "5.8.3",
 		"ts-node": "10.9.2",
 		"ansicolor": "2.0.3",

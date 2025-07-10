@@ -10,9 +10,27 @@ if (!parentWindow)
 
 void (async () => {
 	const registration = await navigator.serviceWorker.register('./index.js')
-	const service = registration.active
+	const service = registration.active ?? await new Promise(resolve => {
+		const service = registration.waiting ?? registration.installing
+		service.addEventListener('statechange', onStateChange)
+		function onStateChange() {
+			if (service.state !== "activated") return
+			resolve(service)
+			service.removeEventListener('statechange', onStateChange)
+		}
+	})
+
+	const MAIN_FORMAT = 'color: #58946c; font-weight: bold;'
+	const PUNCT_FORMAT = 'color: #888;'
+	const SERVICE_FORMAT = 'color: #8651db; font-weight: bold;'
+	const HOST_FORMAT = 'color: #537cc9; font-weight: bold;'
 	navigator.serviceWorker.addEventListener('message', event => {
 		// forward messages from the service worker to the parent window
+		console.log(
+			'%cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %o', 
+			MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT,
+			event.data,
+		)
 		parentWindow.postMessage(event.data, '*')
 	})
 	
@@ -34,7 +52,14 @@ void (async () => {
 		}
 	
 		// forward messages from the parent window to the service worker
+		console.log(
+			'%cconduit.deepsight.gg %c/ %cHost \u2B9E %cService %o', 
+			MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, 
+			event.data,
+		)
 		service.postMessage(event.data)
 	})
+
+	parentWindow.postMessage({ type: '_active' }, '*')
 })()
 </script>
