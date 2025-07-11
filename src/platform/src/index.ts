@@ -1,4 +1,5 @@
 import AuthCard from 'component/AuthCard'
+import MainCards from 'component/MainCards'
 import WordmarkLogo from 'component/WordmarkLogo'
 import { Component } from 'kitsui'
 import ActiveListener from 'kitsui/utility/ActiveListener'
@@ -18,7 +19,10 @@ export default async function () {
 	Text.init()
 
 	Component.getBody().style('body')
-	WordmarkLogo().appendTo(document.body)
+	Component('a')
+		.and(WordmarkLogo)
+		.attributes.set('href', location.origin)
+		.appendTo(document.body)
 
 	await Env['init']()
 
@@ -35,4 +39,6 @@ export default async function () {
 
 	if (authOrigin)
 		AuthCard({ origin: authOrigin, appName }).appendTo(document.body)
+	else
+		MainCards().appendTo(document.body)
 }

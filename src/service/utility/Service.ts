@@ -43,17 +43,19 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 		if (typeof event.data !== 'object' || !('type' in event.data))
 			throw new Error('Unsupported message type')
 
+		const { type, data } = event.data as { type: string, data?: unknown }
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-			const params: any[] = event.data.data === undefined ? [] : !Array.isArray(event.data.data) ? [event.data.data] : event.data.data
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-			const result = await definition.onCall[event.data.type](event, ...params as never)
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-			event.source?.postMessage({ type: `resolve:${event.data.type}`, data: result })
+			const fn = definition.onCall[type]
+			if (!fn)
+				throw new Error(`The function '${type}' does not exist`)
+
+			const params: any[] = data === undefined ? [] : !Array.isArray(data) ? [data] : data
+			const result = await fn(event, ...params as never)
+
+			event.source?.postMessage({ type: `resolve:${type}`, data: result })
 		}
 		catch (err) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-			event.source?.postMessage({ type: `reject:${event.data.type}`, data: err })
+			event.source?.postMessage({ type: `reject:${type}`, data: err })
 		}
 	}
 	service.setRegistered()

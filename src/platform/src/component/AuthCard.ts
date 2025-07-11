@@ -1,4 +1,3 @@
-import type { AuthedOrigin } from 'Auth'
 import ActionRow from 'component/core/ActionRow'
 import Button from 'component/core/Button'
 import Card from 'component/core/Card'
@@ -6,9 +5,7 @@ import Footer from 'component/core/Footer'
 import Loading from 'component/core/Loading'
 import Lore from 'component/core/Lore'
 import Paragraph from 'component/core/Paragraph'
-import type Conduit from 'Conduit'
-import { Component, State } from 'kitsui'
-import type { Quilt } from 'lang'
+import { Component } from 'kitsui'
 import Relic from 'Relic'
 import Env from 'utility/Env'
 import Time from 'utility/Time'
@@ -18,38 +15,37 @@ interface ConduitTarget {
 	appName?: string
 }
 
-interface AuthState {
-	conduit: Conduit
-	authed: boolean
-	target: ConduitTarget
-	targetGrantedAccess?: AuthedOrigin
-}
-
 export default Component((component, target: ConduitTarget) => {
 	const card = component.and(Card)
-	card.header.text.set(quilt => quilt['auth-card/header']())
+	card.header.text.set(quilt => quilt['auth-card/title']())
 
-	const authState = State.Async<AuthState, Quilt.Handler>(card, async (signal, setProgress) => {
-		setProgress(null, quilt => quilt['auth-card/loading']())
-		const conduit = await Relic.connected
-		// await sleep(100000)
+	Loading().appendTo(card).set(
+		async (signal, setProgress) => {
+			setProgress(null, quilt => quilt['auth-card/loading']())
+			const conduit = await Relic.connected
+			// await sleep(100000)
 
-		const bungieCode = localStorage.getItem('bungieCode')
-		if (bungieCode) {
-			localStorage.removeItem('bungieCode')
-			await conduit._authenticate(bungieCode)
-		}
+			const bungieCode = localStorage.getItem('bungieCode')
+			if (bungieCode) {
+				localStorage.removeItem('bungieCode')
+				await conduit._authenticate(bungieCode)
+			}
 
-		return {
-			conduit,
-			authed: await conduit.isAuthenticated(),
-			target,
-			targetGrantedAccess: await conduit.getOriginAccess(target.origin),
-		}
-	})
+			const [authed, targetGrantedAccess] = await Promise.all([
+				conduit.isAuthenticated(),
+				conduit.getOriginAccess(target.origin),
+			])
 
-	Loading()
-		.set(authState, (slot, state) => {
+			target.appName = targetGrantedAccess?.appName ?? target.appName
+
+			return {
+				conduit,
+				authed,
+				target,
+				targetGrantedAccess,
+			}
+		},
+		(slot, state) => {
 			const { conduit } = state
 			const appName = state.target.appName ?? state.target.origin
 			if (state.targetGrantedAccess) {
@@ -58,7 +54,7 @@ export default Component((component, target: ConduitTarget) => {
 					.appendTo(slot)
 
 				Paragraph()
-					.text.set(quilt => quilt['auth-card/granted-since'](Time.relative(state.targetGrantedAccess!.authTimestamp)))
+					.text.set(quilt => quilt['shared/granted-since'](Time.relative(state.targetGrantedAccess!.authTimestamp)))
 					.appendTo(slot)
 
 				const actions = ActionRow().appendTo(slot)
@@ -109,7 +105,7 @@ export default Component((component, target: ConduitTarget) => {
 								}, 100)
 							})
 
-							authState.refresh()
+							slot.refresh()
 						})
 					)
 					.appendTo(slot)
@@ -123,19 +119,25 @@ export default Component((component, target: ConduitTarget) => {
 				.text.set(quilt => quilt['auth-card/action/cancel']())
 				.event.subscribe('click', async () => {
 					await conduit._denyAccess(target.origin)
-					authState.refresh()
+					if (window.opener)
+						window.close()
+					else
+						location.href = location.origin
 				})
 				.appendTo(grantActions)
 
 			Button()
 				.text.set(quilt => quilt['auth-card/action/grant']())
 				.event.subscribe('click', async () => {
-					await conduit._grantAccess(target.origin)
-					authState.refresh()
+					await conduit._grantAccess(target.origin, target.appName)
+					if (window.opener)
+						window.close()
+					else
+						slot.refresh()
 				})
 				.appendTo(grantActions)
-		})
-		.appendTo(card)
+		},
+	)
 
 	return card
 })

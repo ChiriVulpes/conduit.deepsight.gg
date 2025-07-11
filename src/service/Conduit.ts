@@ -16,26 +16,33 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		console.log(await Definitions.DestinySeasonDefinition.en.get())
 	},
 	onCall: {
-		async getOriginAccess (event, origin) {
-			return await Auth.getOriginAccess(origin)
-		},
 		async isAuthenticated (event) {
 			return await Auth.checkBungie()
+		},
+		async getOriginAccess (event, origin) {
+			if (origin !== self.origin && event.origin !== self.origin)
+				throw new Error('This action can only be performed using a code provided by an iframe from the deepsight.gg conduit origin')
+			return await Auth.getOriginAccess(origin)
+		},
+		async getOriginGrants (event) {
+			if (event.origin !== self.origin)
+				throw new Error('This action can only be performed using a code provided by an iframe from the deepsight.gg conduit origin')
+			return await Auth.getOriginGrants()
 		},
 		async getProfiles (event) {
 			return await db.profiles.toArray()
 		},
-		async authenticate (event, code) {
+		async _authenticate (event, code) {
 			if (event.origin !== self.origin)
 				throw new Error('This action can only be performed using a code provided by an iframe from the deepsight.gg conduit origin')
 			return await Auth.complete(code)
 		},
-		async grantAccess (event, origin) {
+		async _grantAccess (event, origin, appName) {
 			if (event.origin !== self.origin)
 				throw new Error('This action can only be performed using a code provided by an iframe from the deepsight.gg conduit origin')
-			return await Auth.grantAccess(origin)
+			return await Auth.grantAccess(origin, appName)
 		},
-		async denyAccess (event, origin) {
+		async _denyAccess (event, origin) {
 			if (event.origin !== self.origin)
 				throw new Error('This action can only be performed using a code provided by an iframe from the deepsight.gg conduit origin')
 			return await Auth.denyAccess(origin)

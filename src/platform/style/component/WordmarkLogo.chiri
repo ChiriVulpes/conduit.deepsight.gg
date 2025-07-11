@@ -4,6 +4,8 @@
 	%align-items-centre
 	gap: .5em
 	%width-fit
+	%colour-inherit
+	%decoration-none
 
 	&-icon:
 		height: 6em

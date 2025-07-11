@@ -30,9 +30,15 @@ namespace Auth {
 		return undefined
 	}
 
-	export async function grantAccess (origin: string): Promise<void> {
+	export async function getOriginGrants (): Promise<AuthedOrigin[]> {
+		const origins = await Store.getOrigins() ?? {}
+		return Object.values(origins).filter(auth => auth.authTimestamp + AUTH_EXPIRY > Date.now())
+	}
+
+	export async function grantAccess (origin: string, appName?: string): Promise<void> {
 		const origins = await Store.getOrigins() ?? {}
 		origins[origin] = {
+			appName,
 			origin,
 			authTimestamp: Date.now(),
 		}

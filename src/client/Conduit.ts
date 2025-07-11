@@ -1,4 +1,5 @@
 import type { AuthedOrigin } from '@shared/Auth'
+import type { ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
 
 if (!('serviceWorker' in navigator))
 	throw new Error('Service Worker is not supported in this browser')
@@ -11,17 +12,14 @@ interface ConduitOptions {
 	| { type: 'popup', width?: number, height?: number }
 }
 
-interface Conduit {
+type ConduitFunctions = { [KEY in keyof ConduitFunctionRegistry]: (...params: Parameters<ConduitFunctionRegistry[KEY]>) => Promise<ReturnType<ConduitFunctionRegistry[KEY]>> }
+interface ConduitImplementation {
 	update (): Promise<void>
-	getOriginAccess (origin?: string): Promise<AuthedOrigin | undefined>
-	isAuthenticated (): Promise<boolean>
 	requestGrant (): Promise<boolean>
-	/** @deprecated This function is for internal use and won't work otherwise */
-	_authenticate (code: string): Promise<boolean>
-	/** @deprecated This function is for internal use and won't work otherwise */
-	_grantAccess (origin: string): Promise<void>
-	/** @deprecated This function is for internal use and won't work otherwise */
-	_denyAccess (origin: string): Promise<void>
+	getOriginAccess (origin?: string): Promise<AuthedOrigin | undefined>
+}
+
+interface Conduit extends Omit<ConduitFunctions, keyof ConduitImplementation>, ConduitImplementation {
 }
 
 const loaded = new Promise<unknown>(resolve => window.addEventListener('DOMContentLoaded', resolve, { once: true }))
@@ -124,15 +122,12 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 
 	await activePromise
 
-	return {
-		async update () {
-			return callPromiseFunction('_update')
-		},
+	const implementation: ConduitImplementation = {
 		async getOriginAccess (origin = window.origin) {
 			return callPromiseFunction<AuthedOrigin | undefined>('getOriginAccess', origin).catch(() => undefined)
 		},
-		async isAuthenticated () {
-			return callPromiseFunction<boolean>('isAuthenticated').catch(() => false)
+		async update () {
+			return callPromiseFunction('_update')
 		},
 		async requestGrant () {
 			if (await this.getOriginAccess())
@@ -176,16 +171,19 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 				})
 			return !await this.getOriginAccess()
 		},
-		async _authenticate (code) {
-			return callPromiseFunction<boolean>('authenticate', code).catch(() => false)
+	}
+
+	return new Proxy(implementation, {
+		get (target, fname: keyof Conduit) {
+			if (fname as any === 'then')
+				return undefined
+
+			if (fname in target)
+				return target[fname as keyof typeof target]
+
+			return (...params: unknown[]) => callPromiseFunction(fname, ...params)
 		},
-		async _grantAccess (origin) {
-			return callPromiseFunction<void>('grantAccess', origin).catch(() => { })
-		},
-		async _denyAccess (origin) {
-			return callPromiseFunction<void>('denyAccess', origin).catch(() => { })
-		},
-	} satisfies Conduit
+	}) as Conduit
 }
 
 export default Conduit

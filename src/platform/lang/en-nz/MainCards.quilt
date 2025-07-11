@@ -1,0 +1,16 @@
+# main
+## about-card
+title: About
+description:
+	The deepsight.gg conduit handles processing your Destiny 2 profile data for third party apps set up to use it. This can:
+	- Reduce memory usage
+	- Allow support for offline usage out of the box
+	- Speed up load times by sharing the same data already on your device
+	- Or even just reduce third party app development time!
+
+## grants-card
+title: Access Grants
+description/none: You have not granted any third party applications access to your Destiny 2 profile data.
+description/grants: The following third party applications have been granted access to your Destiny 2 profile data:
+grant-name: {#B:{1??{0}}}{1? - {0}}
+

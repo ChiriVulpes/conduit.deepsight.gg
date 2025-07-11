@@ -1,9 +1,20 @@
 import Paragraph from 'component/core/Paragraph'
 import { Component, State } from 'kitsui'
 import type { StringApplicatorSource } from 'kitsui/utility/StringApplicator'
+import type { Quilt } from 'lang'
 
-interface LoadingExtensions {
-	set<T> (state: State.Async<T, StringApplicatorSource>, initialiser: (slot: Component, value: T) => unknown): this
+export interface LoadedSlotExtensions {
+	refresh (): this
+}
+
+export interface LoadedSlot extends Component, LoadedSlotExtensions { }
+
+interface LoadingExtensions extends LoadedSlotExtensions {
+	set<T> (state: State.Async<T, StringApplicatorSource>, initialiser: (slot: LoadedSlot, value: T) => unknown): this
+	set<T> (
+		load: (signal: AbortSignal, setProgress: (progress: number | null, details?: Quilt.Handler) => void) => Promise<T>,
+		initialiser: (slot: LoadedSlot, value: T) => unknown,
+	): this
 }
 
 interface Loading extends Component, LoadingExtensions { }
@@ -28,10 +39,21 @@ const Loading = Component((component): Loading => {
 	const error = Paragraph().style('loading-error')
 
 	let owner: State.Owner.Removable | undefined
+	let refresh: (() => void) | undefined
 	return component.style('loading')
 		.extend<LoadingExtensions>(loading => ({
+			refresh () {
+				refresh?.()
+				return this
+			},
 			set (state, initialiser) {
 				owner?.remove(); owner = State.Owner.create()
+
+				if (typeof state === 'function')
+					state = State.Async(owner, state)
+
+				refresh = state.refresh
+
 				loading.style.bind(state.settled, 'loading--loaded')
 				progress
 					.style.bind(state.progress.map(owner, progress => progress?.progress === null), 'loading-progress--unknown')
@@ -59,7 +81,8 @@ const Loading = Component((component): Loading => {
 		}))
 		.onRemoveManual(() => {
 			clearInterval(interval)
-			owner?.remove()
+			owner?.remove(); owner = undefined
+			refresh = undefined
 		})
 })
 
