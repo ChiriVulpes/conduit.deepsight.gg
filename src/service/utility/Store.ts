@@ -3,12 +3,12 @@ import { db } from 'utility/Database'
 export interface LocalStorage {
 }
 
-type StoreProxy = (
-	& { [KEY in keyof LocalStorage as `has${Capitalize<KEY & string>}`]: () => Promise<boolean> }
-	& { [KEY in keyof LocalStorage as `get${Capitalize<KEY & string>}`]: () => Promise<LocalStorage[KEY] | undefined> }
-	& { [KEY in keyof LocalStorage as `set${Capitalize<KEY & string>}`]: (value: LocalStorage[KEY]) => Promise<void> }
-	& { [KEY in keyof LocalStorage as `delete${Capitalize<KEY & string>}`]: () => Promise<void> }
-) extends infer STORE ? { [KEY in keyof STORE]: STORE[KEY] } : never
+type StoreProxy = { [KEY in keyof LocalStorage]: {
+	has (): Promise<boolean>
+	get (): Promise<LocalStorage[KEY] | undefined>
+	set (value: LocalStorage[KEY]): Promise<void>
+	delete (): Promise<void>
+} }
 
 const methods = {
 	has: async (key: string) => !!await db.store.get(key),
@@ -18,25 +18,22 @@ const methods = {
 }
 
 const methodNames = Object.keys(methods) as (keyof typeof methods)[]
-const methodCache = new Map<string, (...params: any[]) => any>()
+type CachedMethods = { [NAME in keyof typeof methods]: (...params: Parameters<(typeof methods)[NAME]> extends [unknown, ...infer PARAMS] ? PARAMS : never) => ReturnType<(typeof methods)[NAME]> }
+const methodCache = new Map<string, CachedMethods>()
 
 const Store = new Proxy({} as StoreProxy, {
 	get (target, key) {
 		if (typeof key !== 'string')
 			return undefined
 
-		const method = methodCache.get(key)
-		if (method)
-			return method
+		let cache = methodCache.get(key)
+		if (cache)
+			return cache
 
-		for (const methodName of methodNames)
-			if (key.startsWith(methodName)) {
-				const realKey = key[methodName.length].toLowerCase() + key.slice(methodName.length + 1)
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-				const boundMethod = (methods[methodName] as any).bind(null, realKey) as (...params: any[]) => any
-				methodCache.set(key, boundMethod)
-				return boundMethod
-			}
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+		cache = Object.fromEntries(methodNames.map(methodName => [methodName, (methods[methodName] as any).bind(null, key)])) as any as CachedMethods
+		methodCache.set(key, cache)
+		return cache
 	},
 })
 

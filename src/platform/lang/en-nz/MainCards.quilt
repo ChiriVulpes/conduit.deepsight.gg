@@ -12,5 +12,22 @@ description:
 title: Access Grants
 description/none: You have not granted any third party applications access to your Destiny 2 profile data.
 description/grants: The following third party applications have been granted access to your Destiny 2 profile data:
+loading: Checking auth state...
 grant-name: {#B:{1??{0}}}{1? - {0}}
 
+## advanced-card
+title: Advanced
+description: Advanced settings for how the deepsight.gg conduit will serve your data to third party applications.
+
+### custom-app
+title: Custom Bungie.net API Application
+loading: Checking for saved app...
+description:
+	Separate your third party app usage from everyone else's by providing your own Bungie.net API application details.
+	You can create an app at {#LINK(www.bungie.net/en/Application):Bungie.net/en/Application}. (Click this link again after signing in, because you'll probably have been redirected to the wrong place.)
+	You must set your OAuth Client Type to {#CODE:Confidential}, and both your "Redirect URL" and your "Origin Header" to {#CODE:https://conduit.deepsight.gg}. Everything else is either up to you or should be left alone.
+api-key/label: API Key
+client-id/label: OAuth Client ID
+client-secret/label: OAuth Client Secret
+action/clear: Clear
+action/save: Save

@@ -15,5 +15,10 @@
 	component/core/Lore
 	component/core/Footer
 	component/core/ActionRow
+	component/core/FormRow
+	component/core/TextInput
+	component/core/Details
+	component/core/Break
+	component/core/Code
 	component/WordmarkLogo
 	component/MainCards

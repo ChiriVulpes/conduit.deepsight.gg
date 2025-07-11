@@ -1,4 +1,4 @@
-import type { AuthedOrigin } from '@shared/Auth'
+import type { AuthedOrigin, CustomBungieApp } from '@shared/Auth'
 import Env from 'utility/Env'
 import Log from 'utility/Log'
 import Store from 'utility/Store'
@@ -12,6 +12,7 @@ declare module 'utility/Store' {
 			refreshToken: string
 			refreshExpiry: number
 		}
+		customApp: CustomBungieApp
 	}
 }
 
@@ -20,43 +21,55 @@ namespace Auth {
 	const AUTH_EXPIRY = 1000 * 60 * 60 * 24 * 30 // 30 days
 
 	export async function getOriginAccess (origin: string): Promise<AuthedOrigin | undefined> {
-		const origins = await Store.getOrigins() ?? {}
+		const origins = await Store.origins.get() ?? {}
 		const auth = origins?.[origin]
 		if (auth && auth.authTimestamp + AUTH_EXPIRY > Date.now())
 			return auth
 
 		delete origins[origin]
-		await Store.setOrigins(origins)
+		await Store.origins.set(origins)
 		return undefined
 	}
 
 	export async function getOriginGrants (): Promise<AuthedOrigin[]> {
-		const origins = await Store.getOrigins() ?? {}
+		const origins = await Store.origins.get() ?? {}
 		return Object.values(origins).filter(auth => auth.authTimestamp + AUTH_EXPIRY > Date.now())
 	}
 
 	export async function grantAccess (origin: string, appName?: string): Promise<void> {
-		const origins = await Store.getOrigins() ?? {}
+		const origins = await Store.origins.get() ?? {}
 		origins[origin] = {
 			appName,
 			origin,
 			authTimestamp: Date.now(),
 		}
-		await Store.setOrigins(origins)
+		await Store.origins.set(origins)
 		Log.info(`Granted access to origin: ${origin}`)
 	}
 
 	export async function denyAccess (origin: string): Promise<void> {
-		const origins = await Store.getOrigins() ?? {}
+		const origins = await Store.origins.get() ?? {}
 		if (origins[origin]) {
 			delete origins[origin]
-			await Store.setOrigins(origins)
+			await Store.origins.set(origins)
 		}
 		Log.info(`Denied access to origin: ${origin}`)
 	}
 
+	export async function getAPIKey () {
+		const customApp = await Store.customApp.get()
+		return customApp?.apiKey ?? Env.BUNGIE_API_KEY
+	}
+
+	export async function getAuthorisation () {
+		const customApp = await Store.customApp.get()
+		const clientId = customApp?.clientId ?? Env.BUNGIE_AUTH_CLIENT_ID
+		const clientSecret = customApp?.clientSecret ?? Env.BUNGIE_AUTH_CLIENT_SECRET
+		return `Basic ${btoa(`${clientId}:${clientSecret}`)}`
+	}
+
 	export async function checkBungie () {
-		const auth = await Store.getAuth()
+		const auth = await Store.auth.get()
 		if (!auth)
 			return false
 
@@ -73,6 +86,8 @@ namespace Auth {
 			return true
 		}
 
+		const authorisation = await getAuthorisation()
+
 		// refresh access token
 		Log.info('Refreshing Bungie.net access token...')
 		const tokenRequestTime = Date.now()
@@ -80,7 +95,7 @@ namespace Auth {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
-				'Authorization': `Basic ${btoa(`${Env.BUNGIE_AUTH_CLIENT_ID}:${Env.BUNGIE_AUTH_CLIENT_SECRET}`)}`,
+				'Authorization': authorisation,
 			},
 			body: new URLSearchParams({
 				grant_type: 'refresh_token',
@@ -109,13 +124,15 @@ namespace Auth {
 			return false
 		}
 
+		const authorisation = await getAuthorisation()
+
 		const tokenRequestTime = Date.now()
 		const tokenResponse = await fetch('https://www.bungie.net/Platform/App/OAuth/Token/', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
 				// 'X-API-Key': Env.BUNGIE_API_KEY,
-				'Authorization': `Basic ${btoa(`${Env.BUNGIE_AUTH_CLIENT_ID}:${Env.BUNGIE_AUTH_CLIENT_SECRET}`)}`,
+				'Authorization': authorisation,
 			},
 			body: new URLSearchParams({
 				grant_type: 'authorization_code',
@@ -132,7 +149,7 @@ namespace Auth {
 			return false
 		}
 
-		await Store.setAuth({
+		await Store.auth.set({
 			accessToken: tokenResponse.access_token,
 			accessExpiry: requestTime + tokenResponse.expires_in * 1000,
 			refreshToken: tokenResponse.refresh_token,

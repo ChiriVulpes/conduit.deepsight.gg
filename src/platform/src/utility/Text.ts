@@ -54,7 +54,7 @@ namespace Text {
 			const texts = value.split('\n')
 			for (let i = 0; i < texts.length; i++) {
 				if (i > 0)
-					element.append(Component('br').element)
+					element.append(Component('br').element, Component().style('break').element)
 
 				element.append(document.createTextNode(texts[i]))
 			}
@@ -73,14 +73,19 @@ namespace Text {
 	export function createTagElement (tag: string): HTMLElement | undefined {
 		tag = tag.toLowerCase()
 
-		// if (tag.startsWith('link(')) {
-		// 	const href = tag.slice(5, -1)
-		// 	const link = href.startsWith('/')
-		// 		? Link(href as RoutePath)
-		// 		: ExternalLink(href)
+		if (tag.startsWith('link(')) {
+			let href = tag.slice(5, -1)
+			// const link = href.startsWith('/')
+			// 	? Link(href as RoutePath)
+			// 	: ExternalLink(href)
 
-		// 	return link.element
-		// }
+			if (!href.startsWith('/') && !href.startsWith('.'))
+				href = `https://${href}`
+
+			return Component('a')
+				.attributes.set('href', href)
+				.element
+		}
 
 		// if (tag.startsWith('.')) {
 		// 	const className = tag.slice(1)
@@ -103,6 +108,7 @@ namespace Text {
 			case 'i': return document.createElement('em')
 			case 'u': return document.createElement('u')
 			case 's': return document.createElement('s')
+			case 'code': return Component('code').style('code').element
 
 			// case 'sm': return Component('small')
 			// 	.style('small')

@@ -28,3 +28,14 @@
 
 	&-text:
 		%font-vertical-align
+
+	&--disabled:
+		#after: .button
+		%cursor-default
+		%border-colour-5
+		%colour-7
+		%background-none
+
+		@before:
+			%transparent
+			inset: -10px

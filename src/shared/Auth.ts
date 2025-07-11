@@ -3,3 +3,9 @@ export interface AuthedOrigin {
 	origin: string
 	authTimestamp: number
 }
+
+export interface CustomBungieApp {
+	apiKey: string
+	clientId: string
+	clientSecret: string
+}
