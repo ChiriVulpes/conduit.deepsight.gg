@@ -1,4 +1,3 @@
-import type { AuthedOrigin } from '@shared/Auth'
 import type { ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
 
 if (!('serviceWorker' in navigator))
@@ -15,8 +14,7 @@ interface ConduitOptions {
 type ConduitFunctions = { [KEY in keyof ConduitFunctionRegistry]: (...params: Parameters<ConduitFunctionRegistry[KEY]>) => Promise<ReturnType<ConduitFunctionRegistry[KEY]>> }
 interface ConduitImplementation {
 	update (): Promise<void>
-	requestGrant (): Promise<boolean>
-	getOriginAccess (origin?: string): Promise<AuthedOrigin | undefined>
+	ensureAuthenticated (appName?: string): Promise<boolean>
 }
 
 interface Conduit extends Omit<ConduitFunctions, keyof ConduitImplementation>, ConduitImplementation {
@@ -123,18 +121,16 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 	await activePromise
 
 	const implementation: ConduitImplementation = {
-		async getOriginAccess (origin = window.origin) {
-			return callPromiseFunction<AuthedOrigin | undefined>('getOriginAccess', origin).catch(() => undefined)
-		},
 		async update () {
 			return callPromiseFunction('_update')
 		},
-		async requestGrant () {
-			if (await this.getOriginAccess())
+		async ensureAuthenticated (this: Conduit, appName) {
+			let authState = await this._getAuthState()
+			if (authState.authenticated && authState.accessGrants.some(grant => grant.origin === window.origin))
 				return true
 
 			let proxy: WindowProxy | null = null
-			const authURL = `${serviceRoot}?auth=${encodeURIComponent(window.origin)}`
+			const authURL = `${serviceRoot}?auth=${encodeURIComponent(window.origin)}${appName ? `&app=${encodeURIComponent(appName)}` : ''}`
 			switch (options.authOptions) {
 				case 'blank':
 					proxy = window.open(authURL, '_blank')
@@ -169,7 +165,9 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 						}
 					}, 10)
 				})
-			return !await this.getOriginAccess()
+
+			authState = await this._getAuthState()
+			return authState.authenticated && authState.accessGrants.some(grant => grant.origin === window.origin)
 		},
 	}
 

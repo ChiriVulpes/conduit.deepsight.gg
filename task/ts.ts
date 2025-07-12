@@ -7,22 +7,10 @@ const options = Env.ENVIRONMENT === 'dev'
 	: ['--pretty']
 
 const ts = Task('ts', task => task.series(
-	task.series(
-		() => TypeScript.compile(task, 'src/shared', '--pretty', ...options),
-		// () => fs.unlink('docs/service/index.tsbuildinfo'),
-	),
-	task.series(
-		() => TypeScript.compile(task, 'src/service', '--pretty', ...options),
-		// () => fs.unlink('docs/service/index.tsbuildinfo'),
-	),
-	task.series(
-		() => TypeScript.compile(task, 'src/client', '--pretty', ...options),
-		// () => fs.unlink('docs/client/index.tsbuildinfo'),
-	),
-	task.series(
-		() => TypeScript.compile(task, 'src/platform/src', '--pretty', ...options),
-		// () => fs.unlink('docs/client/index.tsbuildinfo'),
-	),
+	Task('ts:shared', () => TypeScript.compile(task, 'src/shared', '--pretty', ...options)),
+	Task('ts:service', () => TypeScript.compile(task, 'src/service', '--pretty', ...options)),
+	Task('ts:client', () => TypeScript.compile(task, 'src/client', '--pretty', ...options)),
+	Task('ts:platform', () => TypeScript.compile(task, 'src/platform/src', '--pretty', ...options)),
 	copyClientToPlatform,
 ))
 

@@ -1,11 +1,11 @@
-import type { AuthedOrigin, CustomBungieApp } from '@shared/Auth'
+import type { AccessGrant, AuthState, CustomBungieApp } from '@shared/Auth'
 import Env from 'utility/Env'
 import Log from 'utility/Log'
 import Store from 'utility/Store'
 
 declare module 'utility/Store' {
 	export interface LocalStorage {
-		origins: Record<string, AuthedOrigin>
+		origins: Record<string, AccessGrant>
 		auth: {
 			accessToken: string
 			accessExpiry: number
@@ -20,7 +20,24 @@ namespace Auth {
 
 	const AUTH_EXPIRY = 1000 * 60 * 60 * 24 * 30 // 30 days
 
-	export async function getOriginAccess (origin: string): Promise<AuthedOrigin | undefined> {
+	export async function getAuthState (): Promise<AuthState> {
+		const [auth, customApp, accessGrants] = await Promise.all([
+			Store.auth.get(),
+			Store.customApp.get(),
+			getOriginGrants(),
+		])
+
+		const clientId = customApp?.clientId ?? Env.BUNGIE_AUTH_CLIENT_ID
+
+		return {
+			authenticated: !!auth,
+			accessGrants,
+			bungieAuthURL: `https://www.bungie.net/en/OAuth/Authorize?client_id=${clientId}&response_type=code`,
+			customApp,
+		}
+	}
+
+	export async function getOriginAccess (origin: string): Promise<AccessGrant | undefined> {
 		const origins = await Store.origins.get() ?? {}
 		const auth = origins?.[origin]
 		if (auth && auth.authTimestamp + AUTH_EXPIRY > Date.now())
@@ -31,7 +48,7 @@ namespace Auth {
 		return undefined
 	}
 
-	export async function getOriginGrants (): Promise<AuthedOrigin[]> {
+	export async function getOriginGrants (): Promise<AccessGrant[]> {
 		const origins = await Store.origins.get() ?? {}
 		return Object.values(origins).filter(auth => auth.authTimestamp + AUTH_EXPIRY > Date.now())
 	}

@@ -25,26 +25,13 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		console.log(await Definitions.DestinySeasonDefinition.en.get())
 	},
 	onCall: {
-		async isAuthenticated (event) {
-			return await Auth.checkBungie()
-		},
 		async getProfiles (event) {
 			return await db.profiles.toArray()
 		},
-		async getOriginAccess (event, origin) {
-			if (origin !== self.origin && event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
-			return await Auth.getOriginAccess(origin)
-		},
-		async _getOriginGrants (event) {
+		async _getAuthState (event) {
 			if (event.origin !== self.origin)
 				throw new ConduitPrivateFunctionError()
-			return await Auth.getOriginGrants()
-		},
-		async _getCustomApp (event) {
-			if (event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
-			return await Store.customApp.get()
+			return await Auth.getAuthState()
 		},
 		async _setCustomApp (event, app) {
 			if (event.origin !== self.origin)
@@ -69,11 +56,6 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 			if (event.origin !== self.origin)
 				throw new ConduitPrivateFunctionError()
 			return await Auth.denyAccess(origin)
-		},
-		async _getBungieAuthURL (event) {
-			if (event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
-			return Auth.getBungieAuthURL()
 		},
 	},
 })

@@ -36,9 +36,11 @@ export default Component(component => {
 					await conduit._authenticate(bungieCode)
 				}
 
+				const authState = await conduit._getAuthState()
+
 				return {
 					conduit,
-					grants: await conduit._getOriginGrants(),
+					grants: authState.accessGrants,
 				}
 			},
 			(slot, { conduit, grants }) => {
@@ -82,9 +84,11 @@ export default Component(component => {
 					setProgress(null, quilt => quilt['main/advanced-card/custom-app/loading']())
 					const conduit = await Relic.connected
 
+					const authState = await conduit._getAuthState()
+
 					return {
 						conduit,
-						customApp: await conduit._getCustomApp(),
+						customApp: authState.customApp,
 					}
 				},
 				(slot, { conduit, customApp }) => {

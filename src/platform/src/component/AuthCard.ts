@@ -1,3 +1,4 @@
+import type { AccessGrant } from 'Auth'
 import ActionRow from 'component/core/ActionRow'
 import Button from 'component/core/Button'
 import Card from 'component/core/Card'
@@ -30,32 +31,31 @@ export default Component((component, target: ConduitTarget) => {
 				await conduit._authenticate(bungieCode)
 			}
 
-			const [authed, targetGrantedAccess, bungieAuthURL] = await Promise.all([
-				conduit.isAuthenticated(),
-				conduit.getOriginAccess(target.origin),
-				conduit._getBungieAuthURL(),
-			])
+			const authState = await conduit._getAuthState()
+			const grant = authState.accessGrants.find((grant: AccessGrant) => grant.origin === target.origin)
+			target.appName = grant?.appName ?? target.appName
 
-			target.appName = targetGrantedAccess?.appName ?? target.appName
+			if (authState.authenticated && grant && window.opener)
+				window.close()
 
 			return {
 				conduit,
-				authed,
+				authed: authState.authenticated,
 				target,
-				targetGrantedAccess,
-				bungieAuthURL,
+				grant,
+				bungieAuthURL: authState.bungieAuthURL,
 			}
 		},
 		(slot, state) => {
 			const { conduit, bungieAuthURL } = state
 			const appName = state.target.appName ?? state.target.origin
-			if (state.targetGrantedAccess) {
+			if (state.authed && state.grant) {
 				Lore()
 					.text.set(quilt => quilt['auth-card/description/granted'](appName))
 					.appendTo(slot)
 
 				Paragraph()
-					.text.set(quilt => quilt['shared/granted-since'](Time.relative(state.targetGrantedAccess!.authTimestamp)))
+					.text.set(quilt => quilt['shared/granted-since'](Time.relative(state.grant!.authTimestamp)))
 					.appendTo(slot)
 
 				const actions = ActionRow().appendTo(slot)

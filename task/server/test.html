@@ -42,9 +42,6 @@ void (async () => {
 	//#endregion
 	////////////////////////////////////
 	
-	const authed = await conduit.getOriginAccess()
-	console.log("authed:", authed)
-	if (!authed)
-		await conduit.requestGrant()
+	await conduit.ensureAuthenticated('Conduit Test Website')
 })()
 </script>
