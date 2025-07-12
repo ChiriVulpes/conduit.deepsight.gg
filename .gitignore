@@ -3,3 +3,4 @@ out/
 **/bundle/amd.js
 .env
 src/platform/**/*.d.ts
+*.tsbuildinfo
