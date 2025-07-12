@@ -7,7 +7,6 @@ import Lore from 'component/core/Lore'
 import Paragraph from 'component/core/Paragraph'
 import { Component } from 'kitsui'
 import Relic from 'Relic'
-import Env from 'utility/Env'
 import Time from 'utility/Time'
 
 interface ConduitTarget {
@@ -31,9 +30,10 @@ export default Component((component, target: ConduitTarget) => {
 				await conduit._authenticate(bungieCode)
 			}
 
-			const [authed, targetGrantedAccess] = await Promise.all([
+			const [authed, targetGrantedAccess, bungieAuthURL] = await Promise.all([
 				conduit.isAuthenticated(),
 				conduit.getOriginAccess(target.origin),
+				conduit._getBungieAuthURL(),
 			])
 
 			target.appName = targetGrantedAccess?.appName ?? target.appName
@@ -43,10 +43,11 @@ export default Component((component, target: ConduitTarget) => {
 				authed,
 				target,
 				targetGrantedAccess,
+				bungieAuthURL,
 			}
 		},
 		(slot, state) => {
-			const { conduit } = state
+			const { conduit, bungieAuthURL } = state
 			const appName = state.target.appName ?? state.target.origin
 			if (state.targetGrantedAccess) {
 				Lore()
@@ -75,7 +76,6 @@ export default Component((component, target: ConduitTarget) => {
 				.appendTo(slot)
 
 			if (!state.authed) {
-				const bungieAuthURL = `https://www.bungie.net/en/OAuth/Authorize?client_id=${Env.BUNGIE_AUTH_CLIENT_ID}&response_type=code`
 				localStorage.setItem('bungieAuthState', location.href)
 				Footer()
 					.append(Component('a')
@@ -83,7 +83,7 @@ export default Component((component, target: ConduitTarget) => {
 						.attributes.set('href', `${bungieAuthURL}&state=${encodeURIComponent(location.href)}`)
 						.attributes.set('target', window.opener ? '_self' : '_blank')
 						.text.set(quilt => quilt['auth-card/action/auth-bungie']())
-						.event.subscribe('click', async event => {
+						.event.subscribe('click', event => {
 							if (window.opener)
 								return
 
@@ -96,16 +96,13 @@ export default Component((component, target: ConduitTarget) => {
 								throw new Error('Failed to open auth popup')
 
 							event.preventDefault()
-							await new Promise<void>(resolve => {
-								const interval = setInterval(() => {
-									if (popup?.closed) {
-										resolve()
-										clearInterval(interval)
-									}
-								}, 100)
-							})
 
-							slot.refresh()
+							const interval = setInterval(() => {
+								if (popup?.closed) {
+									slot.refresh()
+									clearInterval(interval)
+								}
+							}, 100)
 						})
 					)
 					.appendTo(slot)

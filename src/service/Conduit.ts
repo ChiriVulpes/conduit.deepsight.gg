@@ -70,5 +70,10 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				throw new ConduitPrivateFunctionError()
 			return await Auth.denyAccess(origin)
 		},
+		async _getBungieAuthURL (event) {
+			if (event.origin !== self.origin)
+				throw new ConduitPrivateFunctionError()
+			return Auth.getBungieAuthURL()
+		},
 	},
 })

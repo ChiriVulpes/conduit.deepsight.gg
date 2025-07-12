@@ -6,6 +6,8 @@ export interface ConduitFunctionRegistry {
 	getOriginAccess (origin: string): AuthedOrigin | undefined
 	getProfiles (): Profile[]
 	/** @deprecated This function is for internal use and won't work otherwise */
+	_getBungieAuthURL (): string
+	/** @deprecated This function is for internal use and won't work otherwise */
 	_getOriginGrants (): AuthedOrigin[]
 	/** @deprecated This function is for internal use and won't work otherwise */
 	_getCustomApp (): CustomBungieApp | undefined

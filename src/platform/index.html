@@ -11,7 +11,7 @@ const params =new URLSearchParams(location.search)
 const code = params.get('code')
 const state = params.get('state')
 const storedState = localStorage.getItem('bungieAuthState')
-if (code && (state === 'popup' || state && storedState === decodeURIComponent(state))) {
+if (code && (state === 'popup' || state && storedState === state)) {
 	localStorage.setItem('bungieCode', code)
 	localStorage.removeItem('bungieAuthState')
 	if (params.get('state') === 'popup')

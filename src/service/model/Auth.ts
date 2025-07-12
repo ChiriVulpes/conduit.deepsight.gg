@@ -68,6 +68,12 @@ namespace Auth {
 		return `Basic ${btoa(`${clientId}:${clientSecret}`)}`
 	}
 
+	export async function getBungieAuthURL () {
+		const customApp = await Store.customApp.get()
+		const clientId = customApp?.clientId ?? Env.BUNGIE_AUTH_CLIENT_ID
+		return `https://www.bungie.net/en/OAuth/Authorize?client_id=${clientId}&response_type=code`
+	}
+
 	export async function checkBungie () {
 		const auth = await Store.auth.get()
 		if (!auth)
