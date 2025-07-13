@@ -19,7 +19,8 @@
 		"noErrorTruncation": true,
 		"composite": true,
 		"paths": {
-			"@shared/*": [
+			"conduit.deepsight.gg/*": [
+				"./*",
 				"../shared/*"
 			],
 		}

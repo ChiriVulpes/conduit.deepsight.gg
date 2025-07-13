@@ -1,5 +1,6 @@
 import { Task } from 'task'
 import chiri from './chiri'
+import _package from './package'
 import _static from './static'
 import ts from './ts'
 import vendor from './vendor'
@@ -14,5 +15,6 @@ export default Task('build', task => task.parallel(
 			vendor,
 		),
 		ts,
+		_package,
 	)
 ))

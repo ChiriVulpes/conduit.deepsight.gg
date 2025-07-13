@@ -1,4 +1,6 @@
-import type { ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
+import type { ConduitFunctionRegistry } from 'conduit.deepsight.gg/ConduitMessageRegistry'
+
+export { default as Inventory } from 'conduit.deepsight.gg/Inventory'
 
 if (!('serviceWorker' in navigator))
 	throw new Error('Service Worker is not supported in this browser')

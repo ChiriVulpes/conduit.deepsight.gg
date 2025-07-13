@@ -3,6 +3,12 @@
 		"declaration": true,
 		"composite": true,
 		"outDir": "../../out/shared",
+		"baseUrl": ".",
+		"paths": {
+			"*": [
+				"./*"
+			]
+		},
 	},
 	"include": [
 		"**/*.ts"

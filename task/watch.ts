@@ -1,8 +1,9 @@
 import { Task } from 'task'
 import chiri, { chiriwatch } from './chiri'
+import _package from './package'
 import serve from './serve'
 import _static from './static'
-import { tsWatch } from './ts'
+import ts, { tsWatch } from './ts'
 import vendor from './vendor'
 import weaving, { weavewatch } from './weaving'
 
@@ -12,6 +13,10 @@ export default Task('watch', async task => {
 		_static,
 		chiri,
 		weaving,
+		task.series(
+			ts,
+			_package,
+		),
 	))
 
 	task.watch([
@@ -20,6 +25,13 @@ export default Task('watch', async task => {
 		'src/platform/node_modules/**/*.js',
 		'src/platform/static/**/*',
 	], _static)
+
+	task.watch([
+		'out/shared/**/*.d.ts',
+		'out/client/index.d.ts',
+		'out/client/index.js',
+		'src/client/package.json',
+	], _package)
 
 	await Promise.all([
 		task.run(tsWatch),

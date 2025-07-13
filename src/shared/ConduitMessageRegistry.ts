@@ -1,5 +1,5 @@
-import type { AuthState, CustomBungieApp } from './Auth'
-import type { Profile } from './Profile'
+import type { AuthState, CustomBungieApp } from 'Auth'
+import type { Profile } from 'Profile'
 
 export interface ConduitFunctionRegistry {
 	getProfiles (): Profile[]
