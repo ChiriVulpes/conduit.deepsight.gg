@@ -18,15 +18,17 @@ export interface StoreProperty {
 	value: unknown
 }
 
-export const db = new Dexie('relic') as Dexie & {
+interface Schema {
 	versions: EntityTable<ModelVersion, 'component'>
 	data: EntityTable<ModelData, 'component'>
 	store: EntityTable<StoreProperty, 'key'>
 	profiles: EntityTable<Profile, 'id'>
 }
+
+export const db = new Dexie('relic') as Dexie & Schema
 db.version(1).stores({
 	versions: 'component, version, cacheTime',
 	data: 'component',
 	store: 'key',
-	profiles: 'id, name',
-})
+	profiles: 'id, name, [name+code]',
+} satisfies Record<keyof Schema, string>)

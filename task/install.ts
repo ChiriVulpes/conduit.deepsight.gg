@@ -18,4 +18,5 @@ export default Task('install', async task => task.install(
 	},
 	{ path: 'src/client' },
 	{ path: 'src/service' },
+	{ path: 'src/shared' },
 ))

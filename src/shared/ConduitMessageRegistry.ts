@@ -3,6 +3,8 @@ import type { Profile } from 'Profile'
 
 export interface ConduitFunctionRegistry {
 	getProfiles (): Profile[]
+	getProfile (displayName: string, displayNameCode: number): Profile | undefined
+	bumpProfile (displayName: string, displayNameCode: number): void
 
 	/** @deprecated This function is for internal use and won't work otherwise */
 	_getAuthState (): AuthState

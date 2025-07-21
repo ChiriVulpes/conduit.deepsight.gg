@@ -1,10 +1,10 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
 import Auth from 'model/Auth'
 import Definitions from 'model/Definitions'
-import { db } from 'utility/Database'
+import Profiles from 'model/Profiles'
 import Env from 'utility/Env'
+import Service from 'utility/Service'
 import Store from 'utility/Store'
-import Service from './utility/Service'
 
 if (!Env.BUNGIE_API_KEY)
 	throw new Error('BUNGIE_API_KEY is not set')
@@ -22,11 +22,38 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 	},
 	async onActivate (service, event) {
 		void service.broadcast.testBroadcast('21')
-		console.log(await Definitions.DestinySeasonDefinition.en.get())
+		console.log(await Definitions.en.DestinySeasonDefinition.get())
 	},
 	onCall: {
 		async getProfiles (event) {
-			return await db.profiles.toArray()
+			const [profiles, auth] = await Promise.all([
+				Profiles.get(),
+				Auth.getValid(),
+			])
+
+			if (!auth)
+				return profiles
+
+			let profile = profiles.find(profile => profile.name === auth.displayName && profile.code === auth.displayNameCode)
+			if (!profile) {
+				profile = await Profiles.getCurrentProfile(auth)
+				const existingProfile = profiles.find(p => p.id === profile!.id)
+				if (profile && !existingProfile)
+					profiles.push(profile)
+				else
+					profile = existingProfile
+			}
+
+			if (profile)
+				profile.authed = true
+
+			return profiles
+		},
+		async getProfile (event, displayName, displayNameCode) {
+			return await Profiles.searchDestinyPlayerByBungieName(displayName, displayNameCode)
+		},
+		async bumpProfile (event, displayName, displayNameCode) {
+			await Profiles.searchDestinyPlayerByBungieName(displayName, displayNameCode)
 		},
 		async _getAuthState (event) {
 			if (event.origin !== self.origin)
@@ -45,7 +72,7 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		async _authenticate (event, code) {
 			if (event.origin !== self.origin)
 				throw new ConduitPrivateFunctionError()
-			return await Auth.complete(code)
+			return !!await Auth.complete(code)
 		},
 		async _grantAccess (event, origin, appName) {
 			if (event.origin !== self.origin)

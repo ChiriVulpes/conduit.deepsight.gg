@@ -1,4 +1,8 @@
 {
 	"private": true,
-	"name": "shared"
+	"name": "shared",
+	"dependencies": {
+		"bungie-api-ts": "5.2.0",
+		"deepsight.gg": "1.0.1340"
+	}
 }

@@ -3,15 +3,20 @@ import Env from 'utility/Env'
 import Log from 'utility/Log'
 import Store from 'utility/Store'
 
+interface Auth {
+	accessToken: string
+	accessExpiry: number
+	refreshToken: string
+	refreshExpiry: number
+	membershipId: string
+	displayName?: string
+	displayNameCode?: number
+}
+
 declare module 'utility/Store' {
 	export interface LocalStorage {
 		origins: Record<string, AccessGrant>
-		auth: {
-			accessToken: string
-			accessExpiry: number
-			refreshToken: string
-			refreshExpiry: number
-		}
+		auth: Auth
 		customApp: CustomBungieApp
 	}
 }
@@ -91,22 +96,22 @@ namespace Auth {
 		return `https://www.bungie.net/en/OAuth/Authorize?client_id=${clientId}&response_type=code`
 	}
 
-	export async function checkBungie () {
+	export async function getValid () {
 		const auth = await Store.auth.get()
 		if (!auth)
-			return false
+			return undefined
 
 		const now = Date.now() + 1000 * 60 // add a minute to account for latency of refresh requests
 		if (now > auth.refreshExpiry) {
 			// refresh token is expired, must re-authenticate
 			Log.info('Bungie.net refresh token expired, must re-authenticate')
-			return false
+			return undefined
 		}
 
 		if (auth.accessExpiry > now) {
 			// access token is still valid
 			Log.info('Bungie.net access token validated')
-			return true
+			return auth
 		}
 
 		const authorisation = await getAuthorisation()
@@ -138,13 +143,13 @@ namespace Auth {
 		membership_id: string
 	}
 
-	export async function complete (code: string): Promise<boolean> {
+	export async function complete (code: string): Promise<Auth | undefined> {
 		if (!code)
-			return false
+			return undefined
 
 		if (!Env.BUNGIE_AUTH_CLIENT_ID || !Env.BUNGIE_AUTH_CLIENT_SECRET) {
 			console.error('BUNGIE_AUTH_CLIENT_ID or BUNGIE_AUTH_CLIENT_SECRET is not set in the environment')
-			return false
+			return undefined
 		}
 
 		const authorisation = await getAuthorisation()
@@ -169,17 +174,92 @@ namespace Auth {
 	async function handleTokenResponse (requestTime: number, tokenResponse: BungieTokenResponse) {
 		if (tokenResponse.token_type !== 'Bearer' || !tokenResponse.access_token || !tokenResponse.refresh_token) {
 			console.error('Invalid Bungie.net token response')
-			return false
+			return undefined
 		}
 
-		await Store.auth.set({
+		const auth: Auth = {
 			accessToken: tokenResponse.access_token,
 			accessExpiry: requestTime + tokenResponse.expires_in * 1000,
 			refreshToken: tokenResponse.refresh_token,
 			refreshExpiry: requestTime + tokenResponse.refresh_expires_in * 1000,
-		})
-		return true
+			membershipId: tokenResponse.membership_id,
+		}
+		await Store.auth.set(auth)
+		return auth
 	}
+
+	interface Cache<T> {
+		time: number
+		value: T
+	}
+
+	interface FetchHeaders {
+		'Content-Type': 'application/json'
+		'X-API-Key': string
+	}
+
+	const empyHeaders = {
+		'Content-Type': 'application/json',
+	} as FetchHeaders
+
+	let fetchHeadersCache: Cache<FetchHeaders> | undefined
+	export async function getHeaders (): Promise<FetchHeaders> {
+		if (fetchHeadersCache && Date.now() - fetchHeadersCache.time < 1000 * 60) // 1 minute cache
+			return fetchHeadersCache.value
+
+		fetchHeadersCache = undefined
+
+		const apiKey = await getAPIKey()
+		if (!apiKey)
+			return empyHeaders // partial headers when invalid
+
+		fetchHeadersCache = {
+			time: Date.now(),
+			value: {
+				'Content-Type': 'application/json',
+				'X-API-Key': apiKey,
+			},
+		}
+
+		return fetchHeadersCache.value
+	}
+
+	interface FetchHeadersAuthed {
+		'Content-Type': 'application/json'
+		'X-API-Key': string
+		'Authorization': string
+	}
+
+	let fetchHeadersAuthedCache: Cache<FetchHeadersAuthed> | undefined
+	export async function getAuthedHeaders (): Promise<FetchHeadersAuthed | undefined> {
+		if (fetchHeadersAuthedCache && Date.now() - fetchHeadersAuthedCache.time < 1000 * 60) // 1 minute cache
+			return fetchHeadersAuthedCache.value
+
+		fetchHeadersAuthedCache = undefined
+
+		const [auth, apiKey] = await Promise.all([
+			Auth.getValid(),
+			Auth.getAPIKey(),
+		])
+		if (!apiKey || !auth?.accessToken)
+			return {
+				'Content-Type': 'application/json',
+				'X-API-Key': apiKey,
+				'Authorization': auth && `Bearer ${auth.accessToken}`,
+			} as FetchHeadersAuthed // partial headers when invalid
+
+		fetchHeadersAuthedCache = {
+			time: Date.now(),
+			value: {
+				'Content-Type': 'application/json',
+				'X-API-Key': apiKey,
+				'Authorization': `Bearer ${auth.accessToken}`,
+			},
+		}
+
+		return fetchHeadersAuthedCache.value
+	}
+
 }
 
 export default Auth
