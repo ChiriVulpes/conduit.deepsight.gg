@@ -19,5 +19,5 @@ export interface ConduitFunctionRegistry {
 }
 
 export interface ConduitBroadcastRegistry {
-	testBroadcast: string
+	ready: void
 }

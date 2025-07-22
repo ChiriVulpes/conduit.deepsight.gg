@@ -14,7 +14,7 @@ const service: Service = Object.assign(self as any as Service, {
 					throw new Error('Invalid broadcast type')
 
 				for (const client of await service.clients.matchAll({ includeUncontrolled: true, type: 'window' }))
-					client.postMessage({ type, data }, options)
+					client.postMessage({ id: 'global', type, data }, options)
 			}
 		},
 	}),
@@ -32,6 +32,7 @@ interface ServiceDefinition<FUNCTIONS extends Messages = Messages, BROADCASTS ex
 	 * Until this promise resolves, the new service worker will buffer any requests it receives.
 	 */
 	onActivate (service: Service<BROADCASTS>, event: ExtendableEvent): Promise<unknown>
+	onRegistered (service: Service<BROADCASTS>): unknown
 	onCall: { [KEY in keyof FUNCTIONS]: (event: ExtendableMessageEvent, ...data: Parameters<FUNCTIONS[KEY]>) => ReturnType<FUNCTIONS[KEY]> | Promise<ReturnType<FUNCTIONS[KEY]>> }
 }
 
@@ -43,7 +44,7 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 		if (typeof event.data !== 'object' || !('type' in event.data))
 			throw new Error('Unsupported message type')
 
-		const { type, data } = event.data as { type: string, data?: unknown }
+		const { id, type, data } = event.data as { id: string, type: string, data?: unknown }
 		try {
 			const fn = definition.onCall[type]
 			if (!fn)
@@ -52,13 +53,14 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 			const params: any[] = data === undefined ? [] : !Array.isArray(data) ? [data] : data
 			const result = await fn(event, ...params as never)
 
-			event.source?.postMessage({ type: `resolve:${type}`, data: result })
+			event.source?.postMessage({ id, type: `resolve:${type}`, data: result })
 		}
 		catch (err) {
-			event.source?.postMessage({ type: `reject:${type}`, data: err })
+			event.source?.postMessage({ id, type: `reject:${type}`, data: err })
 		}
 	}
 	service.setRegistered()
+	definition.onRegistered?.(realService)
 	return realService
 }
 

@@ -21,8 +21,10 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 	async onInstall (service, event) {
 	},
 	async onActivate (service, event) {
-		void service.broadcast.testBroadcast('21')
 		console.log(await Definitions.en.DestinySeasonDefinition.get())
+	},
+	onRegistered (service) {
+		void service.broadcast.ready()
 	},
 	onCall: {
 		async getProfiles (event) {

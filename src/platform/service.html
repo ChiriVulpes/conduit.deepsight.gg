@@ -10,31 +10,55 @@ if (!parentWindow)
 
 void (async () => {
 	const registration = await navigator.serviceWorker.register('./index.js')
-	const service = registration.active ?? await new Promise(resolve => {
+	 let service = registration.active ?? await new Promise(resolve => {
 		const service = registration.waiting ?? registration.installing
 		service.addEventListener('statechange', onStateChange)
-		function onStateChange() {
-			if (service.state !== "activated") return
-			resolve(service)
+		async function onStateChange() {
+			if (service.state !== "activated") 
+				return
+			
 			service.removeEventListener('statechange', onStateChange)
+			resolve(service)
 		}
 	})
 
-	const MAIN_FORMAT = 'color: #58946c; font-weight: bold;'
+	/** @type {Map<string, any>} */
+	const unresolvedMessages = new Map()
+	
+	const MAIN_FORMAT = 'color: #58946c;'
 	const PUNCT_FORMAT = 'color: #888;'
-	const SERVICE_FORMAT = 'color: #8651db; font-weight: bold;'
-	const HOST_FORMAT = 'color: #537cc9; font-weight: bold;'
+	const SERVICE_FORMAT = 'color: #8651db;'
+	const HOST_FORMAT = 'color: #537cc9;'
+	const MESSAGE_FORMAT = 'color: #4ef0bc;'
+	const ERROR_FORMAT = 'color: #d9534f;'
 	navigator.serviceWorker.addEventListener('message', event => {
+		const { id, type, data } = event.data
+		if (id !== 'global' && !unresolvedMessages.has(id)) {
+			console.log(
+				'%cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %c/ %cReceived response for unknown message ID %o %o %o', 
+				MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, ERROR_FORMAT,
+				id, type, data,
+			)
+			return
+		}
+		
+		if (id === 'global' && type === 'ready') {
+			resend()
+			return
+		}
+
+		unresolvedMessages.delete(id)
+		
 		// forward messages from the service worker to the parent window
 		console.log(
-			'%cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %o', 
-			MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT,
-			event.data,
+			`%cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %c/ %c${type} %o`, 
+			MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
+			data,
 		)
 		parentWindow.postMessage(event.data, '*')
 	})
 	
-	window.addEventListener('message', event => {
+	window.addEventListener('message', async event => {
 		if (event.source !== parentWindow)
 			return
 		
@@ -50,15 +74,34 @@ void (async () => {
 			)
 			return
 		}
-	
+
 		// forward messages from the parent window to the service worker
 		console.log(
-			'%cconduit.deepsight.gg %c/ %cHost \u2B9E %cService %o', 
-			MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, 
-			event.data,
+			`%cconduit.deepsight.gg %c/ %cHost \u2B9E %cService %c/ %c${event.data.type} %o`,
+			MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
+			event.data.data,
 		)
+		unresolvedMessages.set(event.data.id, event.data)
 		service.postMessage(event.data)
 	})
+	
+	navigator.serviceWorker.addEventListener('controllerchange', () => {
+		service = registration.active
+		resend()
+	})
+	
+	function resend() {
+		if (!unresolvedMessages.size)
+			return
+		
+		console.log(
+			'%cconduit.deepsight.gg %c/',
+			MAIN_FORMAT, PUNCT_FORMAT, 
+			'Service updated, resending unresolved messages',
+		)
+		for (const [id, data] of unresolvedMessages)
+			service.postMessage(data)
+	}
 
 	parentWindow.postMessage({ type: '_active' }, '*')
 })()

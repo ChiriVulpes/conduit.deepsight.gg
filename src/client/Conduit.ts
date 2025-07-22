@@ -43,10 +43,10 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		callback: (data: any) => void
 	}
 	const messageListeners: MessageListener[] = []
-	function addListener (type: string, callback: (data: any) => void, once = false): MessageListener {
+	function addListener (id: string, type: string, callback: (data: any) => void, once = false): MessageListener {
 		const expiry = !once ? undefined : Date.now() + 1000 * 60 * 2 // 2 minute expiry for once listeners
 		const listener: MessageListener = {
-			id: Math.random().toString(36).slice(2),
+			id,
 			type,
 			callback,
 			once: once ? true : undefined,
@@ -59,22 +59,27 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		const index = messageListeners.findIndex(listener => listener.id === id)
 		if (index !== -1) messageListeners.splice(index, 1)
 	}
-	function addPromiseListener<T> (type: string): Promise<T> {
-		return new Promise<T>((resolve, reject) => {
-			const resolveListener = addListener(`resolve:${type}`, data => {
-				resolve(data as T)
-				removeListener(rejectListener.id)
-			}, true)
-			const rejectListener = addListener(`reject:${type}`, data => {
-				reject(data instanceof Error ? data : new Error('Promise message rejected', { cause: data }))
-				removeListener(resolveListener.id)
-			}, true)
-		})
+	function addPromiseListener<T> (type: string): { id: string, promise: Promise<T> } {
+		const id = Math.random().toString(36).slice(2)
+		return {
+			id,
+			promise: new Promise<T>((resolve, reject) => {
+				addListener(id, `resolve:${type}`, data => {
+					resolve(data as T)
+					removeListener(id)
+				}, true)
+				addListener(id, `reject:${type}`, data => {
+					reject(data instanceof Error ? data : new Error('Promise message rejected', { cause: data }))
+					removeListener(id)
+				}, true)
+			}),
+		}
 	}
 
 	function callPromiseFunction<T> (type: string, ...params: any[]): Promise<T> {
-		iframe.contentWindow?.postMessage({ type, data: params }, serviceOrigin)
-		return addPromiseListener<T>(type)
+		const { id, promise } = addPromiseListener<T>(type)
+		iframe.contentWindow?.postMessage({ type, id, data: params }, serviceOrigin)
+		return promise
 	}
 
 	let setActive: (() => void) | undefined
@@ -84,7 +89,7 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		if (event.source !== iframe.contentWindow)
 			return
 
-		const data = event.data as { type: string, data: unknown }
+		const data = event.data as { id: string, type: string, data: unknown }
 		if (typeof data !== 'object' || typeof data.type !== 'string') {
 			console.warn('Incomprehensible message from Conduit iframe:', data)
 			return
@@ -98,7 +103,7 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		let used = false
 		for (let i = 0; i < messageListeners.length; i++) {
 			const listener = messageListeners[i]
-			if (listener.type === data.type) {
+			if (listener.type === data.type && listener.id === data.id) {
 				listener.callback(data.data)
 				used = true
 				if (listener.once) {

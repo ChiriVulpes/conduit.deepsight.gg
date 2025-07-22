@@ -15,7 +15,7 @@ import Store from 'utility/Store'
 
 namespace Profiles {
 
-	const version = '6'
+	const version = '7'
 
 	export async function get () {
 		const profiles = await db.profiles.toArray()
