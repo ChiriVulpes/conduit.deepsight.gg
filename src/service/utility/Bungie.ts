@@ -1,6 +1,7 @@
 import type { ServerResponse } from 'bungie-api-ts/common'
 import { PlatformErrorCodes } from 'bungie-api-ts/common'
 import Auth from 'model/Auth'
+import Log from 'utility/Log'
 
 type Jsonable = string | number | boolean | null | Jsonable[] | { [key: string | number]: Jsonable }
 namespace Jsonable {
@@ -34,15 +35,16 @@ namespace Bungie {
 			await Promise.resolve(queuePromise).catch(() => { })
 
 		const promise = queuePromise = Promise.resolve(fn())
-		const result = await promise
+		await promise.catch(() => { })
 		queueIds.shift()
 		queuePromise = undefined
-		return result
+		return promise
 	}
 
 	export async function get<T> (url: string, body?: Record<string, Jsonable>) {
 		return await queue(async () => {
 			if (!url.startsWith('/')) url = `/${url}`
+			Log.info('GET', url)
 			if (body) url = `${url}?${Jsonable.searchParamsIfy(body ?? {})}`
 			return self.fetch(`${origin}${url}`, {
 				headers: { ...await Auth.getHeaders() },
@@ -54,6 +56,7 @@ namespace Bungie {
 	export async function getForUser<T> (url: string, body?: Record<string, Jsonable>) {
 		return await queue(async () => {
 			if (!url.startsWith('/')) url = `/${url}`
+			Log.info('GET:AUTHED', url)
 			if (body) url = `${url}?${Jsonable.searchParamsIfy(body ?? {})}`
 			return self.fetch(`${origin}${url}`, {
 				headers: { ...await Auth.getAuthedHeaders() },
@@ -65,6 +68,7 @@ namespace Bungie {
 	export async function post<T> (url: string, body: Record<string, Jsonable>) {
 		return await queue(async () => {
 			if (!url.startsWith('/')) url = `/${url}`
+			Log.info('POST', url)
 			return self.fetch(`${origin}${url}`, {
 				method: 'POST',
 				headers: { ...await Auth.getHeaders() },
@@ -77,6 +81,7 @@ namespace Bungie {
 	export async function postForUser<T> (url: string, body: Record<string, Jsonable>) {
 		return await queue(async () => {
 			if (!url.startsWith('/')) url = `/${url}`
+			Log.info('POST:AUTHED', url)
 			return self.fetch(`${origin}${url}`, {
 				method: 'POST',
 				headers: { ...await Auth.getAuthedHeaders() },
@@ -104,6 +109,7 @@ namespace Bungie {
 					const error = Object.assign(new Error(`${response.Message}`), response.MessageData)
 					error.name = response.ErrorStatus
 					Object.assign(error, { code: response.ErrorCode })
+					Log.info(response.ErrorStatus, response.Message)
 					throw error
 				}
 

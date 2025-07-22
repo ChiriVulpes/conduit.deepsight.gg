@@ -35,8 +35,8 @@ void (async () => {
 		const { id, type, data } = event.data
 		if (id !== 'global' && !unresolvedMessages.has(id)) {
 			console.log(
-				'%cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %c/ %cReceived response for unknown message ID %o %o %o', 
-				MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, ERROR_FORMAT,
+				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %c/ %cReceived response for unknown message ID %o %o %o`, 
+				PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, ERROR_FORMAT,
 				id, type, data,
 			)
 			return
@@ -51,8 +51,8 @@ void (async () => {
 		
 		// forward messages from the service worker to the parent window
 		console.log(
-			`%cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %c/ %c${type} %o`, 
-			MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
+			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %c/ %c${type} %o`, 
+			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
 			data,
 		)
 		parentWindow.postMessage(event.data, '*')
@@ -77,8 +77,8 @@ void (async () => {
 
 		// forward messages from the parent window to the service worker
 		console.log(
-			`%cconduit.deepsight.gg %c/ %cHost \u2B9E %cService %c/ %c${event.data.type} %o`,
-			MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
+			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost \u2B9E %cService %c/ %c${event.data.type} %o`,
+			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
 			event.data.data,
 		)
 		unresolvedMessages.set(event.data.id, event.data)
@@ -95,8 +95,8 @@ void (async () => {
 			return
 		
 		console.log(
-			'%cconduit.deepsight.gg %c/',
-			MAIN_FORMAT, PUNCT_FORMAT, 
+			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/`,
+			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, 
 			'Service updated, resending unresolved messages',
 		)
 		for (const [id, data] of unresolvedMessages)

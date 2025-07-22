@@ -19,7 +19,7 @@ namespace Profiles {
 
 	export async function get () {
 		const profiles = await db.profiles.toArray()
-		await Promise.all(profiles.map(profile => updateProfile(profile)))
+		await Promise.all(profiles.map(profile => updateProfile(profile).catch(() => { })))
 		return profiles
 	}
 

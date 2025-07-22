@@ -33,6 +33,8 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				Auth.getValid(),
 			])
 
+			profiles.sort((a, b) => new Date(b.lastAccess).getTime() - new Date(a.lastAccess).getTime())
+
 			if (!auth)
 				return profiles
 
@@ -49,6 +51,7 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 			if (profile)
 				profile.authed = true
 
+			profiles.sort((a, b) => +!!b.authed - +!!a.authed)
 			return profiles
 		},
 		async getProfile (event, displayName, displayNameCode) {
