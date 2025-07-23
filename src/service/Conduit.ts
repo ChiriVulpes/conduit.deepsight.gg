@@ -89,5 +89,12 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				throw new ConduitPrivateFunctionError()
 			return await Auth.denyAccess(origin)
 		},
+		async _getDefinitionsComponent (event, language, component) {
+			return await Definitions[language][component].get()
+		},
+		async _getDefinition (event, language, component, hash) {
+			const defs = await Definitions[language][component].get()
+			return defs[hash as keyof typeof defs]
+		},
 	},
 })

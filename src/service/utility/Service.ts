@@ -33,7 +33,7 @@ interface ServiceDefinition<FUNCTIONS extends Messages = Messages, BROADCASTS ex
 	 */
 	onActivate (service: Service<BROADCASTS>, event: ExtendableEvent): Promise<unknown>
 	onRegistered (service: Service<BROADCASTS>): unknown
-	onCall: { [KEY in keyof FUNCTIONS]: (event: ExtendableMessageEvent, ...data: Parameters<FUNCTIONS[KEY]>) => ReturnType<FUNCTIONS[KEY]> | Promise<ReturnType<FUNCTIONS[KEY]>> }
+	onCall: { [KEY in keyof FUNCTIONS]: (event: ExtendableMessageEvent, ...data: Parameters<FUNCTIONS[KEY]>) => ReturnType<FUNCTIONS[KEY]> | Awaited<ReturnType<FUNCTIONS[KEY]>> }
 }
 
 function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (definition: NoInfer<ServiceDefinition<FUNCTIONS, BROADCASTS>>): Service<BROADCASTS> {

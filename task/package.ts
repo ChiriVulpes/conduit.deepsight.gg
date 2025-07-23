@@ -17,13 +17,13 @@ export default Task('package', async () => {
 	let injectFile = await fs.readFile('out/client/index.d.ts', 'utf8').catch(() => '')
 	injectFile = injectFile
 		.replace('declare module "Conduit"', 'declare module "conduit.deepsight.gg"')
-		.replace(/(?<=declare module ")(?!conduit|bungie-api-ts)/g, 'conduit.deepsight.gg/')
-		.replace(/(?<= from ['"])(?!conduit|bungie-api-ts)/g, 'conduit.deepsight.gg/')
+		.replace(/(?<=declare module ")(?!conduit|deepsight.gg|bungie-api-ts)/g, 'conduit.deepsight.gg/')
+		.replace(/(?<= from ['"])(?!conduit|deepsight.gg|bungie-api-ts)/g, 'conduit.deepsight.gg/')
 
 	for (const [module, file] of sourceFiles)
 		injectFile = `declare module "${module}" {\n${(file
 			.replace(/^|(?<=\n)/g, '    ')
-			.replace(/(?<= from ['"])(?!conduit|bungie-api-ts)/g, 'conduit.deepsight.gg/')
+			.replace(/(?<= from ['"])(?!conduit|deepsight.gg|bungie-api-ts)/g, 'conduit.deepsight.gg/')
 			.trimEnd()
 		)}\n}\n${injectFile}`
 

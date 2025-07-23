@@ -1,5 +1,6 @@
 import { Task } from 'task'
 import chiri, { chiriwatch } from './chiri'
+import clean from './clean'
 import _package from './package'
 import serve from './serve'
 import _static from './static'
@@ -8,6 +9,7 @@ import vendor from './vendor'
 import weaving, { weavewatch } from './weaving'
 
 export default Task('watch', async task => {
+	await task.run(clean)
 	await task.run(task.parallel(
 		vendor,
 		_static,

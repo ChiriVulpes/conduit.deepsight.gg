@@ -1,37 +1,8 @@
-import type { AllDestinyManifestComponents, DestinyManifestComponentName } from 'bungie-api-ts/destiny2'
-import type { DeepsightAdeptDefinition, DeepsightBreakerTypeDefinition, DeepsightCollectionsDefinitionManifest, DeepsightDropTableDefinition, DeepsightEmblemDefinition, DeepsightMomentDefinition, DeepsightSocketExtendedDefinition, DeepsightStats, DeepsightTierTypeDefinition, DeepsightWallpaperDefinition } from 'deepsight.gg'
-import type { DeepsightPlugCategorisation, DeepsightSocketCategorisationDefinition } from 'deepsight.gg/DeepsightPlugCategorisation'
+import type { AllComponentNames, DefinitionsForComponentName } from '@shared/DefinitionComponents'
 import DeepsightManifest from 'model/DeepsightManifest'
 import DestinyManifest from 'model/DestinyManifest'
 import Model from 'model/Model'
 import Deepsight from 'utility/Deepsight'
-
-interface AllDeepsightManifestComponents {
-	DeepsightPlugCategorisation: Record<number, DeepsightPlugCategorisation>
-	DeepsightSocketCategorisation: Record<number, DeepsightSocketCategorisationDefinition>
-	DeepsightMomentDefinition: Record<number, DeepsightMomentDefinition>
-	DeepsightDropTableDefinition: Record<number, DeepsightDropTableDefinition>
-	DeepsightTierTypeDefinition: Record<number, DeepsightTierTypeDefinition>
-	DeepsightCollectionsDefinition: DeepsightCollectionsDefinitionManifest
-	DeepsightAdeptDefinition: Record<number, DeepsightAdeptDefinition>
-	DeepsightSocketExtendedDefinition: Record<number, DeepsightSocketExtendedDefinition>
-	DeepsightBreakerTypeDefinition: Record<number, DeepsightBreakerTypeDefinition>
-	DeepsightEmblemDefinition: Record<number, DeepsightEmblemDefinition>
-	DeepsightStats: Record<number, DeepsightStats>
-	DeepsightWallpaperDefinition: Record<number, DeepsightWallpaperDefinition>
-}
-
-type DeepsightManifestComponentName = keyof AllDeepsightManifestComponents
-
-type AllComponentNames =
-	| DestinyManifestComponentName
-	| DeepsightManifestComponentName
-
-type DefinitionsForComponentName<NAME extends AllComponentNames> = (
-	NAME extends DestinyManifestComponentName ? AllDestinyManifestComponents[NAME]
-	: NAME extends DeepsightManifestComponentName ? AllDeepsightManifestComponents[NAME]
-	: never
-)
 
 type Definitions = {
 	[NAME in AllComponentNames]: Model<DefinitionsForComponentName<NAME>>

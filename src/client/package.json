@@ -3,5 +3,8 @@
 	"name": "conduit.deepsight.gg",
 	"main": "index.js",
 	"types": "index.d.ts",
-	"version": "1.0.0"
+	"version": "1.0.0",
+	"dependencies": {
+		"bungie-api-ts": "5.4.0"
+	}
 }

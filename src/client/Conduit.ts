@@ -1,4 +1,5 @@
 import type { ConduitFunctionRegistry } from 'conduit.deepsight.gg/ConduitMessageRegistry'
+import Definitions from 'Definitions'
 
 export { default as Inventory } from 'conduit.deepsight.gg/Inventory'
 
@@ -13,13 +14,13 @@ interface ConduitOptions {
 	| { type: 'popup', width?: number, height?: number }
 }
 
-type ConduitFunctions = { [KEY in keyof ConduitFunctionRegistry]: (...params: Parameters<ConduitFunctionRegistry[KEY]>) => Promise<ReturnType<ConduitFunctionRegistry[KEY]>> }
 interface ConduitImplementation {
+	readonly definitions: Definitions
 	update (): Promise<void>
 	ensureAuthenticated (appName?: string): Promise<boolean>
 }
 
-interface Conduit extends Omit<ConduitFunctions, keyof ConduitImplementation>, ConduitImplementation {
+interface Conduit extends ConduitFunctionRegistry, ConduitImplementation {
 }
 
 const loaded = new Promise<unknown>(resolve => window.addEventListener('DOMContentLoaded', resolve, { once: true }))
@@ -128,6 +129,7 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 	await activePromise
 
 	const implementation: ConduitImplementation = {
+		definitions: undefined!,
 		async update () {
 			return callPromiseFunction('_update')
 		},
@@ -178,7 +180,7 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		},
 	}
 
-	return new Proxy(implementation, {
+	const conduit = new Proxy(implementation, {
 		get (target, fname: keyof Conduit) {
 			if (fname as any === 'then')
 				return undefined
@@ -189,6 +191,9 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 			return (...params: unknown[]) => callPromiseFunction(fname, ...params)
 		},
 	}) as Conduit
+
+	Object.assign(conduit, { definitions: Definitions(conduit) })
+	return conduit
 }
 
 export default Conduit

@@ -1,5 +1,4 @@
-import type { BungieMembershipType } from 'bungie-api-ts/common'
-import type { DestinyClass, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2'
+import type { BungieMembershipType, DestinyClass, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2'
 
 export interface Profile {
 	id: string

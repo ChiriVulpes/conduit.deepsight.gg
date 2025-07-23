@@ -22,6 +22,9 @@
 				"../../client/*",
 				"../../shared/*"
 			],
+			"conduit.deepsight.gg/*": [
+				"../../shared/*"
+			],
 			"lang": ["./lang/index.d.ts"],
 			"style": ["./style/index.d.ts"],
 			"kitsui": ["../node_modules/kitsui/index.d.ts"],
