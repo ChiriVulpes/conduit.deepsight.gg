@@ -27,6 +27,8 @@ export default Task('package', async () => {
 			.trimEnd()
 		)}\n}\n${injectFile}`
 
+	injectFile = injectFile.replace(/\r?\n\s+\/\*\* @private:start \*\/[^}]*?(?=\s+})/s, '')
+
 	await fs.mkdir('out/package', { recursive: true })
 	await fs.writeFile('out/package/index.d.ts', injectFile, 'utf8')
 
