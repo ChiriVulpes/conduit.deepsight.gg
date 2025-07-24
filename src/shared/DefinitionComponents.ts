@@ -1,4 +1,5 @@
 import type { AllDestinyManifestComponents, DestinyManifestComponentName } from 'bungie-api-ts/destiny2'
+import type { ClarityDescription } from 'Clarity'
 import type { DeepsightPlugCategorisation, DeepsightSocketCategorisationDefinition } from 'deepsight.gg/DeepsightPlugCategorisation'
 import type { DeepsightAdeptDefinition, DeepsightBreakerTypeDefinition, DeepsightCollectionsDefinitionManifest, DeepsightDropTableDefinition, DeepsightEmblemDefinition, DeepsightMomentDefinition, DeepsightSocketExtendedDefinition, DeepsightStats, DeepsightTierTypeDefinition, DeepsightWallpaperDefinition } from 'deepsight.gg/Interfaces'
 
@@ -19,12 +20,20 @@ export interface AllDeepsightManifestComponents {
 
 export type DeepsightManifestComponentName = keyof AllDeepsightManifestComponents
 
+export interface AllClarityManifestComponents {
+	ClarityDescriptions: Record<number, ClarityDescription>
+}
+
+export type ClarityManifestComponentName = keyof AllClarityManifestComponents
+
 export type AllComponentNames =
 	| DestinyManifestComponentName
 	| DeepsightManifestComponentName
+	| ClarityManifestComponentName
 
 export type DefinitionsForComponentName<NAME extends AllComponentNames> = (
 	NAME extends DestinyManifestComponentName ? AllDestinyManifestComponents[NAME]
 	: NAME extends DeepsightManifestComponentName ? AllDeepsightManifestComponents[NAME]
+	: NAME extends ClarityManifestComponentName ? AllClarityManifestComponents[NAME]
 	: never
 )

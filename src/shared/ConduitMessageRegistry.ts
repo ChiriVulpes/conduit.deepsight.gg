@@ -1,4 +1,5 @@
 import type { AuthState, CustomBungieApp } from 'Auth'
+import type Collections from 'Collections'
 import type { AllComponentNames, DefinitionsForComponentName } from 'DefinitionComponents'
 import type { Profile } from 'Profile'
 
@@ -6,6 +7,7 @@ export interface ConduitFunctionRegistry {
 	getProfiles (): Promise<Profile[]>
 	getProfile (displayName: string, displayNameCode: number): Promise<Profile | undefined>
 	bumpProfile (displayName: string, displayNameCode: number): Promise<void>
+	getCollections (): Promise<Collections>
 	/** @private:start */
 	_getAuthState (): Promise<AuthState>
 	_setCustomApp (app?: CustomBungieApp): Promise<void>

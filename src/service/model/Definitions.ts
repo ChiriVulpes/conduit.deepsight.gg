@@ -1,7 +1,9 @@
 import type { AllComponentNames, DefinitionsForComponentName } from '@shared/DefinitionComponents'
+import ClarityManifest from 'model/ClarityManifest'
 import DeepsightManifest from 'model/DeepsightManifest'
 import DestinyManifest from 'model/DestinyManifest'
 import Model from 'model/Model'
+import Clarity from 'utility/Clarity'
 import Deepsight from 'utility/Deepsight'
 
 type Definitions = {
@@ -14,11 +16,12 @@ const Definitions = new Proxy({} as Record<string, Definitions>, {
 			get<NAME extends AllComponentNames> (target: { [K in NAME]: Model<DefinitionsForComponentName<NAME>> }, componentName: NAME): Model<DefinitionsForComponentName<NAME>> {
 				const prefix = componentName.startsWith('Destiny') ? 'destiny2'
 					: componentName.startsWith('Deepsight') ? 'deepsight'
-						: null
+						: componentName.startsWith('Clarity') ? 'clarity'
+							: null
 				if (!prefix)
 					throw new Error(`Unsupported component name: ${componentName}`)
 
-				const componentLanguage = prefix === 'deepsight' ? 'en' : language
+				const componentLanguage = prefix === 'deepsight' || prefix === 'clarity' ? 'en' : language
 
 				return target[componentName] ??= Model<DefinitionsForComponentName<NAME>>(`${prefix}/${componentName}/${componentLanguage}`, {
 					cacheDirtyTime: 1000 * 60 * 1, // 1 minute cache time (shorter due to first getting the current version from the whole manifest)
@@ -42,6 +45,19 @@ const Definitions = new Proxy({} as Record<string, Definitions>, {
 								return {
 									version: `${(manifest.value as any as Record<string, number>)[componentName]}`,
 									value: async () => await Deepsight.get<DefinitionsForComponentName<NAME>>(`/${componentName}.json`),
+								}
+							}
+
+							case 'clarity': {
+								const manifest = await ClarityManifest.use()
+								const filename = componentName === 'ClarityDescriptions' ? '/descriptions/clarity.json'
+									: undefined
+								if (!filename)
+									throw new Error(`Unsupported Clarity component name: ${componentName}`)
+
+								return {
+									version: manifest.version,
+									value: async () => await Clarity.get<DefinitionsForComponentName<NAME>>(filename),
 								}
 							}
 

@@ -1,5 +1,6 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
 import Auth from 'model/Auth'
+import Collections from 'model/Collections'
 import Definitions from 'model/Definitions'
 import Profiles from 'model/Profiles'
 import Env from 'utility/Env'
@@ -27,6 +28,9 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		void service.broadcast.ready()
 	},
 	onCall: {
+
+		////////////////////////////////////
+		//#region Profiles
 		async getProfiles (event) {
 			const [profiles, auth] = await Promise.all([
 				Profiles.get(),
@@ -60,6 +64,16 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		async bumpProfile (event, displayName, displayNameCode) {
 			await Profiles.searchDestinyPlayerByBungieName(displayName, displayNameCode)
 		},
+		//#endregion
+		////////////////////////////////////
+
+		async getCollections (event) {
+			return await Collections.get()
+		},
+
+		////////////////////////////////////
+		//#region Private
+
 		async _getAuthState (event) {
 			if (event.origin !== self.origin)
 				throw new ConduitPrivateFunctionError()
@@ -96,5 +110,9 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 			const defs = await Definitions[language][component].get()
 			return defs[hash as keyof typeof defs]
 		},
+
+		//#endregion
+		////////////////////////////////////
+
 	},
 })
