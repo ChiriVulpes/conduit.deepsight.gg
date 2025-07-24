@@ -1,12 +1,13 @@
+import type { DestinyClass, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2'
 import type { ClarityDescription } from 'Clarity'
-import type { DeepsightMomentDefinition } from 'deepsight.gg/Interfaces'
-import type { DestinyDisplayPropertiesDefinition } from 'node_modules/bungie-api-ts/destiny2'
-import type { DeepsightPlugFullName } from 'node_modules/deepsight.gg/DeepsightPlugCategorisation'
-import type { InventoryBucketHashes } from 'node_modules/deepsight.gg/Enums'
+import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
+import type { InventoryBucketHashes, ItemTierTypeHashes } from 'deepsight.gg/Enums'
+import type { DeepsightMomentDefinition, DeepsightTierTypeDefinition } from 'deepsight.gg/Interfaces'
 
 interface Collections {
 	moments: CollectionsMoment[]
 	plugs: Record<number, CollectionsPlug>
+	rarities: Record<ItemTierTypeHashes, DeepsightTierTypeDefinition>
 }
 
 export default Collections
@@ -35,6 +36,8 @@ export interface CollectionsItem {
 	watermark: string
 	featuredWatermark?: string
 	sockets: CollectionsSocket[]
+	rarity: ItemTierTypeHashes
+	class?: DestinyClass
 }
 
 export interface CollectionsSocket {

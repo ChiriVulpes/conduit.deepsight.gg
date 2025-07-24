@@ -1,13 +1,13 @@
 import type Collections from '@shared/Collections'
-import type { CollectionsItem, CollectionsMoment, CollectionsPlug, CollectionsSocket } from '@shared/Collections'
+import type { CollectionsBucket, CollectionsItem, CollectionsMoment, CollectionsPlug, CollectionsSocket } from '@shared/Collections'
 import type { DestinyInventoryItemDefinition, DestinyItemSocketEntryDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import { SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
-import { InventoryBucketHashes } from 'deepsight.gg/Enums'
+import { InventoryBucketHashes, ItemTierTypeHashes } from 'deepsight.gg/Enums'
 import CombinedManifestVersion from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
 import Model from 'model/Model'
 
-const version = '3'
+const version = '8'
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },
@@ -33,6 +33,7 @@ export default Model<Collections>('Collections', {
 				const DeepsightPlugCategorisation = await Definitions.en.DeepsightPlugCategorisation.get()
 				const DeepsightSocketCategorisation = await Definitions.en.DeepsightSocketCategorisation.get()
 				const DeepsightSocketExtendedDefinition = await Definitions.en.DeepsightSocketExtendedDefinition.get()
+				const DeepsightTierTypeDefinition = await Definitions.en.DeepsightTierTypeDefinition.get()
 				const DestinyInventoryItemDefinition = await Definitions.en.DestinyInventoryItemDefinition.get()
 				const DestinyPlugSetDefinition = await Definitions.en.DestinyPlugSetDefinition.get()
 
@@ -42,6 +43,8 @@ export default Model<Collections>('Collections', {
 						displayProperties: def.displayProperties,
 						watermark: def.iconWatermark,
 						featuredWatermark: def.isFeaturedItem ? def.iconWatermarkFeatured : undefined,
+						rarity: def.inventory?.tierTypeHash ?? ItemTierTypeHashes.Common,
+						class: def.classType,
 						sockets: def.sockets?.socketEntries.map((entryDef, i): CollectionsSocket => socket(hash, i, entryDef)) ?? [],
 					}
 				}
@@ -93,15 +96,17 @@ export default Model<Collections>('Collections', {
 							moment,
 							buckets: Object.assign(buckets(),
 								Object.entries(DeepsightCollectionsDefinition[moment.hash]?.buckets || {})
-									.map(([bucketHash, itemHashes]): [string, CollectionsItem[]] => [bucketHash,
-										itemHashes.map((hash): [number, DestinyInventoryItemDefinition | undefined] => [hash, DestinyInventoryItemDefinition[hash]])
+									.map(([bucketHash, itemHashes]): [string, CollectionsBucket] => [bucketHash, {
+										items: itemHashes.map((hash): [number, DestinyInventoryItemDefinition | undefined] => [hash, DestinyInventoryItemDefinition[hash]])
 											.filter((tuple): tuple is [number, DestinyInventoryItemDefinition] => tuple[1] !== undefined)
 											.map(([hash, def]): CollectionsItem => item(hash, def)),
-									])
+									}])
 									.collect(Object.fromEntries) as CollectionsMoment['buckets'],
 							),
-						})),
+						}))
+						.sort((a, b) => b.moment.hash - a.moment.hash),
 					plugs: plugs as Record<number, CollectionsPlug>,
+					rarities: DeepsightTierTypeDefinition,
 				}
 			},
 		}
