@@ -7,7 +7,7 @@ import CombinedManifestVersion from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
 import Model from 'model/Model'
 
-const version = '8'
+const version = '9'
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },
@@ -43,6 +43,7 @@ export default Model<Collections>('Collections', {
 						displayProperties: def.displayProperties,
 						watermark: def.iconWatermark,
 						featuredWatermark: def.isFeaturedItem ? def.iconWatermarkFeatured : undefined,
+						type: def.itemTypeDisplayName,
 						rarity: def.inventory?.tierTypeHash ?? ItemTierTypeHashes.Common,
 						class: def.classType,
 						sockets: def.sockets?.socketEntries.map((entryDef, i): CollectionsSocket => socket(hash, i, entryDef)) ?? [],

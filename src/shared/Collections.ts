@@ -36,7 +36,9 @@ export interface CollectionsItem {
 	watermark: string
 	featuredWatermark?: string
 	sockets: CollectionsSocket[]
+	type: string
 	rarity: ItemTierTypeHashes
+	tier?: number
 	class?: DestinyClass
 }
 
