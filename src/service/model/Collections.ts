@@ -1,7 +1,8 @@
 import type Collections from '@shared/Collections'
 import type { CollectionsBucket, CollectionsItem, CollectionsMoment, CollectionsPlug, CollectionsSocket } from '@shared/Collections'
-import type { DestinyInventoryItemDefinition, DestinyItemSocketEntryDefinition } from 'bungie-api-ts/destiny2/interfaces'
+import type { DestinyDamageTypeDefinition, DestinyInventoryItemDefinition, DestinyItemSocketEntryDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import { SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
+import type { DamageTypeHashes } from 'deepsight.gg/Enums'
 import { InventoryBucketHashes, ItemTierTypeHashes } from 'deepsight.gg/Enums'
 import CombinedManifestVersion from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
@@ -36,8 +37,11 @@ export default Model<Collections>('Collections', {
 				const DeepsightTierTypeDefinition = await Definitions.en.DeepsightTierTypeDefinition.get()
 				const DestinyInventoryItemDefinition = await Definitions.en.DestinyInventoryItemDefinition.get()
 				const DestinyPlugSetDefinition = await Definitions.en.DestinyPlugSetDefinition.get()
+				const DestinyDamageTypeDefinition = await Definitions.en.DestinyDamageTypeDefinition.get()
+				const DeepsightItemDamageTypesDefinition = await Definitions.en.DeepsightItemDamageTypesDefinition.get()
 
 				function item (hash: number, def: DestinyInventoryItemDefinition): CollectionsItem {
+					const damageTypes = DeepsightItemDamageTypesDefinition[hash]?.damageTypes ?? def.damageTypeHashes
 					return {
 						hash,
 						displayProperties: def.displayProperties,
@@ -46,6 +50,7 @@ export default Model<Collections>('Collections', {
 						type: def.itemTypeDisplayName,
 						rarity: def.inventory?.tierTypeHash ?? ItemTierTypeHashes.Common,
 						class: def.classType,
+						damageTypes: damageTypes,
 						sockets: def.sockets?.socketEntries.map((entryDef, i): CollectionsSocket => socket(hash, i, entryDef)) ?? [],
 					}
 				}
@@ -108,6 +113,7 @@ export default Model<Collections>('Collections', {
 						.sort((a, b) => b.moment.hash - a.moment.hash),
 					plugs: plugs as Record<number, CollectionsPlug>,
 					rarities: DeepsightTierTypeDefinition,
+					damageTypes: DestinyDamageTypeDefinition as Record<DamageTypeHashes, DestinyDamageTypeDefinition>,
 				}
 			},
 		}

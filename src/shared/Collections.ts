@@ -1,13 +1,14 @@
-import type { DestinyClass, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2'
+import type { DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2'
 import type { ClarityDescription } from 'Clarity'
 import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { InventoryBucketHashes, ItemTierTypeHashes } from 'deepsight.gg/Enums'
+import type { DamageTypeHashes, InventoryBucketHashes, ItemTierTypeHashes } from 'deepsight.gg/Enums'
 import type { DeepsightMomentDefinition, DeepsightTierTypeDefinition } from 'deepsight.gg/Interfaces'
 
 interface Collections {
 	moments: CollectionsMoment[]
 	plugs: Record<number, CollectionsPlug>
 	rarities: Record<ItemTierTypeHashes, DeepsightTierTypeDefinition>
+	damageTypes: Record<DamageTypeHashes, DestinyDamageTypeDefinition>
 }
 
 export default Collections
@@ -40,6 +41,7 @@ export interface CollectionsItem {
 	rarity: ItemTierTypeHashes
 	tier?: number
 	class?: DestinyClass
+	damageTypes?: DamageTypeHashes[]
 }
 
 export interface CollectionsSocket {

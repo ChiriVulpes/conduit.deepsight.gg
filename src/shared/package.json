@@ -3,6 +3,6 @@
 	"name": "shared",
 	"dependencies": {
 		"bungie-api-ts": "5.4.0",
-		"deepsight.gg": "1.0.1347"
+		"deepsight.gg": "1.0.1359"
 	}
 }
