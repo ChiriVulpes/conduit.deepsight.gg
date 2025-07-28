@@ -10,7 +10,17 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '2'
+export const ITEMS_VERSION = '3'
+
+const STATS_ARMOUR = new Set<StatHashes>([
+	StatHashes.Health,
+	StatHashes.Melee4244567218,
+	StatHashes.Grenade,
+	StatHashes.Super,
+	StatHashes.Class1943323491,
+	StatHashes.Weapons,
+])
+
 namespace Items {
 	export async function createResolver (type: 'instance' | 'collections') {
 		const ClarityDescriptions = await Definitions.en.ClarityDescriptions.get()
@@ -135,7 +145,7 @@ namespace Items {
 						stats[random.statTypeHash] ??= { statHash: random.statTypeHash, value: random.value }
 
 			for (const stat of statGroupDefinition.scaledStats)
-				if (!(stat.statHash in stats))
+				if (!(stat.statHash in stats) && !STATS_ARMOUR.has(stat.statHash))
 					stats[stat.statHash] = { statHash: stat.statHash, value: 0 }
 
 			const masterworkStats = type === 'collections' ? []
