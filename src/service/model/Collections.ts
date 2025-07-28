@@ -1,14 +1,14 @@
 import type Collections from '@shared/Collections'
-import type { CollectionsBucket, CollectionsItem, CollectionsMoment, CollectionsPlug, CollectionsSocket } from '@shared/Collections'
-import type { DestinyDamageTypeDefinition, DestinyInventoryItemDefinition, DestinyItemSocketEntryDefinition } from 'bungie-api-ts/destiny2/interfaces'
-import { SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
-import type { DamageTypeHashes } from 'deepsight.gg/Enums'
-import { InventoryBucketHashes, ItemTierTypeHashes } from 'deepsight.gg/Enums'
+import type { CollectionsBucket, CollectionsMoment } from '@shared/Collections'
+import type { DestinyDamageTypeDefinition, DestinyStatDefinition } from 'bungie-api-ts/destiny2/interfaces'
+import type { DamageTypeHashes, StatHashes } from 'deepsight.gg/Enums'
+import { InventoryBucketHashes } from 'deepsight.gg/Enums'
 import CombinedManifestVersion from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
+import Items, { ITEMS_VERSION } from 'model/Items'
 import Model from 'model/Model'
 
-const version = '9'
+const version = `17.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },
@@ -28,73 +28,14 @@ export default Model<Collections>('Collections', {
 		return {
 			version: `${version}/${await CombinedManifestVersion.get()}`,
 			value: async (): Promise<Collections> => {
-				const ClarityDescriptions = await Definitions.en.ClarityDescriptions.get()
 				const DeepsightCollectionsDefinition = await Definitions.en.DeepsightCollectionsDefinition.get()
 				const DeepsightMomentDefinition = await Definitions.en.DeepsightMomentDefinition.get()
-				const DeepsightPlugCategorisation = await Definitions.en.DeepsightPlugCategorisation.get()
-				const DeepsightSocketCategorisation = await Definitions.en.DeepsightSocketCategorisation.get()
-				const DeepsightSocketExtendedDefinition = await Definitions.en.DeepsightSocketExtendedDefinition.get()
 				const DeepsightTierTypeDefinition = await Definitions.en.DeepsightTierTypeDefinition.get()
-				const DestinyInventoryItemDefinition = await Definitions.en.DestinyInventoryItemDefinition.get()
-				const DestinyPlugSetDefinition = await Definitions.en.DestinyPlugSetDefinition.get()
 				const DestinyDamageTypeDefinition = await Definitions.en.DestinyDamageTypeDefinition.get()
-				const DeepsightItemDamageTypesDefinition = await Definitions.en.DeepsightItemDamageTypesDefinition.get()
+				const DestinyStatDefinition = await Definitions.en.DestinyStatDefinition.get()
+				const DestinyStatGroupDefinition = await Definitions.en.DestinyStatGroupDefinition.get()
 
-				function item (hash: number, def: DestinyInventoryItemDefinition): CollectionsItem {
-					const damageTypes = DeepsightItemDamageTypesDefinition[hash]?.damageTypes ?? def.damageTypeHashes
-					return {
-						hash,
-						displayProperties: def.displayProperties,
-						watermark: def.iconWatermark,
-						featuredWatermark: def.isFeaturedItem ? def.iconWatermarkFeatured : undefined,
-						type: def.itemTypeDisplayName,
-						rarity: def.inventory?.tierTypeHash ?? ItemTierTypeHashes.Common,
-						class: def.classType,
-						damageTypes: damageTypes,
-						sockets: def.sockets?.socketEntries.map((entryDef, i): CollectionsSocket => socket(hash, i, entryDef)) ?? [],
-					}
-				}
-
-				function socket (itemHash: number, socketIndex: number, entryDef: DestinyItemSocketEntryDefinition): CollectionsSocket {
-					const categorisationFullName = DeepsightSocketCategorisation[itemHash]?.categorisation[socketIndex]?.fullName ?? 'None'
-
-					const plugHashes = categorisationFullName === 'Cosmetic/Shader' || categorisationFullName === 'Cosmetic/Ornament' ? []
-						: Array.from(new Set([
-							...entryDef.singleInitialItemHash ? [entryDef.singleInitialItemHash] : [],
-							...DeepsightSocketExtendedDefinition[itemHash]?.sockets[socketIndex]?.rewardPlugItems.map(plug => plug.plugItemHash) ?? [],
-							...!(entryDef.plugSources & SocketPlugSources.ReusablePlugItems) ? []
-								: [
-									...entryDef.reusablePlugItems.map(plug => plug.plugItemHash),
-									...DestinyPlugSetDefinition[entryDef.reusablePlugSetHash!]?.reusablePlugItems.map(plug => plug.plugItemHash) ?? [],
-									...DestinyPlugSetDefinition[entryDef.randomizedPlugSetHash!]?.reusablePlugItems.map(plug => plug.plugItemHash) ?? [],
-								],
-						]))
-
-					return {
-						type: categorisationFullName,
-						defaultPlugHash: entryDef.singleInitialItemHash,
-						plugs: plugHashes.map(plug).filter(plug => plug !== undefined),
-					}
-				}
-
-				const plugs: Record<number, CollectionsPlug | undefined> = {}
-				function plug (hash: number): CollectionsPlug | undefined {
-					if (hash in plugs)
-						return plugs[hash]
-
-					const def = DestinyInventoryItemDefinition[hash]
-					if (!def)
-						return plugs[hash] = undefined
-
-					const categorisation = DeepsightPlugCategorisation[hash]
-					return plugs[hash] = {
-						hash,
-						displayProperties: def.displayProperties,
-						type: categorisation?.fullName ?? 'None',
-						enhanced: categorisation?.fullName.includes('Enhanced') ?? false,
-						clarity: ClarityDescriptions[hash],
-					}
-				}
+				const resolver = await Items.createResolver('collections')
 
 				return {
 					moments: Object.values(DeepsightMomentDefinition)
@@ -103,17 +44,17 @@ export default Model<Collections>('Collections', {
 							buckets: Object.assign(buckets(),
 								Object.entries(DeepsightCollectionsDefinition[moment.hash]?.buckets || {})
 									.map(([bucketHash, itemHashes]): [string, CollectionsBucket] => [bucketHash, {
-										items: itemHashes.map((hash): [number, DestinyInventoryItemDefinition | undefined] => [hash, DestinyInventoryItemDefinition[hash]])
-											.filter((tuple): tuple is [number, DestinyInventoryItemDefinition] => tuple[1] !== undefined)
-											.map(([hash, def]): CollectionsItem => item(hash, def)),
+										items: itemHashes.map(resolver.item).filter(item => item !== undefined),
 									}])
 									.collect(Object.fromEntries) as CollectionsMoment['buckets'],
 							),
 						}))
 						.sort((a, b) => b.moment.hash - a.moment.hash),
-					plugs: plugs as Record<number, CollectionsPlug>,
+					plugs: resolver.plugs,
 					rarities: DeepsightTierTypeDefinition,
 					damageTypes: DestinyDamageTypeDefinition as Record<DamageTypeHashes, DestinyDamageTypeDefinition>,
+					stats: DestinyStatDefinition as Record<StatHashes, DestinyStatDefinition>,
+					statGroups: DestinyStatGroupDefinition,
 				}
 			},
 		}

@@ -1,14 +1,16 @@
-import type { DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2'
+import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2'
 import type { ClarityDescription } from 'Clarity'
 import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { DamageTypeHashes, InventoryBucketHashes, ItemTierTypeHashes } from 'deepsight.gg/Enums'
+import type { DamageTypeHashes, InventoryBucketHashes, ItemTierTypeHashes, StatHashes } from 'deepsight.gg/Enums'
 import type { DeepsightMomentDefinition, DeepsightTierTypeDefinition } from 'deepsight.gg/Interfaces'
 
 interface Collections {
 	moments: CollectionsMoment[]
-	plugs: Record<number, CollectionsPlug>
+	plugs: Record<number, ItemPlug>
 	rarities: Record<ItemTierTypeHashes, DeepsightTierTypeDefinition>
 	damageTypes: Record<DamageTypeHashes, DestinyDamageTypeDefinition>
+	stats: Record<StatHashes, DestinyStatDefinition>
+	statGroups: Record<number, DestinyStatGroupDefinition>
 }
 
 export default Collections
@@ -28,32 +30,61 @@ export interface CollectionsMoment {
 }
 
 export interface CollectionsBucket {
-	items: CollectionsItem[]
+	items: Item[]
 }
 
-export interface CollectionsItem {
+export interface Item {
 	hash: number
 	displayProperties: DestinyDisplayPropertiesDefinition
 	watermark: string
 	featuredWatermark?: string
-	sockets: CollectionsSocket[]
+	sockets: ItemSocket[]
 	type: string
 	rarity: ItemTierTypeHashes
-	tier?: number
 	class?: DestinyClass
 	damageTypes?: DamageTypeHashes[]
+	ammo?: ItemAmmo
+	statGroupHash?: number
+	stats?: Partial<Record<StatHashes, ItemStat>>
+
+	// unique to instances
+	tier?: number
 }
 
-export interface CollectionsSocket {
+export interface ItemAmmo {
+	hash: DestinyAmmunitionType
+	displayProperties: DestinyDisplayPropertiesDefinition
+}
+
+export interface ItemArchetype {
+	hash: number
+	displayProperties: DestinyDisplayPropertiesDefinition
+}
+
+export interface ItemSocket {
 	type: DeepsightPlugFullName
-	plugs: CollectionsPlug[]
+	plugs: ItemPlug[]
 	defaultPlugHash?: number
 }
 
-export interface CollectionsPlug {
+export interface ItemPlug {
 	hash: number
 	displayProperties: DestinyDisplayPropertiesDefinition
 	type: DeepsightPlugFullName
 	enhanced: boolean
 	clarity?: ClarityDescription
+}
+
+export interface ItemStat {
+	hash: StatHashes
+	value: number
+	max?: number
+	displayAsNumeric?: true
+
+	intrinsic: number
+	roll: number
+	masterwork: number
+	mod: number
+	subclass: number
+	charge: number
 }
