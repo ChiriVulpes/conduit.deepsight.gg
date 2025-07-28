@@ -10,7 +10,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '1'
+export const ITEMS_VERSION = '2'
 namespace Items {
 	export async function createResolver (type: 'instance' | 'collections') {
 		const ClarityDescriptions = await Definitions.en.ClarityDescriptions.get()
@@ -133,6 +133,10 @@ namespace Items {
 				for (const random of statRolls)
 					if (random && !random.isConditionallyActive)
 						stats[random.statTypeHash] ??= { statHash: random.statTypeHash, value: random.value }
+
+			for (const stat of statGroupDefinition.scaledStats)
+				if (!(stat.statHash in stats))
+					stats[stat.statHash] = { statHash: stat.statHash, value: 0 }
 
 			const masterworkStats = type === 'collections' ? []
 				: sockets.filter(HasMasterworkStats).flatMap(socket => socketedPlugDef(socket)?.investmentStats ?? [])
