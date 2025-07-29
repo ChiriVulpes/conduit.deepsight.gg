@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import type { Item, ItemPlug, ItemSocket, ItemStat } from '@shared/Collections'
 import type { DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition } from 'bungie-api-ts/destiny2/interfaces'
-import { DestinyAmmunitionType, DestinyItemSubType, SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
+import { DestinyItemSubType, SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
 import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import { ItemCategoryHashes, ItemTierTypeHashes, PresentationNodeHashes, StatHashes } from 'deepsight.gg/Enums'
+import { ItemCategoryHashes, ItemTierTypeHashes, StatHashes } from 'deepsight.gg/Enums'
 import Categorisation from 'model/Categorisation'
 import Definitions from 'model/Definitions'
 import DestinyProfiles from 'model/DestinyProfiles'
@@ -30,16 +30,9 @@ namespace Items {
 		const DeepsightSocketExtendedDefinition = await Definitions.en.DeepsightSocketExtendedDefinition.get()
 		const DestinyInventoryItemDefinition = await Definitions.en.DestinyInventoryItemDefinition.get()
 		const DestinyPlugSetDefinition = await Definitions.en.DestinyPlugSetDefinition.get()
-		const DestinyPresentationNodeDefinition = await Definitions.en.DestinyPresentationNodeDefinition.get()
 		const DestinyStatDefinition = await Definitions.en.DestinyStatDefinition.get()
 		const DestinyStatGroupDefinition = await Definitions.en.DestinyStatGroupDefinition.get()
 		const profile = await Profiles.getCurrentProfile(undefined).then(profile => profile && DestinyProfiles[profile.id].get())
-
-		const ammoDefs = {
-			[DestinyAmmunitionType.Primary]: DestinyPresentationNodeDefinition[PresentationNodeHashes.Primary_ObjectiveHash1662965554],
-			[DestinyAmmunitionType.Special]: DestinyPresentationNodeDefinition[PresentationNodeHashes.Special_Scope1],
-			[DestinyAmmunitionType.Heavy]: DestinyPresentationNodeDefinition[PresentationNodeHashes.Heavy_ObjectiveHash3528763451],
-		}
 
 		function item (hash: number, def: DestinyInventoryItemDefinition): Item {
 			const sockets = def.sockets?.socketEntries.map((entryDef, i): ItemSocket => socket(hash, i, entryDef)) ?? []
@@ -52,7 +45,7 @@ namespace Items {
 				rarity: def.inventory?.tierTypeHash ?? ItemTierTypeHashes.Common,
 				class: def.classType,
 				damageTypes: DeepsightItemDamageTypesDefinition[hash]?.damageTypes ?? def.damageTypeHashes,
-				ammo: ammoDefs[def.equippingBlock?.ammoType as keyof typeof ammoDefs],
+				ammo: def.equippingBlock?.ammoType as Item['ammo'],
 				sockets,
 				statGroupHash: def.stats?.statGroupHash,
 				stats: stats(def, undefined, sockets),

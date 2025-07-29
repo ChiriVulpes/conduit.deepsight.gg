@@ -1,14 +1,14 @@
 import type Collections from '@shared/Collections'
 import type { CollectionsBucket, CollectionsMoment } from '@shared/Collections'
-import type { DestinyDamageTypeDefinition, DestinyStatDefinition } from 'bungie-api-ts/destiny2/interfaces'
+import { DestinyAmmunitionType, type DestinyDamageTypeDefinition, type DestinyStatDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import type { DamageTypeHashes, StatHashes } from 'deepsight.gg/Enums'
-import { InventoryBucketHashes } from 'deepsight.gg/Enums'
+import { InventoryBucketHashes, PresentationNodeHashes } from 'deepsight.gg/Enums'
 import CombinedManifestVersion from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import Model from 'model/Model'
 
-const version = `17.${ITEMS_VERSION}`
+const version = `18.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },
@@ -34,8 +34,24 @@ export default Model<Collections>('Collections', {
 				const DestinyDamageTypeDefinition = await Definitions.en.DestinyDamageTypeDefinition.get()
 				const DestinyStatDefinition = await Definitions.en.DestinyStatDefinition.get()
 				const DestinyStatGroupDefinition = await Definitions.en.DestinyStatGroupDefinition.get()
+				const DestinyPresentationNodeDefinition = await Definitions.en.DestinyPresentationNodeDefinition.get()
 
 				const resolver = await Items.createResolver('collections')
+
+				const ammoTypes: Collections['ammoTypes'] = {
+					[DestinyAmmunitionType.Primary]: {
+						hash: DestinyAmmunitionType.Primary,
+						displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Primary_ObjectiveHash1662965554].displayProperties,
+					},
+					[DestinyAmmunitionType.Special]: {
+						hash: DestinyAmmunitionType.Special,
+						displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Special_Scope1].displayProperties,
+					},
+					[DestinyAmmunitionType.Heavy]: {
+						hash: DestinyAmmunitionType.Heavy,
+						displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Heavy_ObjectiveHash3528763451].displayProperties,
+					},
+				}
 
 				return {
 					moments: Object.values(DeepsightMomentDefinition)
@@ -55,6 +71,7 @@ export default Model<Collections>('Collections', {
 					damageTypes: DestinyDamageTypeDefinition as Record<DamageTypeHashes, DestinyDamageTypeDefinition>,
 					stats: DestinyStatDefinition as Record<StatHashes, DestinyStatDefinition>,
 					statGroups: DestinyStatGroupDefinition,
+					ammoTypes,
 				}
 			},
 		}

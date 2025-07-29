@@ -11,6 +11,7 @@ interface Collections {
 	damageTypes: Record<DamageTypeHashes, DestinyDamageTypeDefinition>
 	stats: Record<StatHashes, DestinyStatDefinition>
 	statGroups: Record<number, DestinyStatGroupDefinition>
+	ammoTypes: Record<DestinyAmmunitionType.Primary | DestinyAmmunitionType.Special | DestinyAmmunitionType.Heavy, ItemAmmo>
 }
 
 export default Collections
@@ -43,7 +44,7 @@ export interface Item {
 	rarity: ItemTierTypeHashes
 	class?: DestinyClass
 	damageTypes?: DamageTypeHashes[]
-	ammo?: ItemAmmo
+	ammo?: DestinyAmmunitionType.Primary | DestinyAmmunitionType.Special | DestinyAmmunitionType.Heavy
 	statGroupHash?: number
 	stats?: Partial<Record<StatHashes, ItemStat>>
 
