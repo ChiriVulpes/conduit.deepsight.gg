@@ -10,7 +10,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '3'
+export const ITEMS_VERSION = '4'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -80,7 +80,7 @@ namespace Items {
 			return {
 				type: categorisationFullName,
 				defaultPlugHash: entryDef.singleInitialItemHash,
-				plugs: plugHashes.map(plug).filter(plug => plug !== undefined),
+				plugs: plugHashes.map(plug).filter(plug => plug !== undefined).map(plug => plug.hash),
 			}
 		}
 
@@ -104,7 +104,7 @@ namespace Items {
 		}
 
 		function socketedPlug (socket: ItemSocket): ItemPlug | undefined {
-			return !socket.defaultPlugHash ? undefined : socket.plugs.find(plug => plug.hash === socket.defaultPlugHash)
+			return plugs[socket.defaultPlugHash!]
 		}
 
 		function socketedPlugDef (socket: ItemSocket): DestinyInventoryItemDefinition | undefined {

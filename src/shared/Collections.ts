@@ -63,7 +63,7 @@ export interface ItemArchetype {
 
 export interface ItemSocket {
 	type: DeepsightPlugFullName
-	plugs: ItemPlug[]
+	plugs: number[]
 	defaultPlugHash?: number
 }
 
