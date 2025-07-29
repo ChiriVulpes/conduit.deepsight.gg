@@ -1,7 +1,7 @@
-import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2'
+import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyEquipableItemSetDefinition, DestinySandboxPerkDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2'
 import type { ClarityDescription } from 'Clarity'
 import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { DamageTypeHashes, InventoryBucketHashes, ItemTierTypeHashes, StatHashes } from 'deepsight.gg/Enums'
+import type { DamageTypeHashes, EquipableItemSetHashes, InventoryBucketHashes, ItemTierTypeHashes, SandboxPerkHashes, StatHashes } from 'deepsight.gg/Enums'
 import type { DeepsightMomentDefinition, DeepsightTierTypeDefinition } from 'deepsight.gg/Interfaces'
 
 interface Collections {
@@ -12,6 +12,8 @@ interface Collections {
 	stats: Record<StatHashes, DestinyStatDefinition>
 	statGroups: Record<number, DestinyStatGroupDefinition>
 	ammoTypes: Record<DestinyAmmunitionType.Primary | DestinyAmmunitionType.Special | DestinyAmmunitionType.Heavy, ItemAmmo>
+	itemSets: Record<EquipableItemSetHashes, DestinyEquipableItemSetDefinition>
+	perks: Partial<Record<SandboxPerkHashes, DestinySandboxPerkDefinition>>
 }
 
 export default Collections
@@ -47,8 +49,10 @@ export interface Item {
 	ammo?: DestinyAmmunitionType.Primary | DestinyAmmunitionType.Special | DestinyAmmunitionType.Heavy
 	statGroupHash?: number
 	stats?: Partial<Record<StatHashes, ItemStat>>
+	itemSetHash?: EquipableItemSetHashes
 
 	// unique to instances
+	instanceId?: string
 	tier?: number
 }
 
@@ -74,6 +78,7 @@ export interface ItemPlug {
 	type: DeepsightPlugFullName
 	enhanced: boolean
 	clarity?: ClarityDescription
+	perks?: SandboxPerkHashes[]
 }
 
 export interface ItemStat {

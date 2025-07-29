@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import type { Item, ItemPlug, ItemSocket, ItemStat } from '@shared/Collections'
-import type { DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition } from 'bungie-api-ts/destiny2/interfaces'
+import type { DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition, DestinySandboxPerkDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import { DestinyItemSubType, SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
 import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName } from 'deepsight.gg/DeepsightPlugCategorisation'
+import type { EquipableItemSetHashes, SandboxPerkHashes } from 'deepsight.gg/Enums'
 import { ItemCategoryHashes, ItemTierTypeHashes, StatHashes } from 'deepsight.gg/Enums'
 import Categorisation from 'model/Categorisation'
 import Definitions from 'model/Definitions'
@@ -10,7 +11,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '4'
+export const ITEMS_VERSION = '5'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -32,7 +33,12 @@ namespace Items {
 		const DestinyPlugSetDefinition = await Definitions.en.DestinyPlugSetDefinition.get()
 		const DestinyStatDefinition = await Definitions.en.DestinyStatDefinition.get()
 		const DestinyStatGroupDefinition = await Definitions.en.DestinyStatGroupDefinition.get()
+		const DestinyEquipableItemSetDefinition = await Definitions.en.DestinyEquipableItemSetDefinition.get()
+		const DestinySandboxPerkDefinition = await Definitions.en.DestinySandboxPerkDefinition.get()
+
 		const profile = await Profiles.getCurrentProfile(undefined).then(profile => profile && DestinyProfiles[profile.id].get())
+
+		const perks: Partial<Record<SandboxPerkHashes, DestinySandboxPerkDefinition>> = {}
 
 		function item (hash: number, def: DestinyInventoryItemDefinition): Item {
 			const sockets = def.sockets?.socketEntries.map((entryDef, i): ItemSocket => socket(hash, i, entryDef)) ?? []
@@ -49,7 +55,20 @@ namespace Items {
 				sockets,
 				statGroupHash: def.stats?.statGroupHash,
 				stats: stats(def, undefined, sockets),
+				itemSetHash: itemSetHash(def),
 			}
+		}
+
+		function itemSetHash (def: DestinyInventoryItemDefinition): EquipableItemSetHashes | undefined {
+			const hash = def.equippingBlock?.equipableItemSetHash as EquipableItemSetHashes | undefined
+			if (!hash)
+				return undefined
+
+			const setDef = DestinyEquipableItemSetDefinition[hash]
+			for (const perk of setDef?.setPerks ?? [])
+				perks[perk.sandboxPerkHash as SandboxPerkHashes] = DestinySandboxPerkDefinition[perk.sandboxPerkHash]
+
+			return hash
 		}
 
 		function socket (itemHash: number, socketIndex: number, entryDef: DestinyItemSocketEntryDefinition): ItemSocket {
@@ -87,12 +106,17 @@ namespace Items {
 				return plugs[hash] = undefined
 
 			const categorisation = DeepsightPlugCategorisation[hash]
+			const perkHashes = def.perks.map(perk => perk.perkHash)
+			for (const perkHash of perkHashes)
+				perks[perkHash as SandboxPerkHashes] = DestinySandboxPerkDefinition[perkHash]
+
 			return plugs[hash] = {
 				hash,
 				displayProperties: def.displayProperties,
 				type: categorisation?.fullName ?? 'None',
 				enhanced: Categorisation.IsEnhanced(categorisation?.fullName) ?? false,
 				clarity: ClarityDescriptions[hash],
+				perks: perkHashes,
 			}
 		}
 
@@ -222,6 +246,7 @@ namespace Items {
 
 		return {
 			plugs: plugs as Record<number, ItemPlug>,
+			perks,
 			item (hash: number) {
 				const def = DestinyInventoryItemDefinition[hash]
 				if (!def)

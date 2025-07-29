@@ -1,14 +1,15 @@
 import type Collections from '@shared/Collections'
 import type { CollectionsBucket, CollectionsMoment } from '@shared/Collections'
-import { DestinyAmmunitionType, type DestinyDamageTypeDefinition, type DestinyStatDefinition } from 'bungie-api-ts/destiny2/interfaces'
-import type { DamageTypeHashes, StatHashes } from 'deepsight.gg/Enums'
+import type { DestinyDamageTypeDefinition, DestinyEquipableItemSetDefinition, DestinyStatDefinition } from 'bungie-api-ts/destiny2/interfaces'
+import { DestinyAmmunitionType } from 'bungie-api-ts/destiny2/interfaces'
+import type { DamageTypeHashes, EquipableItemSetHashes, StatHashes } from 'deepsight.gg/Enums'
 import { InventoryBucketHashes, PresentationNodeHashes } from 'deepsight.gg/Enums'
 import CombinedManifestVersion from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import Model from 'model/Model'
 
-const version = `18.${ITEMS_VERSION}`
+const version = `21.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },
@@ -35,6 +36,7 @@ export default Model<Collections>('Collections', {
 				const DestinyStatDefinition = await Definitions.en.DestinyStatDefinition.get()
 				const DestinyStatGroupDefinition = await Definitions.en.DestinyStatGroupDefinition.get()
 				const DestinyPresentationNodeDefinition = await Definitions.en.DestinyPresentationNodeDefinition.get()
+				const DestinyEquipableItemSetDefinition = await Definitions.en.DestinyEquipableItemSetDefinition.get()
 
 				const resolver = await Items.createResolver('collections')
 
@@ -72,6 +74,8 @@ export default Model<Collections>('Collections', {
 					stats: DestinyStatDefinition as Record<StatHashes, DestinyStatDefinition>,
 					statGroups: DestinyStatGroupDefinition,
 					ammoTypes,
+					itemSets: DestinyEquipableItemSetDefinition as Record<EquipableItemSetHashes, DestinyEquipableItemSetDefinition>,
+					perks: resolver.perks,
 				}
 			},
 		}
