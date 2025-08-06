@@ -9,7 +9,7 @@ import Definitions from 'model/Definitions'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import Model from 'model/Model'
 
-const version = `21.${ITEMS_VERSION}`
+const version = `23.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },
@@ -24,19 +24,33 @@ function buckets (): CollectionsMoment['buckets'] {
 }
 
 export default Model<Collections>('Collections', {
-	cacheDirtyTime: 1000 * 60, // 1 hour cache time
+	cacheDirtyTime: 1000 * 60 * 1, // 1 minute cache time
 	async fetch () {
 		return {
 			version: `${version}/${await CombinedManifestVersion.get()}`,
 			value: async (): Promise<Collections> => {
-				const DeepsightCollectionsDefinition = await Definitions.en.DeepsightCollectionsDefinition.get()
-				const DeepsightMomentDefinition = await Definitions.en.DeepsightMomentDefinition.get()
-				const DeepsightTierTypeDefinition = await Definitions.en.DeepsightTierTypeDefinition.get()
-				const DestinyDamageTypeDefinition = await Definitions.en.DestinyDamageTypeDefinition.get()
-				const DestinyStatDefinition = await Definitions.en.DestinyStatDefinition.get()
-				const DestinyStatGroupDefinition = await Definitions.en.DestinyStatGroupDefinition.get()
-				const DestinyPresentationNodeDefinition = await Definitions.en.DestinyPresentationNodeDefinition.get()
-				const DestinyEquipableItemSetDefinition = await Definitions.en.DestinyEquipableItemSetDefinition.get()
+				const [
+					DeepsightCollectionsDefinition,
+					DeepsightMomentDefinition,
+					DeepsightTierTypeDefinition,
+					DestinyDamageTypeDefinition,
+					DestinyStatDefinition,
+					DestinyStatGroupDefinition,
+					DestinyPresentationNodeDefinition,
+					DestinyEquipableItemSetDefinition,
+					DeepsightItemSourceDefinition,
+				] = await Promise.all([
+					Definitions.en.DeepsightCollectionsDefinition.get(),
+					Definitions.en.DeepsightMomentDefinition.get(),
+					Definitions.en.DeepsightTierTypeDefinition.get(),
+					Definitions.en.DestinyDamageTypeDefinition.get(),
+					Definitions.en.DestinyStatDefinition.get(),
+					Definitions.en.DestinyStatGroupDefinition.get(),
+					Definitions.en.DestinyPresentationNodeDefinition.get(),
+					Definitions.en.DestinyEquipableItemSetDefinition.get(),
+					Definitions.en.DeepsightItemSourceDefinition.get(),
+					Definitions.en.DeepsightItemSourceListDefinition.get(),
+				])
 
 				const resolver = await Items.createResolver('collections')
 
@@ -76,6 +90,7 @@ export default Model<Collections>('Collections', {
 					ammoTypes,
 					itemSets: DestinyEquipableItemSetDefinition as Record<EquipableItemSetHashes, DestinyEquipableItemSetDefinition>,
 					perks: resolver.perks,
+					sources: DeepsightItemSourceDefinition,
 				}
 			},
 		}

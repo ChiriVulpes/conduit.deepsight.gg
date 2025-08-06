@@ -2,7 +2,7 @@ import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, 
 import type { ClarityDescription } from 'Clarity'
 import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
 import type { DamageTypeHashes, EquipableItemSetHashes, InventoryBucketHashes, ItemTierTypeHashes, SandboxPerkHashes, StatHashes } from 'deepsight.gg/Enums'
-import type { DeepsightMomentDefinition, DeepsightTierTypeDefinition } from 'deepsight.gg/Interfaces'
+import type { DeepsightItemSourceDefinition, DeepsightItemSourceType, DeepsightMomentDefinition, DeepsightTierTypeDefinition } from 'deepsight.gg/Interfaces'
 
 interface Collections {
 	moments: CollectionsMoment[]
@@ -14,6 +14,7 @@ interface Collections {
 	ammoTypes: Record<DestinyAmmunitionType.Primary | DestinyAmmunitionType.Special | DestinyAmmunitionType.Heavy, ItemAmmo>
 	itemSets: Record<EquipableItemSetHashes, DestinyEquipableItemSetDefinition>
 	perks: Partial<Record<SandboxPerkHashes, DestinySandboxPerkDefinition>>
+	sources: Record<string, DeepsightItemSourceDefinition>
 }
 
 export default Collections
@@ -50,6 +51,8 @@ export interface Item {
 	statGroupHash?: number
 	stats?: Partial<Record<StatHashes, ItemStat>>
 	itemSetHash?: EquipableItemSetHashes
+	flavorText?: string
+	sources?: ItemSource[]
 
 	// unique to instances
 	instanceId?: string
@@ -94,3 +97,11 @@ export interface ItemStat {
 	subclass: number
 	charge: number
 }
+
+export interface ItemSourceDefined {
+	type: 'defined'
+	id: DeepsightItemSourceType
+}
+
+export type ItemSource =
+	| ItemSourceDefined

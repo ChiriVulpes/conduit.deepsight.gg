@@ -4,7 +4,7 @@ import DestinyManifest from 'model/DestinyManifest'
 import Model from 'model/Model'
 
 export default Model<string>('CombinedManifestVersion', {
-	cacheDirtyTime: 1000 * 60 * 60, // 1 hour cache
+	cacheDirtyTime: 1000 * 60 * 1, // 1 minute cache
 	async fetch () {
 		const [destiny, deepsight, clarity] = await Promise.all([
 			DestinyManifest.use(),

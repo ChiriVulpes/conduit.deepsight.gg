@@ -3,6 +3,7 @@ interface Env {
 	BUNGIE_API_KEY: string
 	BUNGIE_AUTH_CLIENT_ID: string
 	BUNGIE_AUTH_CLIENT_SECRET: string
+	LOCAL_DEEPSIGHT_MANIFEST_ORIGIN: string
 }
 
 class Env {

@@ -2,7 +2,7 @@
 	"private": true,
 	"dependencies": {
 		"dexie": "4.0.11",
-		"bungie-api-ts": "5.4.0",
-		"deepsight.gg": "1.0.1359"
+		"bungie-api-ts": "5.5.0",
+		"deepsight.gg": "1.0.1389"
 	}
 }

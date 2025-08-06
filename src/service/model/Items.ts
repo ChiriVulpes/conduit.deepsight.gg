@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
-import type { Item, ItemPlug, ItemSocket, ItemStat } from '@shared/Collections'
+import type { Item, ItemPlug, ItemSocket, ItemSourceDefined, ItemStat } from '@shared/Collections'
 import type { DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition, DestinySandboxPerkDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import { DestinyItemSubType, SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
 import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName } from 'deepsight.gg/DeepsightPlugCategorisation'
@@ -11,7 +11,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '5'
+export const ITEMS_VERSION = '7'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -24,17 +24,33 @@ const STATS_ARMOUR = new Set<StatHashes>([
 
 namespace Items {
 	export async function createResolver (type: 'instance' | 'collections') {
-		const ClarityDescriptions = await Definitions.en.ClarityDescriptions.get()
-		const DeepsightItemDamageTypesDefinition = await Definitions.en.DeepsightItemDamageTypesDefinition.get()
-		const DeepsightPlugCategorisation = await Definitions.en.DeepsightPlugCategorisation.get()
-		const DeepsightSocketCategorisation = await Definitions.en.DeepsightSocketCategorisation.get()
-		const DeepsightSocketExtendedDefinition = await Definitions.en.DeepsightSocketExtendedDefinition.get()
-		const DestinyInventoryItemDefinition = await Definitions.en.DestinyInventoryItemDefinition.get()
-		const DestinyPlugSetDefinition = await Definitions.en.DestinyPlugSetDefinition.get()
-		const DestinyStatDefinition = await Definitions.en.DestinyStatDefinition.get()
-		const DestinyStatGroupDefinition = await Definitions.en.DestinyStatGroupDefinition.get()
-		const DestinyEquipableItemSetDefinition = await Definitions.en.DestinyEquipableItemSetDefinition.get()
-		const DestinySandboxPerkDefinition = await Definitions.en.DestinySandboxPerkDefinition.get()
+		const [
+			ClarityDescriptions,
+			DeepsightItemDamageTypesDefinition,
+			DeepsightPlugCategorisation,
+			DeepsightSocketCategorisation,
+			DeepsightSocketExtendedDefinition,
+			DestinyInventoryItemDefinition,
+			DestinyPlugSetDefinition,
+			DestinyStatDefinition,
+			DestinyStatGroupDefinition,
+			DestinyEquipableItemSetDefinition,
+			DestinySandboxPerkDefinition,
+			DeepsightItemSourceListDefinition,
+		] = await Promise.all([
+			Definitions.en.ClarityDescriptions.get(),
+			Definitions.en.DeepsightItemDamageTypesDefinition.get(),
+			Definitions.en.DeepsightPlugCategorisation.get(),
+			Definitions.en.DeepsightSocketCategorisation.get(),
+			Definitions.en.DeepsightSocketExtendedDefinition.get(),
+			Definitions.en.DestinyInventoryItemDefinition.get(),
+			Definitions.en.DestinyPlugSetDefinition.get(),
+			Definitions.en.DestinyStatDefinition.get(),
+			Definitions.en.DestinyStatGroupDefinition.get(),
+			Definitions.en.DestinyEquipableItemSetDefinition.get(),
+			Definitions.en.DestinySandboxPerkDefinition.get(),
+			Definitions.en.DeepsightItemSourceListDefinition.get(),
+		])
 
 		const profile = await Profiles.getCurrentProfile(undefined).then(profile => profile && DestinyProfiles[profile.id].get())
 
@@ -56,6 +72,10 @@ namespace Items {
 				statGroupHash: def.stats?.statGroupHash,
 				stats: stats(def, undefined, sockets),
 				itemSetHash: itemSetHash(def),
+				flavorText: def.flavorText,
+				sources: [
+					...DeepsightItemSourceListDefinition[hash]?.sources.map((id): ItemSourceDefined => ({ type: 'defined', id })) ?? [],
+				],
 			}
 		}
 
@@ -70,6 +90,9 @@ namespace Items {
 
 			return hash
 		}
+
+		////////////////////////////////////
+		//#region Plugs
 
 		function socket (itemHash: number, socketIndex: number, entryDef: DestinyItemSocketEntryDefinition): ItemSocket {
 			const categorisationFullName = DeepsightSocketCategorisation[itemHash]?.categorisation[socketIndex]?.fullName ?? 'None'
@@ -139,6 +162,12 @@ namespace Items {
 
 			return categorisation as DeepsightPlugCategorisation<typeof DeepsightPlugCategory[CATEGORY]>
 		}
+
+		//#endregion
+		////////////////////////////////////
+
+		////////////////////////////////////
+		//#region Stats
 
 		const HasMasterworkStats = Categorisation.matcher('Masterwork/*', 'Intrinsic/FrameEnhanced')
 		const NotMasterworkNotIntrinsic = Categorisation.matcher('!Intrinsic/*', '!Masterwork/*')
@@ -243,6 +272,9 @@ namespace Items {
 
 			return result
 		}
+
+		//#endregion
+		////////////////////////////////////
 
 		return {
 			plugs: plugs as Record<number, ItemPlug>,
