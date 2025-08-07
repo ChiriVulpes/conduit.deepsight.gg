@@ -9,7 +9,7 @@ import Definitions from 'model/Definitions'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import Model from 'model/Model'
 
-const version = `23.${ITEMS_VERSION}`
+const version = `24.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },
@@ -31,25 +31,26 @@ export default Model<Collections>('Collections', {
 			value: async (): Promise<Collections> => {
 				const [
 					DeepsightCollectionsDefinition,
+					DeepsightDropTableDefinition,
+					DeepsightItemSourceDefinition,
 					DeepsightMomentDefinition,
 					DeepsightTierTypeDefinition,
 					DestinyDamageTypeDefinition,
+					DestinyEquipableItemSetDefinition,
+					DestinyPresentationNodeDefinition,
 					DestinyStatDefinition,
 					DestinyStatGroupDefinition,
-					DestinyPresentationNodeDefinition,
-					DestinyEquipableItemSetDefinition,
-					DeepsightItemSourceDefinition,
 				] = await Promise.all([
 					Definitions.en.DeepsightCollectionsDefinition.get(),
+					Definitions.en.DeepsightDropTableDefinition.get(),
+					Definitions.en.DeepsightItemSourceDefinition.get(),
 					Definitions.en.DeepsightMomentDefinition.get(),
 					Definitions.en.DeepsightTierTypeDefinition.get(),
 					Definitions.en.DestinyDamageTypeDefinition.get(),
+					Definitions.en.DestinyEquipableItemSetDefinition.get(),
+					Definitions.en.DestinyPresentationNodeDefinition.get(),
 					Definitions.en.DestinyStatDefinition.get(),
 					Definitions.en.DestinyStatGroupDefinition.get(),
-					Definitions.en.DestinyPresentationNodeDefinition.get(),
-					Definitions.en.DestinyEquipableItemSetDefinition.get(),
-					Definitions.en.DeepsightItemSourceDefinition.get(),
-					Definitions.en.DeepsightItemSourceListDefinition.get(),
 				])
 
 				const resolver = await Items.createResolver('collections')
@@ -91,6 +92,7 @@ export default Model<Collections>('Collections', {
 					itemSets: DestinyEquipableItemSetDefinition as Record<EquipableItemSetHashes, DestinyEquipableItemSetDefinition>,
 					perks: resolver.perks,
 					sources: DeepsightItemSourceDefinition,
+					dropTables: DeepsightDropTableDefinition,
 				}
 			},
 		}

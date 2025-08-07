@@ -1,8 +1,8 @@
 import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyEquipableItemSetDefinition, DestinySandboxPerkDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2'
 import type { ClarityDescription } from 'Clarity'
 import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { DamageTypeHashes, EquipableItemSetHashes, InventoryBucketHashes, ItemTierTypeHashes, SandboxPerkHashes, StatHashes } from 'deepsight.gg/Enums'
-import type { DeepsightItemSourceDefinition, DeepsightItemSourceType, DeepsightMomentDefinition, DeepsightTierTypeDefinition } from 'deepsight.gg/Interfaces'
+import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, InventoryBucketHashes, ItemTierTypeHashes, SandboxPerkHashes, StatHashes } from 'deepsight.gg/Enums'
+import type { DeepsightDropTableDefinition, DeepsightItemSourceDefinition, DeepsightItemSourceType, DeepsightMomentDefinition, DeepsightTierTypeDefinition } from 'deepsight.gg/Interfaces'
 
 interface Collections {
 	moments: CollectionsMoment[]
@@ -14,7 +14,8 @@ interface Collections {
 	ammoTypes: Record<DestinyAmmunitionType.Primary | DestinyAmmunitionType.Special | DestinyAmmunitionType.Heavy, ItemAmmo>
 	itemSets: Record<EquipableItemSetHashes, DestinyEquipableItemSetDefinition>
 	perks: Partial<Record<SandboxPerkHashes, DestinySandboxPerkDefinition>>
-	sources: Record<string, DeepsightItemSourceDefinition>
+	sources: Record<number, DeepsightItemSourceDefinition>
+	dropTables: Record<string, DeepsightDropTableDefinition>
 }
 
 export default Collections
@@ -103,5 +104,11 @@ export interface ItemSourceDefined {
 	id: DeepsightItemSourceType
 }
 
+export interface ItemSourceDropTable {
+	type: 'table'
+	id: ActivityHashes
+}
+
 export type ItemSource =
 	| ItemSourceDefined
+	| ItemSourceDropTable

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
-import type { Item, ItemPlug, ItemSocket, ItemSourceDefined, ItemStat } from '@shared/Collections'
+import type { Item, ItemPlug, ItemSocket, ItemSourceDefined, ItemSourceDropTable, ItemStat } from '@shared/Collections'
 import type { DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition, DestinySandboxPerkDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import { DestinyItemSubType, SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
 import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName } from 'deepsight.gg/DeepsightPlugCategorisation'
@@ -26,35 +26,45 @@ namespace Items {
 	export async function createResolver (type: 'instance' | 'collections') {
 		const [
 			ClarityDescriptions,
+			DeepsightDropTableDefinition,
 			DeepsightItemDamageTypesDefinition,
+			DeepsightItemSourceListDefinition,
 			DeepsightPlugCategorisation,
 			DeepsightSocketCategorisation,
 			DeepsightSocketExtendedDefinition,
+			DestinyEquipableItemSetDefinition,
 			DestinyInventoryItemDefinition,
 			DestinyPlugSetDefinition,
+			DestinySandboxPerkDefinition,
 			DestinyStatDefinition,
 			DestinyStatGroupDefinition,
-			DestinyEquipableItemSetDefinition,
-			DestinySandboxPerkDefinition,
-			DeepsightItemSourceListDefinition,
 		] = await Promise.all([
 			Definitions.en.ClarityDescriptions.get(),
+			Definitions.en.DeepsightDropTableDefinition.get(),
 			Definitions.en.DeepsightItemDamageTypesDefinition.get(),
+			Definitions.en.DeepsightItemSourceListDefinition.get(),
 			Definitions.en.DeepsightPlugCategorisation.get(),
 			Definitions.en.DeepsightSocketCategorisation.get(),
 			Definitions.en.DeepsightSocketExtendedDefinition.get(),
+			Definitions.en.DestinyEquipableItemSetDefinition.get(),
 			Definitions.en.DestinyInventoryItemDefinition.get(),
 			Definitions.en.DestinyPlugSetDefinition.get(),
+			Definitions.en.DestinySandboxPerkDefinition.get(),
 			Definitions.en.DestinyStatDefinition.get(),
 			Definitions.en.DestinyStatGroupDefinition.get(),
-			Definitions.en.DestinyEquipableItemSetDefinition.get(),
-			Definitions.en.DestinySandboxPerkDefinition.get(),
-			Definitions.en.DeepsightItemSourceListDefinition.get(),
 		])
 
 		const profile = await Profiles.getCurrentProfile(undefined).then(profile => profile && DestinyProfiles[profile.id].get())
 
 		const perks: Partial<Record<SandboxPerkHashes, DestinySandboxPerkDefinition>> = {}
+
+		const dropTableItems = Object.values(DeepsightDropTableDefinition)
+			.map(table => [table, [
+				...Object.keys(table.dropTable ?? {}),
+				...Object.keys(table.master?.dropTable ?? {}),
+				...(table.encounters ?? [])
+					.flatMap(encounter => Object.keys(encounter.dropTable ?? {})),
+			].map(item => +item)] as const)
 
 		function item (hash: number, def: DestinyInventoryItemDefinition): Item {
 			const sockets = def.sockets?.socketEntries.map((entryDef, i): ItemSocket => socket(hash, i, entryDef)) ?? []
@@ -75,6 +85,7 @@ namespace Items {
 				flavorText: def.flavorText,
 				sources: [
 					...DeepsightItemSourceListDefinition[hash]?.sources.map((id): ItemSourceDefined => ({ type: 'defined', id })) ?? [],
+					...dropTableItems.filter(([, items]) => items.includes(hash)).map(([table]): ItemSourceDropTable => ({ type: 'table', id: table.hash })),
 				],
 			}
 		}
