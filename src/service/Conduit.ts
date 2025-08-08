@@ -3,6 +3,7 @@ import Auth from 'model/Auth'
 import Collections from 'model/Collections'
 import Definitions from 'model/Definitions'
 import Profiles from 'model/Profiles'
+import { db } from 'utility/Database'
 import Env from 'utility/Env'
 import Service from 'utility/Service'
 import Store from 'utility/Store'
@@ -18,7 +19,7 @@ class ConduitPrivateFunctionError extends Error {
 
 }
 
-Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
+const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 	async onInstall (service, event) {
 	},
 	async onActivate (service, event) {
@@ -31,33 +32,12 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 
 		////////////////////////////////////
 		//#region Profiles
-		async getProfiles (event) {
-			const [profiles, auth] = await Promise.all([
-				Profiles.get(),
-				Auth.getValid(),
-			])
-
-			profiles.sort((a, b) => new Date(b.lastAccess).getTime() - new Date(a.lastAccess).getTime())
-
-			if (!auth)
-				return profiles
-
-			let profile = profiles.find(profile => profile.name === auth.displayName && profile.code === auth.displayNameCode)
-			if (!profile) {
-				profile = await Profiles.getCurrentProfile(auth)
-				const existingProfile = profiles.find(p => p.id === profile!.id)
-				if (profile && !existingProfile)
-					profiles.push(profile)
-				else
-					profile = existingProfile
-			}
-
-			if (profile)
-				profile.authed = true
-
-			profiles.sort((a, b) => +!!b.authed - +!!a.authed)
-			return profiles
+		async getProfiles () {
+			void updateProfiles()
+			return (await db.profiles.toArray())
+				.sort((a, b) => +!!b.authed - +!!a.authed)
 		},
+		updateProfiles: () => updateProfiles(),
 		async getProfile (event, displayName, displayNameCode) {
 			return await Profiles.searchDestinyPlayerByBungieName(displayName, displayNameCode)
 		},
@@ -116,3 +96,40 @@ Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 
 	},
 })
+
+async function updateProfiles () {
+	let [{ profiles, updated }, auth] = await Promise.all([
+		Profiles.get(),
+		Auth.getValid(),
+	])
+
+	profiles.sort((a, b) => new Date(b.lastAccess).getTime() - new Date(a.lastAccess).getTime())
+
+	if (!auth)
+		return
+
+	let profile = profiles.find(profile => profile.name === auth.displayName && profile.code === auth.displayNameCode)
+	if (!profile) {
+		profile = await Profiles.getCurrentProfile(auth)
+		if (profile) {
+			updated = true
+			const existingProfileIndex = profiles.findIndex(p => p.id === profile!.id)
+			if (existingProfileIndex === -1)
+				// authed a completely new profile
+				profiles.push(profile)
+			else
+				// authed an existing profile with a new name/code
+				profiles[existingProfileIndex] = profile
+		}
+	}
+
+	if (profile && !profile.authed) {
+		profile.authed = true
+		updated = true
+	}
+
+	if (updated) {
+		void db.profiles.bulkPut(profiles)
+		void service.broadcast.profilesUpdated(profiles)
+	}
+}

@@ -15,12 +15,16 @@ import Store from 'utility/Store'
 
 namespace Profiles {
 
-	const version = '7'
+	const version = '10'
 
 	export async function get () {
+		let updated = false
 		const profiles = await db.profiles.toArray()
-		await Promise.all(profiles.map(profile => updateProfile(profile).catch(() => { })))
-		return profiles
+		await Promise.all(profiles.map(async profile => {
+			const thisProfileUpdated = await updateProfile(profile).catch(() => false)
+			updated ||= thisProfileUpdated ?? false
+		}))
+		return { profiles, updated }
 	}
 
 	export async function searchDestinyPlayerByBungieName (displayName: string, displayNameCode: number) {

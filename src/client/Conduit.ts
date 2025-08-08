@@ -1,4 +1,4 @@
-import type { ConduitFunctionRegistry } from 'conduit.deepsight.gg/ConduitMessageRegistry'
+import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from 'conduit.deepsight.gg/ConduitMessageRegistry'
 import Definitions from 'Definitions'
 
 export { default as Inventory } from 'conduit.deepsight.gg/Inventory'
@@ -14,7 +14,10 @@ interface ConduitOptions {
 	| { type: 'popup', width?: number, height?: number }
 }
 
+export type Unsubscribe = () => void
+
 interface ConduitImplementation {
+	on: { [TYPE in keyof ConduitBroadcastRegistry]: (handler: (data: ConduitBroadcastRegistry[TYPE]) => unknown) => Unsubscribe }
 	readonly definitions: Definitions
 	update (): Promise<void>
 	ensureAuthenticated (appName?: string): Promise<boolean>
@@ -130,6 +133,17 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 
 	const implementation: ConduitImplementation = {
 		definitions: undefined!,
+		on: new Proxy({} as never, {
+			get (target, eventName: string) {
+				return (handler: (data: any) => unknown) => {
+					addListener('global', eventName, handler)
+					return () => {
+						const index = messageListeners.findIndex(listener => listener.type === 'global' && listener.type === eventName && listener.callback === handler)
+						if (index !== -1) messageListeners.splice(index, 1)
+					}
+				}
+			},
+		}),
 		async update () {
 			return callPromiseFunction('_update')
 		},

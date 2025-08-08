@@ -5,6 +5,7 @@ import type { Profile } from 'Profile'
 
 export interface ConduitFunctionRegistry {
 	getProfiles (): Promise<Profile[]>
+	updateProfiles (): Promise<void>
 	getProfile (displayName: string, displayNameCode: number): Promise<Profile | undefined>
 	bumpProfile (displayName: string, displayNameCode: number): Promise<void>
 	getCollections (): Promise<Collections>
@@ -21,4 +22,5 @@ export interface ConduitFunctionRegistry {
 
 export interface ConduitBroadcastRegistry {
 	ready: void
+	profilesUpdated: Profile[]
 }
