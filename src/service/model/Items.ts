@@ -11,7 +11,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '7'
+export const ITEMS_VERSION = '8'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -66,9 +66,10 @@ namespace Items {
 					.flatMap(encounter => Object.keys(encounter.dropTable ?? {})),
 			].map(item => +item)] as const)
 
-		function item (hash: number, def: DestinyInventoryItemDefinition): Item {
+		const items: Record<number, Item> = {}
+		function item (hash: number, def: DestinyInventoryItemDefinition): number {
 			const sockets = def.sockets?.socketEntries.map((entryDef, i): ItemSocket => socket(hash, i, entryDef)) ?? []
-			return {
+			const item: Item = {
 				hash,
 				displayProperties: def.displayProperties,
 				watermark: def.iconWatermark,
@@ -88,6 +89,8 @@ namespace Items {
 					...dropTableItems.filter(([, items]) => items.includes(hash)).map(([table]): ItemSourceDropTable => ({ type: 'table', id: table.hash })),
 				],
 			}
+			items[hash] = item
+			return hash
 		}
 
 		function itemSetHash (def: DestinyInventoryItemDefinition): EquipableItemSetHashes | undefined {
@@ -289,6 +292,7 @@ namespace Items {
 
 		return {
 			plugs: plugs as Record<number, ItemPlug>,
+			items,
 			perks,
 			item (hash: number) {
 				const def = DestinyInventoryItemDefinition[hash]

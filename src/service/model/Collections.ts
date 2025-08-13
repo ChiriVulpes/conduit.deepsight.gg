@@ -9,7 +9,7 @@ import Definitions from 'model/Definitions'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import Model from 'model/Model'
 
-const version = `24.${ITEMS_VERSION}`
+const version = `25.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },
@@ -83,6 +83,7 @@ export default Model<Collections>('Collections', {
 							),
 						}))
 						.sort((a, b) => b.moment.hash - a.moment.hash),
+					items: resolver.items,
 					plugs: resolver.plugs,
 					rarities: DeepsightTierTypeDefinition,
 					damageTypes: DestinyDamageTypeDefinition as Record<DamageTypeHashes, DestinyDamageTypeDefinition>,

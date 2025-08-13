@@ -6,6 +6,7 @@ import type { DeepsightDropTableDefinition, DeepsightItemSourceDefinition, Deeps
 
 interface Collections {
 	moments: CollectionsMoment[]
+	items: Record<number, Item>
 	plugs: Record<number, ItemPlug>
 	rarities: Record<ItemTierTypeHashes, DeepsightTierTypeDefinition>
 	damageTypes: Record<DamageTypeHashes, DestinyDamageTypeDefinition>
@@ -14,7 +15,7 @@ interface Collections {
 	ammoTypes: Record<DestinyAmmunitionType.Primary | DestinyAmmunitionType.Special | DestinyAmmunitionType.Heavy, ItemAmmo>
 	itemSets: Record<EquipableItemSetHashes, DestinyEquipableItemSetDefinition>
 	perks: Partial<Record<SandboxPerkHashes, DestinySandboxPerkDefinition>>
-	sources: Record<number, DeepsightItemSourceDefinition>
+	sources: Record<DeepsightItemSourceType, DeepsightItemSourceDefinition>
 	dropTables: Record<string, DeepsightDropTableDefinition>
 }
 
@@ -35,7 +36,7 @@ export interface CollectionsMoment {
 }
 
 export interface CollectionsBucket {
-	items: Item[]
+	items: number[]
 }
 
 export interface Item {
