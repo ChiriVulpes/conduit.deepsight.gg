@@ -11,7 +11,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '8'
+export const ITEMS_VERSION = '10'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -88,6 +88,7 @@ namespace Items {
 					...DeepsightItemSourceListDefinition[hash]?.sources.map((id): ItemSourceDefined => ({ type: 'defined', id })) ?? [],
 					...dropTableItems.filter(([, items]) => items.includes(hash)).map(([table]): ItemSourceDropTable => ({ type: 'table', id: table.hash })),
 				],
+				previewImage: def.screenshot,
 			}
 			items[hash] = item
 			return hash

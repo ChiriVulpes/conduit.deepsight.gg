@@ -9,7 +9,7 @@ import Definitions from 'model/Definitions'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import Model from 'model/Model'
 
-const version = `25.${ITEMS_VERSION}`
+const version = `26.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },

@@ -55,6 +55,7 @@ export interface Item {
 	itemSetHash?: EquipableItemSetHashes
 	flavorText?: string
 	sources?: ItemSource[]
+	previewImage?: string
 
 	// unique to instances
 	instanceId?: string
