@@ -1,5 +1,5 @@
 import type { ItemPlug, ItemSocket } from '@shared/Collections'
-import type { DeepsightPlugCategoryName, DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
+import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName, DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
 
 type PlugCategorisationExpression =
 	| DeepsightPlugFullName
@@ -24,8 +24,15 @@ namespace Categorisation {
 		const positiveExpressions = expressions.filter(expr => expr[0] !== '!') as PlugCategorisationExpression[]
 		const negativeExpressions = expressions.filter(expr => expr[0] === '!').map(expr => expr.slice(1) as PlugCategorisationExpression)
 
-		return function (categorised?: ItemPlug | ItemSocket | DeepsightPlugFullName): boolean {
-			const categorisation = typeof categorised === 'string' ? categorised : categorised?.type
+		return matcher
+
+		function matcher (categorised?: ItemPlug | ItemSocket | DeepsightPlugCategorisation | DeepsightPlugFullName): boolean
+		function matcher<CATEGORY extends DeepsightPlugCategoryName> (categorised?: DeepsightPlugCategorisation): categorised is DeepsightPlugCategorisation & DeepsightPlugCategorisation<typeof DeepsightPlugCategory[CATEGORY]>
+		function matcher (categorised?: ItemPlug | ItemSocket | DeepsightPlugCategorisation | DeepsightPlugFullName): boolean {
+			const categorisation = typeof categorised === 'string' ? categorised
+				: !categorised ? undefined
+					: 'fullName' in categorised ? categorised.fullName
+						: categorised?.type
 			if (!categorisation)
 				return false
 

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import type { Item, ItemPlug, ItemSocket, ItemSourceDefined, ItemSourceDropTable, ItemStat } from '@shared/Collections'
-import type { DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition, DestinySandboxPerkDefinition } from 'bungie-api-ts/destiny2/interfaces'
+import type { DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition, DestinySandboxPerkDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import { DestinyItemSubType, SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
 import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName } from 'deepsight.gg/DeepsightPlugCategorisation'
 import type { EquipableItemSetHashes, SandboxPerkHashes } from 'deepsight.gg/Enums'
@@ -11,7 +11,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '10'
+export const ITEMS_VERSION = '13'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -89,6 +89,7 @@ namespace Items {
 					...dropTableItems.filter(([, items]) => items.includes(hash)).map(([table]): ItemSourceDropTable => ({ type: 'table', id: table.hash })),
 				],
 				previewImage: def.screenshot,
+				foundryImage: def.secondaryIcon,
 			}
 			items[hash] = item
 			return hash
@@ -155,6 +156,7 @@ namespace Items {
 				enhanced: Categorisation.IsEnhanced(categorisation?.fullName) ?? false,
 				clarity: ClarityDescriptions[hash],
 				perks: perkHashes,
+				stats: stats(def),
 			}
 		}
 
@@ -167,15 +169,18 @@ namespace Items {
 			return plug ? DestinyInventoryItemDefinition[plug.hash] : undefined
 		}
 
-		function plugCat<CATEGORY extends DeepsightPlugCategoryName> (hash: number | undefined, category: CATEGORY): DeepsightPlugCategorisation<typeof DeepsightPlugCategory[CATEGORY]> | undefined {
+		function plugCat<CATEGORY extends DeepsightPlugCategoryName> (hash: number | undefined, category: CATEGORY): DeepsightPlugCategorisation<typeof DeepsightPlugCategory[CATEGORY]> | undefined
+		function plugCat (hash: number | undefined): DeepsightPlugCategorisation | undefined
+		// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+		function plugCat (hash: number | undefined, category?: DeepsightPlugCategoryName): DeepsightPlugCategorisation<never> | undefined {
 			if (!hash)
 				return undefined
 
 			const categorisation = DeepsightPlugCategorisation[hash]
-			if (!categorisation || categorisation.categoryName !== category)
+			if (!categorisation || (category !== undefined && categorisation.categoryName !== category))
 				return undefined
 
-			return categorisation as DeepsightPlugCategorisation<typeof DeepsightPlugCategory[CATEGORY]>
+			return categorisation
 		}
 
 		//#endregion
@@ -188,10 +193,29 @@ namespace Items {
 		const NotMasterworkNotIntrinsic = Categorisation.matcher('!Intrinsic/*', '!Masterwork/*')
 		const ArmorMod = Categorisation.matcher('Mod/Armor')
 		function stats (def: DestinyInventoryItemDefinition, ref?: DestinyItemComponent, sockets: ItemSocket[] = []): Partial<Record<StatHashes, ItemStat>> | undefined {
-			if (!def.stats)
-				return undefined
+			if (!def.stats) {
+				const cat = plugCat(def.hash)
+				return Object.fromEntries(def.investmentStats.map(stat => [
+					stat.statTypeHash,
+					{
+						hash: stat.statTypeHash as StatHashes,
+						value: stat.value,
+						intrinsic: 0,
+						roll: 0,
+						mod: !ArmorMod(cat?.fullName) ? 0 : stat.value,
+						masterwork: 0,
+						subclass: 0,
+						charge: !ArmorMod<'Mod'>(cat) ? 0
+							: (cat.armourChargeStats
+								?.find(({ statTypeHash }) => statTypeHash === stat.statTypeHash)
+								?.value
+								?? 0
+							),
+					} satisfies ItemStat,
+				]))
+			}
 
-			const statGroupDefinition = DestinyStatGroupDefinition[def.stats?.statGroupHash ?? NaN]
+			const statGroupDefinition = DestinyStatGroupDefinition[def.stats?.statGroupHash ?? NaN] as DestinyStatGroupDefinition | undefined
 
 			const intrinsicStats = def.investmentStats
 
@@ -205,7 +229,7 @@ namespace Items {
 					if (random && !random.isConditionallyActive)
 						stats[random.statTypeHash] ??= { statHash: random.statTypeHash, value: random.value }
 
-			for (const stat of statGroupDefinition.scaledStats)
+			for (const stat of statGroupDefinition?.scaledStats ?? [])
 				if (!(stat.statHash in stats) && !STATS_ARMOUR.has(stat.statHash))
 					stats[stat.statHash] = { statHash: stat.statHash, value: 0 }
 
@@ -227,7 +251,7 @@ namespace Items {
 					continue
 				}
 
-				const display = statGroupDefinition.scaledStats.find(stat => stat.statHash === hash)
+				const display = statGroupDefinition?.scaledStats.find(stat => stat.statHash === hash)
 				if (!display)
 					continue
 

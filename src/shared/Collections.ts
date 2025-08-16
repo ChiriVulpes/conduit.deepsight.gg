@@ -56,6 +56,7 @@ export interface Item {
 	flavorText?: string
 	sources?: ItemSource[]
 	previewImage?: string
+	foundryImage?: string
 
 	// unique to instances
 	instanceId?: string
@@ -85,6 +86,7 @@ export interface ItemPlug {
 	enhanced: boolean
 	clarity?: ClarityDescription
 	perks?: SandboxPerkHashes[]
+	stats?: Partial<Record<StatHashes, ItemStat>>
 }
 
 export interface ItemStat {
@@ -98,7 +100,7 @@ export interface ItemStat {
 	masterwork: number
 	mod: number
 	subclass: number
-	charge: number
+	charge: number | number[]
 }
 
 export interface ItemSourceDefined {
