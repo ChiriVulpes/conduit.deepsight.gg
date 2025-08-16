@@ -11,7 +11,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '13'
+export const ITEMS_VERSION = '14'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -70,6 +70,7 @@ namespace Items {
 		function item (hash: number, def: DestinyInventoryItemDefinition): number {
 			const sockets = def.sockets?.socketEntries.map((entryDef, i): ItemSocket => socket(hash, i, entryDef)) ?? []
 			const item: Item = {
+				is: 'item',
 				hash,
 				displayProperties: def.displayProperties,
 				watermark: def.iconWatermark,
@@ -150,6 +151,7 @@ namespace Items {
 				perks[perkHash as SandboxPerkHashes] = DestinySandboxPerkDefinition[perkHash]
 
 			return plugs[hash] = {
+				is: 'plug',
 				hash,
 				displayProperties: def.displayProperties,
 				type: categorisation?.fullName ?? 'None',

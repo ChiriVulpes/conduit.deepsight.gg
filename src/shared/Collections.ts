@@ -40,6 +40,7 @@ export interface CollectionsBucket {
 }
 
 export interface Item {
+	is: 'item'
 	hash: number
 	displayProperties: DestinyDisplayPropertiesDefinition
 	watermark: string
@@ -80,6 +81,7 @@ export interface ItemSocket {
 }
 
 export interface ItemPlug {
+	is: 'plug'
 	hash: number
 	displayProperties: DestinyDisplayPropertiesDefinition
 	type: DeepsightPlugFullName
