@@ -11,7 +11,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '14'
+export const ITEMS_VERSION = '17'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -25,7 +25,8 @@ const STATS_ARMOUR = new Set<StatHashes>([
 namespace Items {
 	export async function createResolver (type: 'instance' | 'collections') {
 		const [
-			ClarityDescriptions,
+			// ClarityDescriptions,
+			DeepsightFormattedClarityDescriptions,
 			DeepsightDropTableDefinition,
 			DeepsightItemDamageTypesDefinition,
 			DeepsightItemSourceListDefinition,
@@ -39,7 +40,8 @@ namespace Items {
 			DestinyStatDefinition,
 			DestinyStatGroupDefinition,
 		] = await Promise.all([
-			Definitions.en.ClarityDescriptions.get(),
+			// Definitions.en.ClarityDescriptions.get(),
+			Definitions.en.DeepsightFormattedClarityDescriptions.get(),
 			Definitions.en.DeepsightDropTableDefinition.get(),
 			Definitions.en.DeepsightItemDamageTypesDefinition.get(),
 			Definitions.en.DeepsightItemSourceListDefinition.get(),
@@ -156,7 +158,7 @@ namespace Items {
 				displayProperties: def.displayProperties,
 				type: categorisation?.fullName ?? 'None',
 				enhanced: Categorisation.IsEnhanced(categorisation?.fullName) ?? false,
-				clarity: ClarityDescriptions[hash],
+				clarity: DeepsightFormattedClarityDescriptions[hash],
 				perks: perkHashes,
 				stats: stats(def),
 			}

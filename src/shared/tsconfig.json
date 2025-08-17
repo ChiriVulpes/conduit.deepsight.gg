@@ -4,6 +4,7 @@
 		"composite": true,
 		"outDir": "../../out/shared",
 		"baseUrl": ".",
+		"preserveSymlinks": true,
 		"paths": {
 			"*": [
 				"./*"

@@ -17,6 +17,16 @@ export default Task('install', async task => task.install(
 		},
 	},
 	{ path: 'src/client' },
-	{ path: 'src/service' },
-	{ path: 'src/shared' },
+	{
+		path: 'src/service',
+		dependencies: {
+			'deepsight.gg': { name: 'deepsight.gg' },
+		},
+	},
+	{
+		path: 'src/shared',
+		dependencies: {
+			'deepsight.gg': { name: 'deepsight.gg' },
+		},
+	},
 ))
