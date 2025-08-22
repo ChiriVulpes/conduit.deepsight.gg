@@ -11,7 +11,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '17'
+export const ITEMS_VERSION = '18'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -93,6 +93,7 @@ namespace Items {
 				],
 				previewImage: def.screenshot,
 				foundryImage: def.secondaryIcon,
+				categories: def.itemCategoryHashes as ItemCategoryHashes[],
 			}
 			items[hash] = item
 			return hash
