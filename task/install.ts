@@ -21,12 +21,14 @@ export default Task('install', async task => task.install(
 		path: 'src/service',
 		dependencies: {
 			'deepsight.gg': { name: 'deepsight.gg' },
+			'bungie-api-ts': { name: 'bungie-api-ts' },
 		},
 	},
 	{
 		path: 'src/shared',
 		dependencies: {
 			'deepsight.gg': { name: 'deepsight.gg' },
+			'bungie-api-ts': { name: 'bungie-api-ts' },
 		},
 	},
 ))
