@@ -2,7 +2,7 @@ import Env from 'utility/Env'
 
 namespace Deepsight {
 
-	const origin = 'https://deepsight.gg/manifest'
+	const origin = 'https://definition.deepsight.gg'
 
 	export async function get<T> (url: string) {
 		if (!url.startsWith('/')) url = `/${url}`
@@ -11,7 +11,7 @@ namespace Deepsight {
 
 	async function fetchTryLocalThenRemote (url: string) {
 		if (Env.LOCAL_DEEPSIGHT_MANIFEST_ORIGIN) {
-			const localResult = await self.fetch(`${Env.LOCAL_DEEPSIGHT_MANIFEST_ORIGIN}/manifest${url}`)
+			const localResult = await self.fetch(`${Env.LOCAL_DEEPSIGHT_MANIFEST_ORIGIN}/docs/definitions${url}`)
 				.then(handleDeepsightResponse)
 				.catch(() => null)
 			if (localResult !== null)
