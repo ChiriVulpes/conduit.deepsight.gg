@@ -52,11 +52,6 @@ jobs:
           echo "BUNGIE_AUTH_CLIENT_ID=${{ vars.BUNGIE_AUTH_CLIENT_ID }}" >> .env
           echo "BUNGIE_AUTH_CLIENT_SECRET=${{ vars.BUNGIE_AUTH_CLIENT_SECRET }}" >> .env
 
-      - name: Clean up service directory
-        if: success()
-        run: |
-          rm index.tsbuildinfo
-
       - name: Prepare service for GitHub Pages
         if: success()
         uses: crazy-max/ghaction-github-pages@v4
