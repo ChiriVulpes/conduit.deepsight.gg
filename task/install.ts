@@ -16,7 +16,12 @@ export default Task('install', async task => task.install(
 			kitsui: { repo: 'fluff4me/kitsui', branch: 'package' },
 		},
 	},
-	{ path: 'src/client' },
+	{
+		path: 'src/client',
+		dependencies: {
+			'bungie-api-ts': { name: 'bungie-api-ts' },
+		},
+	},
 	{
 		path: 'src/service',
 		dependencies: {
