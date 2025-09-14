@@ -1,6 +1,29 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+define("conduit.deepsight.gg/Definitions", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function Definitions(conduit) {
+        return new Proxy({}, {
+            get(target, languageName) {
+                return target[languageName] ??= new Proxy({}, {
+                    get(target, componentName) {
+                        return target[componentName] ??= {
+                            async all() {
+                                return await conduit._getDefinitionsComponent(languageName, componentName);
+                            },
+                            async get(hash) {
+                                return !hash ? undefined : await conduit._getDefinition(languageName, componentName, hash);
+                            },
+                        };
+                    },
+                });
+            },
+        });
+    }
+    exports.default = Definitions;
+});
 define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -12,10 +35,11 @@ define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (requi
     })(Inventory || (Inventory = {}));
     exports.default = Inventory;
 });
-define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Inventory"], function (require, exports, Inventory_1) {
+define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Definitions", "conduit.deepsight.gg/Inventory"], function (require, exports, Definitions_1, Inventory_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Inventory = void 0;
+    Definitions_1 = __importDefault(Definitions_1);
     Object.defineProperty(exports, "Inventory", { enumerable: true, get: function () { return __importDefault(Inventory_1).default; } });
     if (!('serviceWorker' in navigator))
         throw new Error('Service Worker is not supported in this browser');
@@ -30,10 +54,10 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Inve
         document.body.appendChild(iframe);
         await new Promise(resolve => iframe.addEventListener('load', resolve, { once: true }));
         const messageListeners = [];
-        function addListener(type, callback, once = false) {
+        function addListener(id, type, callback, once = false) {
             const expiry = !once ? undefined : Date.now() + 1000 * 60 * 2; // 2 minute expiry for once listeners
             const listener = {
-                id: Math.random().toString(36).slice(2),
+                id,
                 type,
                 callback,
                 once: once ? true : undefined,
@@ -48,20 +72,25 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Inve
                 messageListeners.splice(index, 1);
         }
         function addPromiseListener(type) {
-            return new Promise((resolve, reject) => {
-                const resolveListener = addListener(`resolve:${type}`, data => {
-                    resolve(data);
-                    removeListener(rejectListener.id);
-                }, true);
-                const rejectListener = addListener(`reject:${type}`, data => {
-                    reject(data instanceof Error ? data : new Error('Promise message rejected', { cause: data }));
-                    removeListener(resolveListener.id);
-                }, true);
-            });
+            const id = Math.random().toString(36).slice(2);
+            return {
+                id,
+                promise: new Promise((resolve, reject) => {
+                    addListener(id, `resolve:${type}`, data => {
+                        resolve(data);
+                        removeListener(id);
+                    }, true);
+                    addListener(id, `reject:${type}`, data => {
+                        reject(data instanceof Error ? data : new Error('Promise message rejected', { cause: data }));
+                        removeListener(id);
+                    }, true);
+                }),
+            };
         }
         function callPromiseFunction(type, ...params) {
-            iframe.contentWindow?.postMessage({ type, data: params }, serviceOrigin);
-            return addPromiseListener(type);
+            const { id, promise } = addPromiseListener(type);
+            iframe.contentWindow?.postMessage({ type, id, data: params }, serviceOrigin);
+            return promise;
         }
         let setActive;
         const activePromise = new Promise(resolve => setActive = resolve);
@@ -80,7 +109,7 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Inve
             let used = false;
             for (let i = 0; i < messageListeners.length; i++) {
                 const listener = messageListeners[i];
-                if (listener.type === data.type) {
+                if (listener.type === data.type && listener.id === data.id) {
                     listener.callback(data.data);
                     used = true;
                     if (listener.once) {
@@ -100,6 +129,19 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Inve
         });
         await activePromise;
         const implementation = {
+            definitions: undefined,
+            on: new Proxy({}, {
+                get(target, eventName) {
+                    return (handler) => {
+                        addListener('global', eventName, handler);
+                        return () => {
+                            const index = messageListeners.findIndex(listener => listener.type === 'global' && listener.type === eventName && listener.callback === handler);
+                            if (index !== -1)
+                                messageListeners.splice(index, 1);
+                        };
+                    };
+                },
+            }),
             async update() {
                 return callPromiseFunction('_update');
             },
@@ -142,7 +184,7 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Inve
                 return authState.authenticated && authState.accessGrants.some(grant => grant.origin === window.origin);
             },
         };
-        return new Proxy(implementation, {
+        const conduit = new Proxy(implementation, {
             get(target, fname) {
                 if (fname === 'then')
                     return undefined;
@@ -151,6 +193,8 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Inve
                 return (...params) => callPromiseFunction(fname, ...params);
             },
         });
+        Object.assign(conduit, { definitions: (0, Definitions_1.default)(conduit) });
+        return conduit;
     }
     exports.default = Conduit;
 });
