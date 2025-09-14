@@ -44,13 +44,14 @@ jobs:
 
       # Deploy service
 
-      - name: Write service .env file
+      - name: Write required service files
         if: success()
         run: |
           cd out/service
           echo "BUNGIE_API_KEY=${{ vars.BUNGIE_API_KEY }}" >> .env
           echo "BUNGIE_AUTH_CLIENT_ID=${{ vars.BUNGIE_AUTH_CLIENT_ID }}" >> .env
           echo "BUNGIE_AUTH_CLIENT_SECRET=${{ vars.BUNGIE_AUTH_CLIENT_SECRET }}" >> .env
+          echo "conduit.deepsight.gg" >> CNAME
 
       - name: Prepare service for GitHub Pages
         if: success()
