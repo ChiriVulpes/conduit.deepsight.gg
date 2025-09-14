@@ -5,7 +5,7 @@ import Deepsight from 'utility/Deepsight'
 export default Model('DeepsightManifest', {
 	cacheDirtyTime: 1000 * 60 * 1, // 1 minute cache time
 	async fetch () {
-		const manifest = await Deepsight.get<DeepsightManifest>('/versions.json')
+		const manifest = await Deepsight.get<DeepsightManifest>('/manifest.json')
 		if (typeof manifest?.deepsight !== 'number')
 			throw new Error('Invalid Destiny manifest response')
 
