@@ -4,7 +4,7 @@
 	"types": "index.d.ts",
 	"version": "1.0.0",
 	"dependencies": {
-		"bungie-api-ts": "5.7.0",
-		"deepsight.gg": "1.0.1502"
+		"bungie-api-ts": "^5.8.0",
+		"deepsight.gg": "^1.0.1502"
 	}
 }
