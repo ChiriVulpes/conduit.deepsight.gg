@@ -2,9 +2,9 @@
 	"private": true,
 	"name": "shared",
 	"dependencies": {
-		"bungie-api-ts": "^5.8.0"
+		"bungie-api-ts": "^5.9.0"
 	},
 	"devDependencies": {
-		"deepsight.gg": "^1.0.1509"
+		"deepsight.gg": "^1.0.1515"
 	}
 }
