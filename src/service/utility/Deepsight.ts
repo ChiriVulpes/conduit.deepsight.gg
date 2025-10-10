@@ -11,7 +11,7 @@ namespace Deepsight {
 
 	async function fetchTryLocalThenRemote (url: string) {
 		if (Env.LOCAL_DEEPSIGHT_MANIFEST_ORIGIN) {
-			const localResult = await self.fetch(`${Env.LOCAL_DEEPSIGHT_MANIFEST_ORIGIN}/docs/definitions${url}`)
+			const localResult = await self.fetch(`${Env.LOCAL_DEEPSIGHT_MANIFEST_ORIGIN}/definitions${url}`)
 				.then(handleDeepsightResponse)
 				.catch(() => null)
 			if (localResult !== null)
