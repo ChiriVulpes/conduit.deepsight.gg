@@ -9,6 +9,7 @@ export interface ConduitFunctionRegistry {
 	getProfile (displayName: string, displayNameCode: number): Promise<Profile | undefined>
 	bumpProfile (displayName: string, displayNameCode: number): Promise<void>
 	getCollections (): Promise<Collections>
+	getComponentNames (): Promise<AllComponentNames[]>
 	/** @private:start */
 	_getAuthState (): Promise<AuthState>
 	_setCustomApp (app?: CustomBungieApp): Promise<void>

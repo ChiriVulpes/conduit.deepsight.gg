@@ -2,7 +2,7 @@ import type { DeepsightManifest } from 'deepsight.gg'
 import Model from 'model/Model'
 import Deepsight from 'utility/Deepsight'
 
-export default Model('DeepsightManifest', {
+const DeepsightManifest = Model('DeepsightManifest', {
 	cacheDirtyTime: 1000 * 60 * 1, // 1 minute cache time
 	async fetch () {
 		const manifest = await Deepsight.get<DeepsightManifest>('/manifest.json')
@@ -15,3 +15,5 @@ export default Model('DeepsightManifest', {
 		}
 	},
 })
+
+export default DeepsightManifest

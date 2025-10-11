@@ -2,6 +2,7 @@ import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/
 import Auth from 'model/Auth'
 import Collections from 'model/Collections'
 import Definitions from 'model/Definitions'
+import DefinitionsComponentNames from 'model/DefinitionsComponentNames'
 import Profiles from 'model/Profiles'
 import { db } from 'utility/Database'
 import Env from 'utility/Env'
@@ -49,6 +50,10 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 
 		async getCollections (event) {
 			return await Collections.get()
+		},
+
+		async getComponentNames () {
+			return await DefinitionsComponentNames.get()
 		},
 
 		////////////////////////////////////
