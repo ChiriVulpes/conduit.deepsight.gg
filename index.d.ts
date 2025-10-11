@@ -63,6 +63,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         getProfile(displayName: string, displayNameCode: number): Promise<Profile | undefined>;
         bumpProfile(displayName: string, displayNameCode: number): Promise<void>;
         getCollections(): Promise<Collections>;
+        getComponentNames(): Promise<AllComponentNames[]>;
     }
     export interface ConduitBroadcastRegistry {
         ready: void;
