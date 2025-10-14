@@ -2,6 +2,7 @@ export interface AccessGrant {
 	appName?: string
 	origin: string
 	authTimestamp: number
+	fullTrust?: true
 }
 
 export interface CustomBungieApp {

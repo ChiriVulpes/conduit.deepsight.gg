@@ -20,6 +20,14 @@ class ConduitPrivateFunctionError extends Error {
 
 }
 
+class ConduitFunctionRequiresTrustedOriginError extends Error {
+
+	constructor () {
+		super('This action can only be performed by a trusted origin')
+	}
+
+}
+
 const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 	async onInstall (service, event) {
 	},
@@ -76,7 +84,10 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		async _authenticate (event, code) {
 			if (event.origin !== self.origin)
 				throw new ConduitPrivateFunctionError()
-			return !!await Auth.complete(code)
+			const authed = !!await Auth.complete(code)
+			if (authed)
+				await updateProfiles()
+			return authed
 		},
 		async _grantAccess (event, origin, appName) {
 			if (event.origin !== self.origin)
@@ -94,6 +105,19 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		async _getDefinition (event, language, component, hash) {
 			const defs = await Definitions[language][component].get()
 			return defs[hash as keyof typeof defs]
+		},
+		async _getFilteredDefinitionsComponent (event, language, component, filter) {
+			if (!await Auth.isOriginTrusted(event.origin))
+				throw new ConduitFunctionRequiresTrustedOriginError()
+
+			const predicate = eval(filter) as (def: any) => boolean
+			if (typeof predicate !== 'function')
+				throw new Error('Filter did not evaluate to a function')
+
+			const defs = await Definitions[language][component].get()
+			return Object.fromEntries(Object.values(defs)
+				.filter(predicate)
+				.map(def => [(def as { hash: number }).hash, def] as const))
 		},
 
 		//#endregion

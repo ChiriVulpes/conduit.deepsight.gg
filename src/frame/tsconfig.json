@@ -2,13 +2,14 @@
 	"compilerOptions": {
 		"strict": true,
 		"target": "ES2024",
-		"lib": ["ES2024", "DOM", "DOM.Iterable", "ESNext.Iterator"],
+		"lib": ["ES2024", "DOM", "DOM.Iterable", "ESNext.Iterator", "WebWorker"],
 		"moduleResolution": "node",
-		"outFile": "../../out/client/index.js",
-		"declaration": true,
-		"module": "amd",
+		"outDir": "../../out/service",
+		"declarationDir": "../client/frame",
+		"module": "commonjs",
 		"baseUrl": ".",
 		"incremental": true,
+		"composite": true,
 		"esModuleInterop": true,
 		"noImplicitOverride": true,
 		"experimentalDecorators": true,
@@ -17,23 +18,17 @@
 		"allowJs": true,
 		"skipLibCheck": true,
 		"noErrorTruncation": true,
-		"composite": true,
 		"preserveSymlinks": true,
 		"paths": {
-			"conduit.deepsight.gg/*": [
-				"./*",
+			"@shared/*": [
 				"../shared/*"
-			],
-			"@frame/*": [
-				"../frame/*"
 			],
 		}
 	},
 	"references": [
-		{ "path": "../shared" },
-		{ "path": "../frame" }
+		{"path": "../shared" }
 	],
 	"include": [
-		"**/*.ts",
+		"**/*.ts"
 	]
 }

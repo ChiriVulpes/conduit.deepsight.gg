@@ -4,3 +4,4 @@ out/
 .env
 src/platform/**/*.d.ts
 *.tsbuildinfo
+src/client/frame/

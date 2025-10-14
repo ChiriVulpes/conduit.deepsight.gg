@@ -44,7 +44,8 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 		if (typeof event.data !== 'object' || !('type' in event.data))
 			throw new Error('Unsupported message type')
 
-		const { id, type, data } = event.data as { id: string, type: string, data?: unknown }
+		const { id, type, origin, data } = event.data as { id: string, type: string, origin: string, data?: unknown }
+		Object.defineProperty(event, 'origin', { get () { return origin ?? 'bad.origin' }, configurable: true })
 		try {
 			const fn = definition.onCall[type]
 			if (!fn)
@@ -53,10 +54,10 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 			const params: any[] = data === undefined ? [] : !Array.isArray(data) ? [data] : data
 			const result = await fn(event, ...params as never)
 
-			event.source?.postMessage({ id, type: `resolve:${type}`, data: result })
+			event.source?.postMessage({ id, type: `resolve:${type}`, origin, data: result })
 		}
 		catch (err) {
-			event.source?.postMessage({ id, type: `reject:${type}`, data: err })
+			event.source?.postMessage({ id, type: `reject:${type}`, origin, data: err })
 		}
 	}
 	service.setRegistered()

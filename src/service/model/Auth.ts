@@ -78,6 +78,33 @@ namespace Auth {
 		Log.info(`Denied access to origin: ${origin}`)
 	}
 
+	export async function isOriginTrusted (origin: string): Promise<boolean> {
+		const lastOwnOriginPart = self.origin.slice(self.origin.lastIndexOf('.', self.origin.lastIndexOf('.') - 1) + 1)
+		if (origin.endsWith(lastOwnOriginPart) || origin.startsWith('https://localhost') || origin.startsWith('http://localhost'))
+			return true
+
+		const origins = await Store.origins.get() ?? {}
+		return !!origins[origin]?.fullTrust
+	}
+
+	export async function trustOrigin (origin: string): Promise<void> {
+		const origins = await Store.origins.get() ?? {}
+		if (origins[origin]) {
+			origins[origin].fullTrust = true
+			await Store.origins.set(origins)
+		}
+		Log.info(`Trusted origin: ${origin}`)
+	}
+
+	export async function untrustOrigin (origin: string): Promise<void> {
+		const origins = await Store.origins.get() ?? {}
+		if (origins[origin]) {
+			delete origins[origin].fullTrust
+			await Store.origins.set(origins)
+		}
+		Log.info(`Untrusted origin: ${origin}`)
+	}
+
 	export async function getAPIKey () {
 		const customApp = await Store.customApp.get()
 		return customApp?.apiKey ?? Env.BUNGIE_API_KEY

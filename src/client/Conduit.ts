@@ -1,3 +1,4 @@
+import type Frame from '@frame/FrameFunctions'
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from 'conduit.deepsight.gg/ConduitMessageRegistry'
 import Definitions from 'Definitions'
 
@@ -145,11 +146,10 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 			},
 		}),
 		async update () {
-			return callPromiseFunction('_update')
+			return frame.update()
 		},
-		async ensureAuthenticated (this: Conduit, appName) {
-			let authState = await this._getAuthState()
-			if (authState.authenticated && authState.accessGrants.some(grant => grant.origin === window.origin))
+		async ensureAuthenticated (appName: string) {
+			if (!await frame.needsAuth())
 				return true
 
 			let proxy: WindowProxy | null = null
@@ -189,10 +189,18 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 					}, 10)
 				})
 
-			authState = await this._getAuthState()
-			return authState.authenticated && authState.accessGrants.some(grant => grant.origin === window.origin)
+			return !await frame.needsAuth()
 		},
 	}
+
+	const frame = new Proxy({}, {
+		get (target, fname: keyof Frame.Functions) {
+			if (fname as any === 'then')
+				return undefined
+
+			return (...params: unknown[]) => callPromiseFunction(`_${fname}`, ...params)
+		},
+	}) as any as Frame.Functions
 
 	const conduit = new Proxy(implementation, {
 		get (target, fname: keyof Conduit) {

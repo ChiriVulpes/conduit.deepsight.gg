@@ -9,6 +9,7 @@ const options = Env.ENVIRONMENT === 'dev'
 const ts = Task('ts', task => task.series(
 	Task('ts:shared', () => TypeScript.compile(task, 'src/shared', '--pretty', ...options)),
 	Task('ts:service', () => TypeScript.compile(task, 'src/service', '--pretty', ...options)),
+	Task('ts:frame', () => TypeScript.compile(task, 'src/frame', '--pretty', ...options)),
 	Task('ts:client', () => TypeScript.compile(task, 'src/client', '--pretty', ...options)),
 	Task('ts:platform', () => TypeScript.compile(task, 'src/platform/src', '--pretty', ...options)),
 	copyClientToPlatform,
@@ -19,6 +20,7 @@ export default ts
 export const tsWatch = Task('ts (watch)', task => task.parallel(
 	() => TypeScript.compile(task, 'src/shared', '--watch', '--preserveWatchOutput', '--pretty', ...options),
 	() => TypeScript.compile(task, 'src/service', '--watch', '--preserveWatchOutput', '--pretty', ...options),
+	() => TypeScript.compile(task, 'src/frame', '--watch', '--preserveWatchOutput', '--pretty', ...options),
 	() => TypeScript.compile(task, 'src/client', '--watch', '--preserveWatchOutput', '--pretty', ...options),
 	() => TypeScript.compile(task, 'src/platform/src', '--watch', '--preserveWatchOutput', '--pretty', ...options),
 	() => task.watch('out/client/index.js', copyClientToPlatform),

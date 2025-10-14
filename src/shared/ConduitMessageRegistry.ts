@@ -18,6 +18,7 @@ export interface ConduitFunctionRegistry {
 	_denyAccess (origin: string): Promise<void>
 	_getDefinitionsComponent<NAME extends AllComponentNames> (language: string, component: NAME): Promise<DefinitionsForComponentName<NAME>>
 	_getDefinition<NAME extends AllComponentNames> (language: string, component: NAME, hash: number | string): Promise<DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never>
+	_getFilteredDefinitionsComponent<NAME extends AllComponentNames> (language: string, component: NAME, filter: string): Promise<DefinitionsForComponentName<NAME> extends infer D ? Partial<D> : never>
 	// the above defs cannot contain a } character or it will break the packager
 }
 
