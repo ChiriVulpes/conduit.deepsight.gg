@@ -1,3 +1,4 @@
+import fs from 'fs/promises'
 import { Task } from 'task'
 import chiri from './chiri'
 import clean from './clean'
@@ -19,6 +20,12 @@ export default Task('build', task => task.series(
 			),
 			ts,
 			_package,
+			async function cleanupPlatform () {
+				await fs.unlink('out/service/FrameFunctions.js')
+				for await (const file of fs.glob('out/service/*.tsbuildinfo')) {
+					await fs.unlink(file)
+				}
+			},
 		)
 	)
 )) 
