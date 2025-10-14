@@ -143,11 +143,10 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
                 },
             }),
             async update() {
-                return callPromiseFunction('_update');
+                return frame.update();
             },
             async ensureAuthenticated(appName) {
-                let authState = await this._getAuthState();
-                if (authState.authenticated && authState.accessGrants.some(grant => grant.origin === window.origin))
+                if (!await frame.needsAuth())
                     return true;
                 let proxy = null;
                 const authURL = `${serviceRoot}?auth=${encodeURIComponent(window.origin)}${appName ? `&app=${encodeURIComponent(appName)}` : ''}`;
@@ -180,10 +179,16 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
                             }
                         }, 10);
                     });
-                authState = await this._getAuthState();
-                return authState.authenticated && authState.accessGrants.some(grant => grant.origin === window.origin);
+                return !await frame.needsAuth();
             },
         };
+        const frame = new Proxy({}, {
+            get(target, fname) {
+                if (fname === 'then')
+                    return undefined;
+                return (...params) => callPromiseFunction(`_${fname}`, ...params);
+            },
+        });
         const conduit = new Proxy(implementation, {
             get(target, fname) {
                 if (fname === 'then')

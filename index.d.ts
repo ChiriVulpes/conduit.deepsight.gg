@@ -237,6 +237,7 @@ declare module "conduit.deepsight.gg/Auth" {
         appName?: string;
         origin: string;
         authTimestamp: number;
+        fullTrust?: true;
     }
     export interface CustomBungieApp {
         apiKey: string;
