@@ -9,7 +9,8 @@
 <script>
 const params =new URLSearchParams(location.search)
 const code = params.get('code')
-const state = params.get('state')
+let state = params.get('state')
+state = state && atob(state.replaceAll('.', '/').replaceAll('_', '=').replaceAll('-', '+') ?? '')
 const storedState = localStorage.getItem('bungieAuthState')
 if (code && (state === 'popup' || state && storedState === state)) {
 	localStorage.setItem('bungieCode', code)

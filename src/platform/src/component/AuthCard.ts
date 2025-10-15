@@ -80,7 +80,7 @@ export default Component((component, target: ConduitTarget) => {
 				Footer()
 					.append(Component('a')
 						.and(Button)
-						.attributes.set('href', `${bungieAuthURL}&state=${encodeURIComponent(location.href)}`)
+						.attributes.set('href', `${bungieAuthURL}&state=${btoa(location.href).replaceAll('/', '.').replaceAll('=', '_').replaceAll('+', '-')}`)
 						.attributes.set('target', window.opener ? '_self' : '_blank')
 						.text.set(quilt => quilt['auth-card/action/auth-bungie']())
 						.event.subscribe('click', event => {
