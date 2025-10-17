@@ -24,6 +24,7 @@ void (async () => {
 		type: keyof T & string
 		data?: unknown
 		origin?: string
+		frame?: true
 	}
 
 	const unresolvedMessages = new Map<string, any>()
@@ -36,7 +37,7 @@ void (async () => {
 	const MESSAGE_FORMAT = 'color: #4ef0bc;'
 	const ERROR_FORMAT = 'color: #d9534f;'
 	navigator.serviceWorker.addEventListener('message', event => {
-		const { id, type, data, origin } = event.data as Message
+		const { id, type, data, origin, frame } = event.data as Message
 
 		////////////////////////////////////
 		// #region Internal SW > Frame
@@ -67,9 +68,7 @@ void (async () => {
 		}
 
 		// check if this is an internal message that should not be forwarded to parent
-		if (used)
-			return
-		if (origin !== self.origin && (type.startsWith('resolve:_') || type.startsWith('reject:_')))
+		if (used || frame)
 			return
 
 		// #endregion
@@ -115,6 +114,7 @@ void (async () => {
 		}
 
 		const message = { ...event.data } as Message<Frame.Functions>
+		delete message.frame
 
 		// special messages that the iframe will handle
 		const frameFunctionType = message.type.slice(1) as keyof Frame.Functions

@@ -65,10 +65,10 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 			const params: any[] = data === undefined ? [] : !Array.isArray(data) ? [data] : data
 			const result = await Promise.resolve(fn(event, ...params as never))
 
-			event.source?.postMessage({ id, type: `resolve:${type}`, origin, data: result })
+			event.source?.postMessage({ id, type: `resolve:${type}`, origin, data: result, frame })
 		}
 		catch (err) {
-			event.source?.postMessage({ id, type: `reject:${type}`, origin, data: err })
+			event.source?.postMessage({ id, type: `reject:${type}`, origin, data: err, frame })
 		}
 	}
 	service.setRegistered()
