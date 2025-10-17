@@ -1,4 +1,5 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
+import type { Profile } from '@shared/Profile'
 import Auth from 'model/Auth'
 import Collections from 'model/Collections'
 import Definitions from 'model/Definitions'
@@ -41,14 +42,20 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 
 		////////////////////////////////////
 		//#region Profiles
-		async getProfiles () {
+		async getProfiles (event) {
 			void updateProfiles()
-			return (await db.profiles.toArray())
+			const profiles = (await db.profiles.toArray())
 				.sort((a, b) => +!!b.authed - +!!a.authed)
+			return getProfilesForOrigin(profiles, event.origin)
 		},
 		updateProfiles: () => updateProfiles(),
-		async getProfile (event, displayName, displayNameCode) {
-			return await Profiles.searchDestinyPlayerByBungieName(displayName, displayNameCode)
+		async getProfile (event, displayName, displayNameCode): Promise<Profile | undefined> {
+			const profile = await Profiles.searchDestinyPlayerByBungieName(displayName, displayNameCode)
+
+			if (!profile || await Auth.getOriginAccess(event.origin))
+				return profile
+
+			return { ...profile, authed: undefined }
 		},
 		async bumpProfile (event, displayName, displayNameCode) {
 			await Profiles.searchDestinyPlayerByBungieName(displayName, displayNameCode)
@@ -67,6 +74,7 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		////////////////////////////////////
 		//#region Private
 
+		setOrigin (event) { },
 		async _getAuthState (event) {
 			if (event.origin !== self.origin)
 				throw new ConduitPrivateFunctionError()
@@ -159,6 +167,19 @@ async function updateProfiles () {
 
 	if (updated) {
 		void db.profiles.bulkPut(profiles)
-		void service.broadcast.profilesUpdated(profiles)
+		void service.broadcast.profilesUpdated(async origin => {
+			return getProfilesForOrigin(profiles, origin)
+		})
 	}
+}
+
+async function getProfilesForOrigin (profiles: Profile[], origin: string): Promise<Profile[]> {
+	const grantedAccess = await Auth.getOriginAccess(origin)
+	if (grantedAccess)
+		return profiles
+
+	return profiles.map(profile => ({
+		...profile,
+		authed: undefined,
+	}))
 }

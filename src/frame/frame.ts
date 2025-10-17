@@ -228,7 +228,7 @@ void (async () => {
 			params,
 		)
 
-		service?.postMessage({ type, id, data: params, origin: self.origin })
+		service?.postMessage({ type, id, data: params, origin: self.origin, frame: true })
 		return promise
 	}
 

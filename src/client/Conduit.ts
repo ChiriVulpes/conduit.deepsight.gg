@@ -214,6 +214,8 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		},
 	}) as Conduit
 
+	await conduit.setOrigin()
+
 	Object.assign(conduit, { definitions: Definitions(conduit) })
 	return conduit
 }

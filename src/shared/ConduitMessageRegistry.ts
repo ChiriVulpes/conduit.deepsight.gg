@@ -11,6 +11,7 @@ export interface ConduitFunctionRegistry {
 	getCollections (): Promise<Collections>
 	getComponentNames (): Promise<AllComponentNames[]>
 	/** @private:start */
+	setOrigin (): Promise<void>
 	_getAuthState (): Promise<AuthState>
 	_setCustomApp (app?: CustomBungieApp): Promise<void>
 	_authenticate (code: string): Promise<boolean>
