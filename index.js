@@ -198,6 +198,7 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
                 return (...params) => callPromiseFunction(fname, ...params);
             },
         });
+        await conduit.setOrigin();
         Object.assign(conduit, { definitions: (0, Definitions_1.default)(conduit) });
         return conduit;
     }
