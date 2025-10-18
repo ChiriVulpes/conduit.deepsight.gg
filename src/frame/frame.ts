@@ -37,7 +37,7 @@ void (async () => {
 	const MESSAGE_FORMAT = 'color: #4ef0bc;'
 	const ERROR_FORMAT = 'color: #d9534f;'
 	navigator.serviceWorker.addEventListener('message', event => {
-		const { id, type, data, origin, frame } = event.data as Message
+		const { id, type, data, frame } = event.data as Message
 
 		////////////////////////////////////
 		// #region Internal SW > Frame
