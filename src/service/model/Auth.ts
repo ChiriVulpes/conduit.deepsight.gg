@@ -58,8 +58,11 @@ namespace Auth {
 		return Object.values(origins).filter(auth => auth.authTimestamp + AUTH_EXPIRY > Date.now())
 	}
 
-	export async function grantAccess (origin: string, appName?: string): Promise<void> {
+	export async function grantAccess (origin: string, appName?: string): Promise<boolean> {
 		const origins = await Store.origins.get() ?? {}
+		if (origins[origin])
+			return false
+
 		origins[origin] = {
 			appName,
 			origin,
@@ -67,6 +70,7 @@ namespace Auth {
 		}
 		await Store.origins.set(origins)
 		Log.info(`Granted access to origin: ${origin}`)
+		return true
 	}
 
 	export async function denyAccess (origin: string): Promise<void> {

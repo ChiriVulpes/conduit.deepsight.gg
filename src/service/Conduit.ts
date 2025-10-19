@@ -7,7 +7,7 @@ import DefinitionsComponentNames from 'model/DefinitionsComponentNames'
 import Profiles from 'model/Profiles'
 import { db } from 'utility/Database'
 import Env from 'utility/Env'
-import Service from 'utility/Service'
+import Service, { SKIP_CLIENT } from 'utility/Service'
 import Store from 'utility/Store'
 
 if (!Env.BUNGIE_API_KEY)
@@ -100,7 +100,10 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		async _grantAccess (event, origin, appName) {
 			if (event.origin !== self.origin)
 				throw new ConduitPrivateFunctionError()
-			return await Auth.grantAccess(origin, appName)
+			const granted = await Auth.grantAccess(origin, appName)
+			if (granted) {
+				await updateProfiles(origin)
+			}
 		},
 		async _denyAccess (event, origin) {
 			if (event.origin !== self.origin)
@@ -134,7 +137,7 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 	},
 })
 
-async function updateProfiles () {
+async function updateProfiles (forceOriginUpdate?: string) {
 	let [{ profiles, updated }, auth] = await Promise.all([
 		Profiles.get(),
 		Auth.getValid(),
@@ -165,12 +168,16 @@ async function updateProfiles () {
 		updated = true
 	}
 
-	if (updated) {
+	if (updated)
 		void db.profiles.bulkPut(profiles)
+
+	if (updated || forceOriginUpdate)
 		void service.broadcast.profilesUpdated(async origin => {
+			if (forceOriginUpdate && forceOriginUpdate !== origin)
+				return SKIP_CLIENT
+
 			return getProfilesForOrigin(profiles, origin)
 		})
-	}
 }
 
 async function getProfilesForOrigin (profiles: Profile[], origin: string): Promise<Profile[]> {

@@ -5,6 +5,8 @@ const parentWindow = window.parent
 if (!parentWindow)
 	throw new Error('This page must be loaded in an iframe')
 
+let origin: string | undefined
+
 void (async () => {
 	const registration = await navigator.serviceWorker.register('./index.js')
 	let service = registration.active ?? await new Promise(resolve => {
@@ -88,6 +90,12 @@ void (async () => {
 			return
 		}
 
+		if (id === 'global' && type === '_getOrigin') {
+			if (origin)
+				service?.postMessage({ id: 'global', type: 'resolve:_getOrigin', data: [origin] })
+			return
+		}
+
 		unresolvedMessages.delete(id)
 
 		// forward messages from the service worker to the parent window
@@ -102,6 +110,8 @@ void (async () => {
 	window.addEventListener('message', event => {
 		if (event.source !== parentWindow)
 			return
+
+		origin = event.origin
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 		if (typeof event.data !== 'object' || typeof event.data.type !== 'string') {
