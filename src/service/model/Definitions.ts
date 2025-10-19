@@ -43,8 +43,8 @@ const Definitions = new Proxy({} as Record<string, Definitions>, {
 							case 'deepsight': {
 								const manifest = await DeepsightManifest.use()
 								return {
-									version: `${(manifest.value as any as Record<string, number>)[componentName]}`,
-									value: async () => await Deepsight.get<DefinitionsForComponentName<NAME>>(`/${componentName}.json`),
+									version: `${(manifest.value.manifest as any as Record<string, number>)[componentName]}`,
+									value: async () => await Deepsight.get<DefinitionsForComponentName<NAME>>(`/${componentName}.json`, !manifest.value.isLocal),
 								}
 							}
 
