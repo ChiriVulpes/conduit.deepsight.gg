@@ -6,6 +6,10 @@ interface DefinitionsProvider<DEFINITION> {
 	get (hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>
 }
 
+interface InternalDefinitionsProvider<DEFINITION> extends DefinitionsProvider<DEFINITION> {
+	filter (predicate: (definition: DEFINITION[keyof DEFINITION]) => boolean): Promise<DEFINITION[keyof DEFINITION][]>
+}
+
 type DefinitionsForLanguage = { [NAME in AllComponentNames]: DefinitionsProvider<DefinitionsForComponentName<NAME>> }
 type Definitions = Record<string, DefinitionsForLanguage>
 
@@ -21,7 +25,10 @@ function Definitions (conduit: Conduit) {
 						async get (hash?: number | string) {
 							return !hash ? undefined : await conduit._getDefinition<NAME>(languageName, componentName, hash)
 						},
-					} satisfies DefinitionsProvider<DefinitionsForComponentName<NAME>>) as never
+						async filter (predicate) {
+							return await conduit._getFilteredDefinitionsComponent(languageName, componentName, predicate.toString()) as never
+						},
+					} satisfies InternalDefinitionsProvider<DefinitionsForComponentName<NAME>>) as never
 				},
 			})
 		},
