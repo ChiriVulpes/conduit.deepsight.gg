@@ -13,7 +13,7 @@ namespace Deepsight {
 		return fetchTryLocalThenRemote(url, skipLocal) as DeepsightResultPromise<T>
 	}
 
-	async function fetchTryLocalThenRemote (url: string, skipLocal = false) {
+	function fetchTryLocalThenRemote (url: string, skipLocal = false) {
 		const promise: DeepsightResultPromise<unknown> = (async () => {
 			if (Env.LOCAL_DEEPSIGHT_MANIFEST_ORIGIN && !skipLocal) {
 				const localResult = await self.fetch(`${Env.LOCAL_DEEPSIGHT_MANIFEST_ORIGIN}/definitions${url}`)
