@@ -22,7 +22,7 @@ export default Model<AllComponentNames[]>('DefinitionsComponentNames', {
 			version,
 			value: [
 				...Object.keys(destiny.value.en) as (keyof AllDestinyManifestComponents)[],
-				...((Object.keys(deepsight.value) as (keyof DeepsightManifest | DeepsightManifestComponentName)[])
+				...((Object.keys(deepsight.value.manifest) as (keyof DeepsightManifest | DeepsightManifestComponentName)[])
 					.filter((name): name is DeepsightManifestComponentName => name.startsWith('Deepsight'))
 				),
 				'ClarityDescriptions',
