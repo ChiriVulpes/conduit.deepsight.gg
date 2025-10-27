@@ -237,6 +237,16 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				return followLinkPath(obj[key], path)
 			}
 		},
+		async _getDefinitionWithLinks (event, language, component, hash) {
+			const [def, links] = await Promise.all([
+				this._getDefinition(event, language, component, hash),
+				this._getDefinitionLinks(event, language, component, hash),
+			])
+			if (!def)
+				return undefined
+
+			return { definition: def, links }
+		},
 
 		//#endregion
 		////////////////////////////////////
