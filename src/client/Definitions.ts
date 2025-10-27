@@ -5,6 +5,7 @@ interface DefinitionsProvider<DEFINITION> {
 	all (): Promise<DEFINITION>
 	get (hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>
 	links (hash?: number | string): Promise<DefinitionLinks | undefined>
+	getWithLinks (hash?: number | string): Promise<{ definition: DEFINITION[keyof DEFINITION], links?: DefinitionLinks } | undefined>
 }
 
 interface InternalDefinitionsProvider<DEFINITION> extends DefinitionsProvider<DEFINITION> {
@@ -28,6 +29,19 @@ function Definitions (conduit: Conduit) {
 						},
 						async links (hash) {
 							return !hash ? undefined : await conduit._getDefinitionLinks(languageName, componentName, hash)
+						},
+						async getWithLinks (hash) {
+							if (!hash)
+								return undefined
+
+							const [definition, links] = await Promise.all([
+								target[componentName].get(hash),
+								target[componentName].links(hash),
+							])
+							if (!definition)
+								return undefined
+
+							return { definition, links }
 						},
 						async filter (predicate) {
 							return await conduit._getFilteredDefinitionsComponent(languageName, componentName, predicate.toString()) as never
