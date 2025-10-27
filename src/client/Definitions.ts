@@ -1,9 +1,10 @@
 import type Conduit from 'conduit.deepsight.gg/Conduit'
-import type { AllComponentNames, DefinitionsForComponentName } from 'conduit.deepsight.gg/DefinitionComponents'
+import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName } from 'conduit.deepsight.gg/DefinitionComponents'
 
 interface DefinitionsProvider<DEFINITION> {
 	all (): Promise<DEFINITION>
 	get (hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>
+	links (hash?: number | string): Promise<DefinitionLinks | undefined>
 }
 
 interface InternalDefinitionsProvider<DEFINITION> extends DefinitionsProvider<DEFINITION> {
@@ -24,6 +25,9 @@ function Definitions (conduit: Conduit) {
 						},
 						async get (hash?: number | string) {
 							return !hash ? undefined : await conduit._getDefinition<NAME>(languageName, componentName, hash)
+						},
+						async links (hash) {
+							return !hash ? undefined : await conduit._getDefinitionLinks(languageName, componentName, hash)
 						},
 						async filter (predicate) {
 							return await conduit._getFilteredDefinitionsComponent(languageName, componentName, predicate.toString()) as never

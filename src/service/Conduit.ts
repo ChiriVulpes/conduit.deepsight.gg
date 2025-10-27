@@ -1,4 +1,5 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
+import type { AllComponentNames, DefinitionLinks } from '@shared/DefinitionComponents'
 import type { Profile } from '@shared/Profile'
 import Auth from 'model/Auth'
 import Collections from 'model/Collections'
@@ -129,6 +130,112 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 			return Object.fromEntries(Object.values(defs)
 				.filter(predicate)
 				.map(def => [(def as { hash: number }).hash, def] as const))
+		},
+		async _getDefinitionLinks (event, language, component, hash) {
+			const defs = await Definitions[language][component].get()
+			const def = defs[hash as keyof typeof defs]
+			if (!def)
+				return undefined
+
+			const { components, enums } = await Definitions.en.DeepsightLinksDefinition.get()
+			const linksDef = components[component]
+			if (!linksDef)
+				return undefined
+
+			let augmentations: DefinitionLinks['augmentations'] | undefined
+			const links: DefinitionLinks['links'] = linksDef.links
+			let usedEnums: DefinitionLinks['enums'] | undefined
+			let definitions: DefinitionLinks['definitions'] | undefined
+			let defsToGrab: Map<AllComponentNames, Set<number | string>> | undefined
+
+			for (const link of linksDef.links ?? []) {
+				if ('enum' in link) {
+					usedEnums ??= {}
+					usedEnums[link.enum] ??= enums[link.enum]
+				}
+				else {
+					const hashes = followLinkPath(def, link.path.split('.'))
+					if (!hashes.length)
+						continue
+
+					defsToGrab ??= new Map()
+					let set = defsToGrab.get(link.component)
+					if (!set) {
+						set = new Set()
+						defsToGrab.set(link.component, set)
+					}
+
+					for (const hash of hashes)
+						set.add(hash)
+				}
+			}
+
+			await Promise.all([
+				...(linksDef.augmentations ?? [])
+					.map(async augmentationComponent => {
+						const defs = await Definitions[language][augmentationComponent].get()
+						const def = defs?.[hash as never]
+						if (!def)
+							return
+
+						augmentations ??= {}
+						augmentations[augmentationComponent] = def
+					}),
+				...(defsToGrab?.entries().toArray() ?? [])
+					.map(async ([component, hashes]) => {
+						const defs = await Definitions[language][component].get()
+						for (const hash of hashes) {
+							const def = defs[hash as keyof typeof defs]
+							if (!def)
+								continue
+							definitions ??= {}
+							if (!definitions[component])
+								definitions[component] = {} as never
+							definitions[component][hash as never] = def
+						}
+					}),
+			])
+
+			return {
+				augmentations,
+				links,
+				enums: usedEnums,
+				definitions,
+			}
+
+			function followLinkPath (obj: any = def, path: (string | number)[]): (number | string)[] {
+				if (!path.length && (typeof obj === 'number' || typeof obj === 'string'))
+					return [obj]
+
+				if (!obj || typeof obj !== 'object')
+					return []
+
+				const key = path.shift()
+				if (!key)
+					return []
+
+				if (key === '[]') {
+					if (!Array.isArray(obj))
+						return []
+
+					if (!path.length)
+						return obj.filter(item => typeof item === 'number' || typeof item === 'string')
+
+					return obj.flatMap((item: any) => followLinkPath(item, path.slice()))
+				}
+
+				if (key === '{}') {
+					if (!path.length)
+						// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+						return Object.keys(obj)
+
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+					return Object.values(obj).flatMap(value => followLinkPath(value, path.slice()))
+				}
+
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+				return followLinkPath(obj[key], path)
+			}
 		},
 
 		//#endregion
