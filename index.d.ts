@@ -268,6 +268,10 @@ declare module "conduit.deepsight.gg/Definitions" {
         all(): Promise<DEFINITION>;
         get(hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>;
         links(hash?: number | string): Promise<DefinitionLinks | undefined>;
+        getWithLinks(hash?: number | string): Promise<{
+            definition: DEFINITION[keyof DEFINITION];
+            links?: DefinitionLinks;
+        } | undefined>;
     }
     type DefinitionsForLanguage = {
         [NAME in AllComponentNames]: DefinitionsProvider<DefinitionsForComponentName<NAME>>;
