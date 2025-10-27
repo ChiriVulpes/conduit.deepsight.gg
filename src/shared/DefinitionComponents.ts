@@ -28,3 +28,8 @@ export interface DefinitionLinks {
 	definitions?: Partial<{ [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> }>
 	enums?: Partial<Record<string, DeepsightEnumDefinition>>
 }
+
+export interface DefinitionWithLinks<DEFINITION> {
+	definition: DEFINITION
+	links?: DefinitionLinks
+}

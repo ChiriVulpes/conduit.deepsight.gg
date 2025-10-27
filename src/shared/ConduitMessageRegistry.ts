@@ -1,6 +1,6 @@
 import type { AuthState, CustomBungieApp } from 'Auth'
 import type Collections from 'Collections'
-import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName } from 'DefinitionComponents'
+import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionWithLinks } from 'DefinitionComponents'
 import type { Profile } from 'Profile'
 
 export interface ConduitFunctionRegistry {
@@ -21,6 +21,7 @@ export interface ConduitFunctionRegistry {
 	_getDefinition<NAME extends AllComponentNames> (language: string, component: NAME, hash: number | string): Promise<DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never>
 	_getFilteredDefinitionsComponent<NAME extends AllComponentNames> (language: string, component: NAME, filter: string): Promise<DefinitionsForComponentName<NAME> extends infer D ? Partial<D> : never>
 	_getDefinitionLinks<NAME extends AllComponentNames> (language: string, component: NAME, hash: number | string): Promise<DefinitionLinks | undefined>
+	_getDefinitionWithLinks<NAME extends AllComponentNames> (language: string, component: NAME, hash: number | string): Promise<DefinitionWithLinks<DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never> | undefined>
 	// the above defs cannot contain a } character or it will break the packager
 }
 

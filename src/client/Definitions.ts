@@ -1,11 +1,11 @@
 import type Conduit from 'conduit.deepsight.gg/Conduit'
-import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName } from 'conduit.deepsight.gg/DefinitionComponents'
+import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents'
 
 interface DefinitionsProvider<DEFINITION> {
 	all (): Promise<DEFINITION>
 	get (hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>
 	links (hash?: number | string): Promise<DefinitionLinks | undefined>
-	getWithLinks (hash?: number | string): Promise<{ definition: DEFINITION[keyof DEFINITION], links?: DefinitionLinks } | undefined>
+	getWithLinks (hash?: number | string): Promise<DefinitionWithLinks<DEFINITION[keyof DEFINITION]> | undefined>
 }
 
 interface InternalDefinitionsProvider<DEFINITION> extends DefinitionsProvider<DEFINITION> {
@@ -31,17 +31,7 @@ function Definitions (conduit: Conduit) {
 							return !hash ? undefined : await conduit._getDefinitionLinks(languageName, componentName, hash)
 						},
 						async getWithLinks (hash) {
-							if (!hash)
-								return undefined
-
-							const [definition, links] = await Promise.all([
-								target[componentName].get(hash),
-								target[componentName].links(hash),
-							])
-							if (!definition)
-								return undefined
-
-							return { definition, links }
+							return !hash ? undefined : await conduit._getDefinitionWithLinks<NAME>(languageName, componentName, hash)
 						},
 						async filter (predicate) {
 							return await conduit._getFilteredDefinitionsComponent(languageName, componentName, predicate.toString()) as never
