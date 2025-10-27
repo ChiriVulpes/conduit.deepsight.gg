@@ -95,7 +95,7 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 				throw new Error(`The function '${type}' does not exist`)
 
 			const params: any[] = data === undefined ? [] : !Array.isArray(data) ? [data] : data
-			const result = await Promise.resolve(fn(event, ...params as never))
+			const result = await Promise.resolve(definition.onCall[type](event, ...params as never))
 
 			event.source?.postMessage({ id, type: `resolve:${type}`, origin, data: result, frame })
 		}
