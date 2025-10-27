@@ -20,15 +20,7 @@ define("conduit.deepsight.gg/Definitions", ["require", "exports"], function (req
                                 return !hash ? undefined : await conduit._getDefinitionLinks(languageName, componentName, hash);
                             },
                             async getWithLinks(hash) {
-                                if (!hash)
-                                    return undefined;
-                                const [definition, links] = await Promise.all([
-                                    target[componentName].get(hash),
-                                    target[componentName].links(hash),
-                                ]);
-                                if (!definition)
-                                    return undefined;
-                                return { definition, links };
+                                return !hash ? undefined : await conduit._getDefinitionWithLinks(languageName, componentName, hash);
                             },
                             async filter(predicate) {
                                 return await conduit._getFilteredDefinitionsComponent(languageName, componentName, predicate.toString());

@@ -61,11 +61,15 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
         }>;
         enums?: Partial<Record<string, DeepsightEnumDefinition>>;
     }
+    export interface DefinitionWithLinks<DEFINITION> {
+        definition: DEFINITION;
+        links?: DefinitionLinks;
+    }
 }
 declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type { AuthState, CustomBungieApp } from 'conduit.deepsight.gg/Auth';
     import type Collections from 'conduit.deepsight.gg/Collections';
-    import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName } from 'conduit.deepsight.gg/DefinitionComponents';
+    import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type { Profile } from 'conduit.deepsight.gg/Profile';
     export interface ConduitFunctionRegistry {
         getProfiles(): Promise<Profile[]>;
@@ -263,15 +267,12 @@ declare module "conduit.deepsight.gg/Auth" {
 }
 declare module "conduit.deepsight.gg/Definitions" {
     import type Conduit from "conduit.deepsight.gg/Conduit";
-    import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName } from 'conduit.deepsight.gg/DefinitionComponents';
+    import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     interface DefinitionsProvider<DEFINITION> {
         all(): Promise<DEFINITION>;
         get(hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>;
         links(hash?: number | string): Promise<DefinitionLinks | undefined>;
-        getWithLinks(hash?: number | string): Promise<{
-            definition: DEFINITION[keyof DEFINITION];
-            links?: DefinitionLinks;
-        } | undefined>;
+        getWithLinks(hash?: number | string): Promise<DefinitionWithLinks<DEFINITION[keyof DEFINITION]> | undefined>;
     }
     type DefinitionsForLanguage = {
         [NAME in AllComponentNames]: DefinitionsProvider<DefinitionsForComponentName<NAME>>;
