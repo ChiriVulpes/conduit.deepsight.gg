@@ -51,6 +51,13 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
     export type ClarityManifestComponentName = keyof AllClarityManifestComponents;
     export type AllComponentNames = DestinyManifestComponentName | DeepsightManifestComponentName | ClarityManifestComponentName;
     export type DefinitionsForComponentName<NAME extends AllComponentNames> = (NAME extends DestinyManifestComponentName ? AllDestinyManifestComponents[NAME] : NAME extends DeepsightManifestComponentName ? DeepsightManifestComponentsMap[NAME] : NAME extends ClarityManifestComponentName ? AllClarityManifestComponents[NAME] : never);
+    export interface DefinitionsPage<DEFINITION> {
+        definitions: DEFINITION[];
+        page: number;
+        pageSize: number;
+        totalPages: number;
+        totalDefinitions: number;
+    }
     export interface DefinitionLinks {
         augmentations?: Partial<{
             [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never;
@@ -69,7 +76,7 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
 declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type { AuthState, CustomBungieApp } from 'conduit.deepsight.gg/Auth';
     import type Collections from 'conduit.deepsight.gg/Collections';
-    import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
+    import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type { Profile } from 'conduit.deepsight.gg/Profile';
     export interface ConduitFunctionRegistry {
         getProfiles(): Promise<Profile[]>;
@@ -267,9 +274,10 @@ declare module "conduit.deepsight.gg/Auth" {
 }
 declare module "conduit.deepsight.gg/Definitions" {
     import type Conduit from "conduit.deepsight.gg/Conduit";
-    import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
+    import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     interface DefinitionsProvider<DEFINITION> {
         all(): Promise<DEFINITION>;
+        page(pageSize: number, page: number): Promise<DefinitionsPage<DEFINITION>>;
         get(hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>;
         links(hash?: number | string): Promise<DefinitionLinks | undefined>;
         getWithLinks(hash?: number | string): Promise<DefinitionWithLinks<DEFINITION[keyof DEFINITION]> | undefined>;
