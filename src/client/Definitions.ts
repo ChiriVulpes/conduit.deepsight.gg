@@ -6,7 +6,7 @@ interface DefinitionsProvider<DEFINITION> {
 	page (pageSize: number, page: number): Promise<DefinitionsPage<DEFINITION>>
 	get (hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>
 	links (hash?: number | string): Promise<DefinitionLinks | undefined>
-	getWithLinks (hash?: number | string): Promise<DefinitionWithLinks<DEFINITION[keyof DEFINITION]> | undefined>
+	getWithLinks (hash?: number | string): Promise<DefinitionWithLinks<Exclude<DEFINITION[keyof DEFINITION], undefined>> | undefined>
 }
 
 interface InternalDefinitionsProvider<DEFINITION> extends DefinitionsProvider<DEFINITION> {
