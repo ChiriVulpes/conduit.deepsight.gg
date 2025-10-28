@@ -22,6 +22,14 @@ export type DefinitionsForComponentName<NAME extends AllComponentNames> = (
 	: never
 )
 
+export interface DefinitionsPage<DEFINITION> {
+	definitions: DEFINITION[]
+	page: number
+	pageSize: number
+	totalPages: number
+	totalDefinitions: number
+}
+
 export interface DefinitionLinks {
 	augmentations?: Partial<{ [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never }>
 	links?: (DeepsightDefinitionLinkDefinition | DeepsightEnumLinkDefinition)[]

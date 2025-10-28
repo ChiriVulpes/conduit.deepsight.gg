@@ -114,6 +114,49 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		async _getDefinitionsComponent (event, language, component) {
 			return await Definitions[language][component].get()
 		},
+		async _getDefinitionsComponentPage (event, language, component, pageSize, page) {
+			if (page < 0 || pageSize <= 0)
+				return {
+					definitions: {} as never,
+					page,
+					pageSize,
+					totalPages: 0,
+					totalDefinitions: 0,
+				}
+
+			const defs = await Definitions[language][component].get()
+			const keys = Object.keys(defs)
+			const totalPages = Math.ceil(keys.length / pageSize)
+			if (totalPages === 1)
+				return {
+					definitions: defs as never,
+					page: 0,
+					pageSize,
+					totalPages,
+					totalDefinitions: keys.length,
+				}
+
+			if (page >= totalPages)
+				return {
+					definitions: {} as never,
+					page,
+					pageSize,
+					totalPages,
+					totalDefinitions: keys.length,
+				}
+
+			const pageDefs = Object.fromEntries(keys
+				.slice(page * pageSize, (page + 1) * pageSize)
+				.map(key => [key, defs[key as keyof typeof defs]] as const)
+			)
+			return {
+				definitions: pageDefs as never,
+				page,
+				pageSize,
+				totalPages,
+				totalDefinitions: keys.length,
+			}
+		},
 		async _getDefinition (event, language, component, hash) {
 			const defs = await Definitions[language][component].get()
 			return defs[hash as keyof typeof defs]

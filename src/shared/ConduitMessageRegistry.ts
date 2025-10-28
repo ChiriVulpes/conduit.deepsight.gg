@@ -1,6 +1,6 @@
 import type { AuthState, CustomBungieApp } from 'Auth'
 import type Collections from 'Collections'
-import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionWithLinks } from 'DefinitionComponents'
+import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'DefinitionComponents'
 import type { Profile } from 'Profile'
 
 export interface ConduitFunctionRegistry {
@@ -18,6 +18,7 @@ export interface ConduitFunctionRegistry {
 	_grantAccess (origin: string, appName?: string): Promise<void>
 	_denyAccess (origin: string): Promise<void>
 	_getDefinitionsComponent<NAME extends AllComponentNames> (language: string, component: NAME): Promise<DefinitionsForComponentName<NAME>>
+	_getDefinitionsComponentPage<NAME extends AllComponentNames> (language: string, component: NAME, pageSize: number, page: number): Promise<DefinitionsPage<DefinitionsForComponentName<NAME>>>
 	_getDefinition<NAME extends AllComponentNames> (language: string, component: NAME, hash: number | string): Promise<DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never>
 	_getFilteredDefinitionsComponent<NAME extends AllComponentNames> (language: string, component: NAME, filter: string): Promise<DefinitionsForComponentName<NAME> extends infer D ? Partial<D> : never>
 	_getDefinitionLinks<NAME extends AllComponentNames> (language: string, component: NAME, hash: number | string): Promise<DefinitionLinks | undefined>
