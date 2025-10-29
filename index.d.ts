@@ -52,9 +52,9 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
     export type AllComponentNames = DestinyManifestComponentName | DeepsightManifestComponentName | ClarityManifestComponentName;
     export type DefinitionsForComponentName<NAME extends AllComponentNames> = (NAME extends DestinyManifestComponentName ? AllDestinyManifestComponents[NAME] : NAME extends DeepsightManifestComponentName ? DeepsightManifestComponentsMap[NAME] : NAME extends ClarityManifestComponentName ? AllClarityManifestComponents[NAME] : never);
     export interface DefinitionsFilter {
-        nameContainsOrHashIs?: string;
-        deepContains?: string;
-        jsonPathExpression?: string;
+        nameContainsOrHashIs?: string | string[];
+        deepContains?: string | string[];
+        jsonPathExpression?: string | string[];
         /** @deprecated This is only available when the client page has been granted permission by the user. When no permission is granted, it does nothing. */
         evalExpression?: string;
     }
