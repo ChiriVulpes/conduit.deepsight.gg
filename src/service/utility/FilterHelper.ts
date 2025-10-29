@@ -1,5 +1,5 @@
 import type { DefinitionsFilter } from '@shared/DefinitionComponents'
-import jsonpath from 'jsonpath-plus'
+import { JSONPath } from 'jsonpath-plus'
 
 function array<T> (value: T | T[]): T[] {
 	return Array.isArray(value) ? value : [value]
@@ -50,7 +50,7 @@ namespace FilterHelper {
 					continue
 
 			if (search.jsonPathExpression)
-				if (array(search.jsonPathExpression).some(expr => !jsonpath.JSONPath<any[]>({ path: expr, json: def, resultType: 'value', wrap: true }).length))
+				if (array(search.jsonPathExpression).some(expr => !JSONPath<any[]>({ path: expr, json: [def], resultType: 'value', wrap: true }).length))
 					continue
 
 			if (predicate && !predicate(def))
