@@ -34,4 +34,4 @@ service.addEventListener('message', event => {
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-call, no-undef, @typescript-eslint/no-unsafe-member-access
-ModuleLoader.get('Init').default()
+getModule('Init').default()
