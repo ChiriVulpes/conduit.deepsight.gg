@@ -8,6 +8,7 @@ import DefinitionsComponentNames from 'model/DefinitionsComponentNames'
 import Profiles from 'model/Profiles'
 import { db } from 'utility/Database'
 import Env from 'utility/Env'
+import FilterHelper from 'utility/FilterHelper'
 import Service, { SKIP_CLIENT } from 'utility/Service'
 import Store from 'utility/Store'
 
@@ -111,10 +112,18 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				throw new ConduitPrivateFunctionError()
 			return await Auth.denyAccess(origin)
 		},
-		async _getDefinitionsComponent (event, language, component) {
-			return await Definitions[language][component].get()
+		async _getDefinitionsComponent (event, language, component, filter) {
+			if (filter?.evalExpression && !await Auth.isOriginTrusted(event.origin))
+				throw new ConduitFunctionRequiresTrustedOriginError()
+			// filter.evalExpression = undefined
+
+			const defs = await Definitions[language][component].get()
+			if (!filter || (!filter.nameContainsOrHashIs && !filter.deepContains && !filter.jsonPathExpression && !filter.evalExpression))
+				return defs
+
+			return Object.fromEntries(FilterHelper.filter(defs as Record<string, unknown>, filter))
 		},
-		async _getDefinitionsComponentPage (event, language, component, pageSize, page) {
+		async _getDefinitionsComponentPage (event, language, component, pageSize, page, filter) {
 			if (page < 0 || pageSize <= 0)
 				return {
 					definitions: {} as never,
@@ -124,7 +133,14 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 					totalDefinitions: 0,
 				}
 
-			const defs = await Definitions[language][component].get()
+			if (filter?.evalExpression && !await Auth.isOriginTrusted(event.origin))
+				throw new ConduitFunctionRequiresTrustedOriginError()
+			// filter.evalExpression = undefined
+
+			let defs = await Definitions[language][component].get()
+			if (filter && (filter.nameContainsOrHashIs || filter.deepContains || filter.jsonPathExpression || filter.evalExpression))
+				defs = Object.fromEntries(FilterHelper.filter(defs as Record<string, unknown>, filter)) as never
+
 			const keys = Object.keys(defs)
 			const totalPages = Math.ceil(keys.length / pageSize)
 			if (totalPages === 1)
@@ -160,19 +176,6 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		async _getDefinition (event, language, component, hash) {
 			const defs = await Definitions[language][component].get()
 			return defs[hash as keyof typeof defs]
-		},
-		async _getFilteredDefinitionsComponent (event, language, component, filter) {
-			if (!await Auth.isOriginTrusted(event.origin))
-				throw new ConduitFunctionRequiresTrustedOriginError()
-
-			const predicate = eval(filter) as (def: any) => boolean
-			if (typeof predicate !== 'function')
-				throw new Error('Filter did not evaluate to a function')
-
-			const defs = await Definitions[language][component].get()
-			return Object.fromEntries(Object.values(defs)
-				.filter(predicate)
-				.map(def => [(def as { hash: number }).hash, def] as const))
 		},
 		async _getDefinitionLinks (event, language, component, hash) {
 			const defs = await Definitions[language][component].get()

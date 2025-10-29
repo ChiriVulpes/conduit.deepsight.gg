@@ -22,6 +22,14 @@ export type DefinitionsForComponentName<NAME extends AllComponentNames> = (
 	: never
 )
 
+export interface DefinitionsFilter {
+	nameContainsOrHashIs?: string
+	deepContains?: string
+	jsonPathExpression?: string
+	/** @deprecated This is only available when the client page has been granted permission by the user. When no permission is granted, it does nothing. */
+	evalExpression?: string
+}
+
 export interface DefinitionsPage<DEFINITION> {
 	definitions: DEFINITION[]
 	page: number
