@@ -65,7 +65,7 @@ namespace FilterHelper {
 
 	function deepContains (value: unknown, search: string): boolean {
 		if (typeof value === 'string')
-			return value.includes(search)
+			return value.toLowerCase().includes(search.toLowerCase())
 
 		if (typeof value === 'number')
 			return `${value}` === search
