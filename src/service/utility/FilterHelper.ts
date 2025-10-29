@@ -6,7 +6,7 @@ function array<T> (value: T | T[]): T[] {
 }
 
 namespace FilterHelper {
-	export function* filter (defs: Record<string, unknown>, search: DefinitionsFilter): Iterable<[string, object]> {
+	export function* filter (defs: Record<string, unknown>, search: DefinitionsFilter) {
 		if (!search.nameContainsOrHashIs && !search.deepContains && !search.jsonPathExpression && !search.evalExpression)
 			throw new Error('At least one filter criterion must be specified')
 
@@ -56,7 +56,7 @@ namespace FilterHelper {
 			if (predicate && !predicate(def))
 				continue
 
-			yield [key, def]
+			yield [key, def] as const
 			if (hashMatch)
 				// there's only ever one def with a given hash
 				return

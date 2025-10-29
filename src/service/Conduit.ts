@@ -138,11 +138,14 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 			// filter.evalExpression = undefined
 
 			let defs = await Definitions[language][component].get()
-			if (filter && (filter.nameContainsOrHashIs || filter.deepContains || filter.jsonPathExpression || filter.evalExpression))
-				defs = Object.fromEntries(FilterHelper.filter(defs as Record<string, unknown>, filter)) as never
+			let filtered = false
+			if (filter && (filter.nameContainsOrHashIs || filter.deepContains || filter.jsonPathExpression || filter.evalExpression)) {
+				filtered = true
+				defs = Object.fromEntries(FilterHelper.filter(defs as Record<string, unknown>, filter).drop(page * pageSize).take(pageSize + 1)) as never
+			}
 
 			const keys = Object.keys(defs)
-			const totalPages = Math.ceil(keys.length / pageSize)
+			const totalPages = (filtered ? page : 0) + Math.ceil(keys.length / pageSize)
 			if (totalPages === 1)
 				return {
 					definitions: defs as never,
@@ -162,7 +165,7 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				}
 
 			const pageDefs = Object.fromEntries(keys
-				.slice(page * pageSize, (page + 1) * pageSize)
+				.slice(filtered ? 0 : page * pageSize, filtered ? -1 : (page + 1) * pageSize)
 				.map(key => [key, defs[key as keyof typeof defs]] as const)
 			)
 			return {
