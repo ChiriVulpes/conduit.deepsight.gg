@@ -1,13 +1,18 @@
 import type { DefinitionsFilter } from '@shared/DefinitionComponents'
 import jsonpath from 'jsonpath-plus'
 
+function array<T> (value: T | T[]): T[] {
+	return Array.isArray(value) ? value : [value]
+}
+
 namespace FilterHelper {
 	export function* filter (defs: Record<string, unknown>, search: DefinitionsFilter): Iterable<[string, object]> {
 		if (!search.nameContainsOrHashIs && !search.deepContains && !search.jsonPathExpression && !search.evalExpression)
 			throw new Error('At least one filter criterion must be specified')
 
 		const nameRegex = !search.nameContainsOrHashIs ? undefined
-			: new RegExp(`\\b${search.nameContainsOrHashIs.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i')
+			: array(search.nameContainsOrHashIs)
+				.map(name => new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i'))
 
 		interface TypicalDef {
 			hash?: number | string
@@ -26,14 +31,14 @@ namespace FilterHelper {
 				continue
 
 			let hashMatch = false
-			if (search.nameContainsOrHashIs) {
+			if (nameRegex) {
 				let nameMatch = false
 
 				const name = def.displayProperties?.name
 				if (`${def.hash}` === search.nameContainsOrHashIs)
 					hashMatch = true
 
-				else if (name && nameRegex?.test(name))
+				else if (name && nameRegex.every(regex => regex.test(name)))
 					nameMatch = true
 
 				if (!nameMatch && !hashMatch)
@@ -41,11 +46,12 @@ namespace FilterHelper {
 			}
 
 			if (search.deepContains)
-				if (!deepContains(def, search.deepContains))
+				if (array(search.deepContains).some(contains => !deepContains(def, contains)))
 					continue
 
-			if (search.jsonPathExpression && !jsonpath.JSONPath<any[]>({ path: search.jsonPathExpression, json: def, resultType: 'value', wrap: true }).length)
-				continue
+			if (search.jsonPathExpression)
+				if (array(search.jsonPathExpression).some(expr => !jsonpath.JSONPath<any[]>({ path: expr, json: def, resultType: 'value', wrap: true }).length))
+					continue
 
 			if (predicate && !predicate(def))
 				continue
