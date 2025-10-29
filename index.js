@@ -10,11 +10,11 @@ define("conduit.deepsight.gg/Definitions", ["require", "exports"], function (req
                 return target[languageName] ??= new Proxy({}, {
                     get(target, componentName) {
                         return target[componentName] ??= {
-                            async all() {
-                                return await conduit._getDefinitionsComponent(languageName, componentName);
+                            async all(filter) {
+                                return await conduit._getDefinitionsComponent(languageName, componentName, !filter ? undefined : { ...filter, evalExpression: filter?.evalExpression?.toString() });
                             },
-                            async page(pageSize, page) {
-                                return await conduit._getDefinitionsComponentPage(languageName, componentName, pageSize, page);
+                            async page(pageSize, page, filter) {
+                                return await conduit._getDefinitionsComponentPage(languageName, componentName, pageSize, page, !filter ? undefined : { ...filter, evalExpression: filter?.evalExpression?.toString() });
                             },
                             async get(hash) {
                                 return !hash ? undefined : await conduit._getDefinition(languageName, componentName, hash);
@@ -26,7 +26,7 @@ define("conduit.deepsight.gg/Definitions", ["require", "exports"], function (req
                                 return !hash ? undefined : await conduit._getDefinitionWithLinks(languageName, componentName, hash);
                             },
                             async filter(predicate) {
-                                return await conduit._getFilteredDefinitionsComponent(languageName, componentName, predicate.toString());
+                                return await conduit._getDefinitionsComponent(languageName, componentName, { evalExpression: predicate.toString() });
                             },
                         };
                     },

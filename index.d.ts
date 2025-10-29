@@ -51,6 +51,13 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
     export type ClarityManifestComponentName = keyof AllClarityManifestComponents;
     export type AllComponentNames = DestinyManifestComponentName | DeepsightManifestComponentName | ClarityManifestComponentName;
     export type DefinitionsForComponentName<NAME extends AllComponentNames> = (NAME extends DestinyManifestComponentName ? AllDestinyManifestComponents[NAME] : NAME extends DeepsightManifestComponentName ? DeepsightManifestComponentsMap[NAME] : NAME extends ClarityManifestComponentName ? AllClarityManifestComponents[NAME] : never);
+    export interface DefinitionsFilter {
+        nameContainsOrHashIs?: string;
+        deepContains?: string;
+        jsonPathExpression?: string;
+        /** @deprecated This is only available when the client page has been granted permission by the user. When no permission is granted, it does nothing. */
+        evalExpression?: string;
+    }
     export interface DefinitionsPage<DEFINITION> {
         definitions: DEFINITION[];
         page: number;
@@ -76,7 +83,7 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
 declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type { AuthState, CustomBungieApp } from 'conduit.deepsight.gg/Auth';
     import type Collections from 'conduit.deepsight.gg/Collections';
-    import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
+    import type { AllComponentNames, DefinitionLinks, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type { Profile } from 'conduit.deepsight.gg/Profile';
     export interface ConduitFunctionRegistry {
         getProfiles(): Promise<Profile[]>;
@@ -274,10 +281,14 @@ declare module "conduit.deepsight.gg/Auth" {
 }
 declare module "conduit.deepsight.gg/Definitions" {
     import type Conduit from "conduit.deepsight.gg/Conduit";
-    import type { AllComponentNames, DefinitionLinks, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
+    import type { AllComponentNames, DefinitionLinks, DefinitionsFilter as DefinitionsFilterSerialised, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
+    export interface DefinitionsFilter<DEFINITION> extends Omit<DefinitionsFilterSerialised, 'evalExpression'> {
+        /** @deprecated This is only available when the client page has been granted permission by the user. When no permission is granted, it does nothing. */
+        evalExpression?(def: DEFINITION): unknown;
+    }
     interface DefinitionsProvider<DEFINITION> {
-        all(): Promise<DEFINITION>;
-        page(pageSize: number, page: number): Promise<DefinitionsPage<DEFINITION>>;
+        all(filter?: DefinitionsFilter<DEFINITION[keyof DEFINITION]>): Promise<DEFINITION>;
+        page(pageSize: number, page: number, filter?: DefinitionsFilter<DEFINITION[keyof DEFINITION]>): Promise<DefinitionsPage<DEFINITION>>;
         get(hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>;
         links(hash?: number | string): Promise<DefinitionLinks | undefined>;
         getWithLinks(hash?: number | string): Promise<DefinitionWithLinks<Exclude<DEFINITION[keyof DEFINITION], undefined>> | undefined>;
