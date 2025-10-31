@@ -22,6 +22,8 @@ export type DefinitionsForComponentName<NAME extends AllComponentNames> = (
 	: never
 )
 
+export type AllDefinitions = { [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> }
+
 export interface DefinitionsFilter {
 	nameContainsOrHashIs?: string | string[]
 	deepContains?: string | string[]
@@ -36,6 +38,14 @@ export interface DefinitionsPage<DEFINITION> {
 	pageSize: number
 	totalPages: number
 	totalDefinitions: number
+}
+
+export interface DefinitionReferencesPage {
+	references: AllDefinitions
+	page: number
+	pageSize: number
+	totalPages: number
+	totalReferences: number
 }
 
 export interface DefinitionLinks {

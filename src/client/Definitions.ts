@@ -1,5 +1,5 @@
 import type Conduit from 'conduit.deepsight.gg/Conduit'
-import type { AllComponentNames, DefinitionLinks, DefinitionsFilter as DefinitionsFilterSerialised, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents'
+import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter as DefinitionsFilterSerialised, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents'
 
 export interface DefinitionsFilter<DEFINITION> extends Omit<DefinitionsFilterSerialised, 'evalExpression'> {
 	/** @deprecated This is only available when the client page has been granted permission by the user. When no permission is granted, it does nothing. */
@@ -12,10 +12,10 @@ interface DefinitionsProvider<DEFINITION> {
 	get (hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>
 	links (hash?: number | string): Promise<DefinitionLinks | undefined>
 	getWithLinks (hash?: number | string): Promise<DefinitionWithLinks<Exclude<DEFINITION[keyof DEFINITION], undefined>> | undefined>
+	getReferencing (hash: number | string | undefined, pageSize: number, page: number): Promise<DefinitionReferencesPage | undefined>
 }
 
 interface InternalDefinitionsProvider<DEFINITION> extends DefinitionsProvider<DEFINITION> {
-	filter (predicate: (definition: DEFINITION[keyof DEFINITION]) => boolean): Promise<DEFINITION[keyof DEFINITION][]>
 }
 
 type DefinitionsForLanguage = { [NAME in AllComponentNames]: DefinitionsProvider<DefinitionsForComponentName<NAME>> }
@@ -42,8 +42,8 @@ function Definitions (conduit: Conduit) {
 						async getWithLinks (hash) {
 							return !hash ? undefined : await conduit._getDefinitionWithLinks<NAME>(languageName, componentName, hash)
 						},
-						async filter (predicate) {
-							return await conduit._getDefinitionsComponent(languageName, componentName, { evalExpression: predicate.toString() }) as never
+						async getReferencing (hash, pageSize, page) {
+							return !hash ? undefined : await conduit._getDefinitionsReferencingPage<NAME>(languageName, componentName, hash, pageSize, page)
 						},
 					} satisfies InternalDefinitionsProvider<DefinitionsForComponentName<NAME>>) as never
 				},

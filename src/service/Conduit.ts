@@ -1,6 +1,7 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
-import type { AllComponentNames, DefinitionLinks } from '@shared/DefinitionComponents'
+import type { AllComponentNames, AllDefinitions, DefinitionLinks, DefinitionReferencesPage } from '@shared/DefinitionComponents'
 import type { Profile } from '@shared/Profile'
+import type { DeepsightDefinitionLinkDefinition } from 'deepsight.gg'
 import Auth from 'model/Auth'
 import Collections from 'model/Collections'
 import Definitions from 'model/Definitions'
@@ -251,40 +252,6 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				enums: usedEnums,
 				definitions,
 			}
-
-			function followLinkPath (obj: any = def, path: (string | number)[]): (number | string)[] {
-				if (!path.length && (typeof obj === 'number' || typeof obj === 'string'))
-					return [obj]
-
-				if (!obj || typeof obj !== 'object')
-					return []
-
-				const key = path.shift()
-				if (!key)
-					return []
-
-				if (key === '[]') {
-					if (!Array.isArray(obj))
-						return []
-
-					if (!path.length)
-						return obj.filter(item => typeof item === 'number' || typeof item === 'string')
-
-					return obj.flatMap((item: any) => followLinkPath(item, path.slice()))
-				}
-
-				if (key === '{}') {
-					if (!path.length)
-						// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-						return Object.keys(obj)
-
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-					return Object.values(obj).flatMap(value => followLinkPath(value, path.slice()))
-				}
-
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-				return followLinkPath(obj[key], path)
-			}
 		},
 		async _getDefinitionWithLinks (event, language, component, hash) {
 			const [def, links] = await Promise.all([
@@ -296,12 +263,82 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 
 			return { definition: def, links }
 		},
+		async _getDefinitionsReferencingPage (event, language, component, hash, pageSize, page) {
+			const { components } = await Definitions.en.DeepsightLinksDefinition.get()
+			const componentsReferencing = Object.entries(components).filter(([_, linksDef]) => linksDef.links?.some(link => !('enum' in link) && link.component === component))
+			const result: [string, number | string, object][] = []
+			await Promise.all(componentsReferencing.map(async ([referencingComponent, linksDef]) => {
+				const linksReferencing = linksDef.links!.filter((link): link is DeepsightDefinitionLinkDefinition => !('enum' in link) && link.component === component)
+				const defs = await Definitions[language][referencingComponent as AllComponentNames].get()
+				for (const key of Object.keys(defs)) {
+					const def = defs[key as keyof typeof defs]
+					if (!def)
+						continue
+
+					for (const link of linksReferencing) {
+						const hashes = followLinkPath(def, link.path.split('.'))
+						if (hashes.some(defHash => `${defHash}` === `${hash}`)) {
+							result.push([referencingComponent, key, def])
+							break // next def
+						}
+					}
+				}
+			}))
+
+			return {
+				page,
+				pageSize,
+				totalPages: Math.ceil(result.length / pageSize),
+				totalReferences: result.length,
+				references: (result
+					.slice(page * pageSize, (page + 1) * pageSize)
+					.groupBy(([component]) => component, entries => entries.toObject(([, key, def]) => [key, def]))
+					.entries()
+					.toArray()
+					.toObject()
+				) as never as AllDefinitions,
+			} satisfies DefinitionReferencesPage
+		},
 
 		//#endregion
 		////////////////////////////////////
 
 	},
 })
+
+function followLinkPath (obj: any, path: (string | number)[]): (number | string)[] {
+	if (!path.length && (typeof obj === 'number' || typeof obj === 'string'))
+		return [obj]
+
+	if (!obj || typeof obj !== 'object')
+		return []
+
+	const key = path.shift()
+	if (!key)
+		return []
+
+	if (key === '[]') {
+		if (!Array.isArray(obj))
+			return []
+
+		if (!path.length)
+			return obj.filter(item => typeof item === 'number' || typeof item === 'string')
+
+		return obj.flatMap((item: any) => followLinkPath(item, path.slice()))
+	}
+
+	if (key === '{}') {
+		if (!path.length)
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+			return Object.keys(obj)
+
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+		return Object.values(obj).flatMap(value => followLinkPath(value, path.slice()))
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+	return followLinkPath(obj[key], path)
+}
 
 async function updateProfiles (forceOriginUpdate?: string) {
 	let [{ profiles, updated }, auth] = await Promise.all([
