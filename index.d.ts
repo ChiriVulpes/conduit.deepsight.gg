@@ -51,6 +51,9 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
     export type ClarityManifestComponentName = keyof AllClarityManifestComponents;
     export type AllComponentNames = DestinyManifestComponentName | DeepsightManifestComponentName | ClarityManifestComponentName;
     export type DefinitionsForComponentName<NAME extends AllComponentNames> = (NAME extends DestinyManifestComponentName ? AllDestinyManifestComponents[NAME] : NAME extends DeepsightManifestComponentName ? DeepsightManifestComponentsMap[NAME] : NAME extends ClarityManifestComponentName ? AllClarityManifestComponents[NAME] : never);
+    export type AllDefinitions = {
+        [NAME in AllComponentNames]: DefinitionsForComponentName<NAME>;
+    };
     export interface DefinitionsFilter {
         nameContainsOrHashIs?: string | string[];
         deepContains?: string | string[];
@@ -64,6 +67,13 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
         pageSize: number;
         totalPages: number;
         totalDefinitions: number;
+    }
+    export interface DefinitionReferencesPage {
+        references: AllDefinitions;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+        totalReferences: number;
     }
     export interface DefinitionLinks {
         augmentations?: Partial<{
@@ -83,7 +93,7 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
 declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type { AuthState, CustomBungieApp } from 'conduit.deepsight.gg/Auth';
     import type Collections from 'conduit.deepsight.gg/Collections';
-    import type { AllComponentNames, DefinitionLinks, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
+    import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type { Profile } from 'conduit.deepsight.gg/Profile';
     export interface ConduitFunctionRegistry {
         getProfiles(): Promise<Profile[]>;
@@ -281,7 +291,7 @@ declare module "conduit.deepsight.gg/Auth" {
 }
 declare module "conduit.deepsight.gg/Definitions" {
     import type Conduit from "conduit.deepsight.gg/Conduit";
-    import type { AllComponentNames, DefinitionLinks, DefinitionsFilter as DefinitionsFilterSerialised, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
+    import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter as DefinitionsFilterSerialised, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     export interface DefinitionsFilter<DEFINITION> extends Omit<DefinitionsFilterSerialised, 'evalExpression'> {
         /** @deprecated This is only available when the client page has been granted permission by the user. When no permission is granted, it does nothing. */
         evalExpression?(def: DEFINITION): unknown;
@@ -292,6 +302,7 @@ declare module "conduit.deepsight.gg/Definitions" {
         get(hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>;
         links(hash?: number | string): Promise<DefinitionLinks | undefined>;
         getWithLinks(hash?: number | string): Promise<DefinitionWithLinks<Exclude<DEFINITION[keyof DEFINITION], undefined>> | undefined>;
+        getReferencing(hash: number | string | undefined, pageSize: number, page: number): Promise<DefinitionReferencesPage | undefined>;
     }
     type DefinitionsForLanguage = {
         [NAME in AllComponentNames]: DefinitionsProvider<DefinitionsForComponentName<NAME>>;

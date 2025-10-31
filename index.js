@@ -25,8 +25,8 @@ define("conduit.deepsight.gg/Definitions", ["require", "exports"], function (req
                             async getWithLinks(hash) {
                                 return !hash ? undefined : await conduit._getDefinitionWithLinks(languageName, componentName, hash);
                             },
-                            async filter(predicate) {
-                                return await conduit._getDefinitionsComponent(languageName, componentName, { evalExpression: predicate.toString() });
+                            async getReferencing(hash, pageSize, page) {
+                                return !hash ? undefined : await conduit._getDefinitionsReferencingPage(languageName, componentName, hash, pageSize, page);
                             },
                         };
                     },
