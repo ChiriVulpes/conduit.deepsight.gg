@@ -43,7 +43,7 @@ declare module "conduit.deepsight.gg/Profile" {
 declare module "conduit.deepsight.gg/DefinitionComponents" {
     import type { AllDestinyManifestComponents, DestinyManifestComponentName } from 'bungie-api-ts/destiny2';
     import type { ClarityDescription } from 'conduit.deepsight.gg/Clarity';
-    import type { DeepsightDefinitionLinkDefinition, DeepsightEnumDefinition, DeepsightEnumLinkDefinition, DeepsightManifestComponentsMap } from 'deepsight.gg/Interfaces';
+    import type { DeepsightDefinitionLinkDefinition, DeepsightEnumDefinition, DeepsightEnumLinkDefinition, DeepsightManifestComponentsMap, DeepsightVariantDefinitionEntry } from 'deepsight.gg/Interfaces';
     export type DeepsightManifestComponentName = keyof DeepsightManifestComponentsMap;
     export interface AllClarityManifestComponents {
         ClarityDescriptions: Record<number, ClarityDescription>;
@@ -79,6 +79,7 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
         augmentations?: Partial<{
             [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never;
         }>;
+        variants?: DeepsightVariantDefinitionEntry[];
         links?: (DeepsightDefinitionLinkDefinition | DeepsightEnumLinkDefinition)[];
         definitions?: Partial<{
             [NAME in AllComponentNames]: DefinitionsForComponentName<NAME>;
