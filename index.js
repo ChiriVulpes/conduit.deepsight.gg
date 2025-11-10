@@ -17,16 +17,16 @@ define("conduit.deepsight.gg/Definitions", ["require", "exports"], function (req
                                 return await conduit._getDefinitionsComponentPage(languageName, componentName, pageSize, page, !filter ? undefined : { ...filter, evalExpression: filter?.evalExpression?.toString() });
                             },
                             async get(hash) {
-                                return !hash ? undefined : await conduit._getDefinition(languageName, componentName, hash);
+                                return hash === undefined ? undefined : await conduit._getDefinition(languageName, componentName, hash);
                             },
                             async links(hash) {
-                                return !hash ? undefined : await conduit._getDefinitionLinks(languageName, componentName, hash);
+                                return hash === undefined ? undefined : await conduit._getDefinitionLinks(languageName, componentName, hash);
                             },
                             async getWithLinks(hash) {
-                                return !hash ? undefined : await conduit._getDefinitionWithLinks(languageName, componentName, hash);
+                                return hash === undefined ? undefined : await conduit._getDefinitionWithLinks(languageName, componentName, hash);
                             },
                             async getReferencing(hash, pageSize, page) {
-                                return !hash ? undefined : await conduit._getDefinitionsReferencingPage(languageName, componentName, hash, pageSize, page);
+                                return hash === undefined ? undefined : await conduit._getDefinitionsReferencingPage(languageName, componentName, hash, pageSize, page);
                             },
                         };
                     },
