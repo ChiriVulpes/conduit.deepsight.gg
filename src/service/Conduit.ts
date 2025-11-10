@@ -2,6 +2,7 @@ import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/
 import type { AllComponentNames, AllDefinitions, DefinitionLinks, DefinitionReferencesPage } from '@shared/DefinitionComponents'
 import type { Profile } from '@shared/Profile'
 import type { DeepsightDefinitionLinkDefinition } from 'deepsight.gg'
+import type { InventoryItemHashes } from 'deepsight.gg/Enums'
 import Auth from 'model/Auth'
 import Collections from 'model/Collections'
 import Definitions from 'model/Definitions'
@@ -193,6 +194,7 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				return undefined
 
 			let augmentations: DefinitionLinks['augmentations'] | undefined
+			let variants: DefinitionLinks['variants'] | undefined
 			const links: DefinitionLinks['links'] = linksDef.links
 			let usedEnums: DefinitionLinks['enums'] | undefined
 			let definitions: DefinitionLinks['definitions'] | undefined
@@ -239,15 +241,29 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 							if (!def)
 								continue
 							definitions ??= {}
-							if (!definitions[component])
-								definitions[component] = {} as never
+							definitions[component] ??= {} as never
 							definitions[component][hash as never] = def
 						}
 					}),
+				component !== 'DestinyInventoryItemDefinition' ? undefined : (async () => {
+					const DeepsightVariantDefinition = await Definitions[language].DeepsightVariantDefinition.get()
+					const groupIndex = DeepsightVariantDefinition.variantGroupLookupTable[hash as InventoryItemHashes]
+					if (groupIndex === undefined)
+						return
+
+					variants = DeepsightVariantDefinition.groups[groupIndex]
+					await Promise.all(variants.map(async variantEntry => {
+						const defs = await Definitions[language].DestinyInventoryItemDefinition.get()
+						definitions ??= {}
+						definitions.DestinyInventoryItemDefinition ??= {}
+						definitions.DestinyInventoryItemDefinition[variantEntry.hash] = defs[variantEntry.hash]
+					}))
+				})(),
 			])
 
 			return {
 				augmentations,
+				variants,
 				links,
 				enums: usedEnums,
 				definitions,

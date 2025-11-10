@@ -1,6 +1,6 @@
 import type { AllDestinyManifestComponents, DestinyManifestComponentName } from 'bungie-api-ts/destiny2'
 import type { ClarityDescription } from 'Clarity'
-import type { DeepsightDefinitionLinkDefinition, DeepsightEnumDefinition, DeepsightEnumLinkDefinition, DeepsightManifestComponentsMap } from 'deepsight.gg/Interfaces'
+import type { DeepsightDefinitionLinkDefinition, DeepsightEnumDefinition, DeepsightEnumLinkDefinition, DeepsightManifestComponentsMap, DeepsightVariantDefinitionEntry } from 'deepsight.gg/Interfaces'
 
 export type DeepsightManifestComponentName = keyof DeepsightManifestComponentsMap
 
@@ -50,6 +50,7 @@ export interface DefinitionReferencesPage {
 
 export interface DefinitionLinks {
 	augmentations?: Partial<{ [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never }>
+	variants?: DeepsightVariantDefinitionEntry[]
 	links?: (DeepsightDefinitionLinkDefinition | DeepsightEnumLinkDefinition)[]
 	definitions?: Partial<{ [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> }>
 	enums?: Partial<Record<string, DeepsightEnumDefinition>>
