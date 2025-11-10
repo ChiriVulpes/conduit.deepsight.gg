@@ -34,16 +34,16 @@ function Definitions (conduit: Conduit) {
 							return await conduit._getDefinitionsComponentPage<NAME>(languageName, componentName, pageSize, page, !filter ? undefined : { ...filter, evalExpression: filter?.evalExpression?.toString() })
 						},
 						async get (hash?: number | string) {
-							return !hash ? undefined : await conduit._getDefinition<NAME>(languageName, componentName, hash)
+							return hash === undefined ? undefined : await conduit._getDefinition<NAME>(languageName, componentName, hash)
 						},
 						async links (hash) {
-							return !hash ? undefined : await conduit._getDefinitionLinks(languageName, componentName, hash)
+							return hash === undefined ? undefined : await conduit._getDefinitionLinks(languageName, componentName, hash)
 						},
 						async getWithLinks (hash) {
-							return !hash ? undefined : await conduit._getDefinitionWithLinks<NAME>(languageName, componentName, hash)
+							return hash === undefined ? undefined : await conduit._getDefinitionWithLinks<NAME>(languageName, componentName, hash)
 						},
 						async getReferencing (hash, pageSize, page) {
-							return !hash ? undefined : await conduit._getDefinitionsReferencingPage<NAME>(languageName, componentName, hash, pageSize, page)
+							return hash === undefined ? undefined : await conduit._getDefinitionsReferencingPage<NAME>(languageName, componentName, hash, pageSize, page)
 						},
 					} satisfies InternalDefinitionsProvider<DefinitionsForComponentName<NAME>>) as never
 				},
