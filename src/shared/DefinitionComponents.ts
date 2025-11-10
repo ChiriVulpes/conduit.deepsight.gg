@@ -33,7 +33,7 @@ export interface DefinitionsFilter {
 }
 
 export interface DefinitionsPage<DEFINITION> {
-	definitions: DEFINITION[]
+	definitions: Record<string | number, DEFINITION>
 	page: number
 	pageSize: number
 	totalPages: number
