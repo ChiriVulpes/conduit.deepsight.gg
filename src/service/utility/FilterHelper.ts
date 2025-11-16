@@ -35,7 +35,7 @@ namespace FilterHelper {
 				let nameMatch = false
 
 				const name = def.displayProperties?.name
-				if (`${def.hash}` === search.nameContainsOrHashIs)
+				if (array(search.nameContainsOrHashIs).includes(`${def.hash}`))
 					hashMatch = true
 
 				else if (name && nameRegex.every(regex => regex.test(name)))
