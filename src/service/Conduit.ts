@@ -5,6 +5,7 @@ import type { DeepsightDefinitionLinkDefinition } from 'deepsight.gg'
 import type { InventoryItemHashes } from 'deepsight.gg/Enums'
 import Auth from 'model/Auth'
 import Collections from 'model/Collections'
+import { getVersions } from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
 import DefinitionsComponentNames from 'model/DefinitionsComponentNames'
 import Profiles from 'model/Profiles'
@@ -46,12 +47,7 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 
 		////////////////////////////////////
 		//#region Profiles
-		async getProfiles (event) {
-			void updateProfiles()
-			const profiles = (await db.profiles.toArray())
-				.sort((a, b) => +!!b.authed - +!!a.authed)
-			return getProfilesForOrigin(profiles, event.origin)
-		},
+		getProfiles: event => getProfiles(event),
 		updateProfiles: () => updateProfiles(),
 		async getProfile (event, displayName, displayNameCode): Promise<Profile | undefined> {
 			const profile = await Profiles.searchDestinyPlayerByBungieName(displayName, displayNameCode)
@@ -74,6 +70,9 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		async getComponentNames () {
 			return await DefinitionsComponentNames.get()
 		},
+
+		getState: event => getState(event),
+		checkUpdate: event => getState(event, true),
 
 		////////////////////////////////////
 		//#region Private
@@ -114,6 +113,14 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				throw new ConduitPrivateFunctionError()
 			return await Auth.denyAccess(origin)
 		},
+
+		////////////////////////////////////
+		//#region Defs
+
+		async _getDefinition (event, language, component, hash) {
+			const defs = await Definitions[language][component].get()
+			return defs[hash as keyof typeof defs]
+		},
 		async _getDefinitionsComponent (event, language, component, filter) {
 			if (filter?.evalExpression && !await Auth.isOriginTrusted(event.origin))
 				throw new ConduitFunctionRequiresTrustedOriginError()
@@ -125,6 +132,9 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 
 			return Object.fromEntries(FilterHelper.filter(defs as Record<string, unknown>, filter))
 		},
+
+		////////////////////////////////////
+		//#region Paginated Defs
 		async _getDefinitionsComponentPage (event, language, component, pageSize, page, filter) {
 			if (page < 0 || pageSize <= 0)
 				return {
@@ -178,10 +188,11 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				totalDefinitions: keys.length,
 			}
 		},
-		async _getDefinition (event, language, component, hash) {
-			const defs = await Definitions[language][component].get()
-			return defs[hash as keyof typeof defs]
-		},
+		//#endregion
+		////////////////////////////////////
+
+		////////////////////////////////////
+		//#region Links
 		async _getDefinitionLinks (event, language, component, hash) {
 			const defs = await Definitions[language][component].get()
 			const def = defs[hash as keyof typeof defs]
@@ -279,6 +290,11 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 
 			return { definition: def, links }
 		},
+		//#endregion
+		////////////////////////////////////
+
+		////////////////////////////////////
+		//#region References
 		async _getDefinitionsReferencingPage (event, language, component, hash, pageSize, page) {
 			const { components } = await Definitions.en.DeepsightLinksDefinition.get()
 			const componentsReferencing = Object.entries(components).filter(([_, linksDef]) => linksDef.links?.some(link => !('enum' in link) && link.component === component))
@@ -315,6 +331,11 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				) as never as AllDefinitions,
 			} satisfies DefinitionReferencesPage
 		},
+		//#endregion
+		////////////////////////////////////
+
+		//#endregion
+		////////////////////////////////////
 
 		//#endregion
 		////////////////////////////////////
@@ -354,6 +375,26 @@ function followLinkPath (obj: any, path: (string | number)[]): (number | string)
 
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 	return followLinkPath(obj[key], path)
+}
+
+async function getState (event: ExtendableMessageEvent, hard?: true) {
+	const [version, profiles] = await Promise.all([
+		getVersions(hard),
+		getProfiles(event),
+	])
+
+	return {
+		version,
+		authed: profiles.some(profile => profile.authed),
+		profiles: profiles.length,
+	}
+}
+
+async function getProfiles (event: ExtendableMessageEvent) {
+	void updateProfiles()
+	const profiles = (await db.profiles.toArray())
+		.sort((a, b) => +!!b.authed - +!!a.authed)
+	return getProfilesForOrigin(profiles, event.origin)
 }
 
 async function updateProfiles (forceOriginUpdate?: string) {

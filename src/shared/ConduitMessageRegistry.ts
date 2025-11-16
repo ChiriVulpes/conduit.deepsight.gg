@@ -1,5 +1,6 @@
 import type { AuthState, CustomBungieApp } from 'Auth'
 import type Collections from 'Collections'
+import type ConduitState from 'ConduitState'
 import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'DefinitionComponents'
 import type { Profile } from 'Profile'
 
@@ -10,6 +11,15 @@ export interface ConduitFunctionRegistry {
 	bumpProfile (displayName: string, displayNameCode: number): Promise<void>
 	getCollections (): Promise<Collections>
 	getComponentNames (): Promise<AllComponentNames[]>
+	/** 
+	 * Get the current state of conduit — defs versions, profiles, etc. 
+	 * 
+	 * Only checks if defs versions have updated if the cache is old enough.
+	 * Returns `version.updated: true` if there's been a defs update.
+	 */
+	getState (): Promise<ConduitState>
+	/** Perform a hard defs update check, ignoring how recently they were cached */
+	checkUpdate (): Promise<ConduitState>
 	/** @private:start */
 	setOrigin (): Promise<void>
 	_getAuthState (): Promise<AuthState>
