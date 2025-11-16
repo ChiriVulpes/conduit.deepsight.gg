@@ -91,9 +91,24 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
         links?: DefinitionLinks;
     }
 }
+declare module "conduit.deepsight.gg/ConduitState" {
+    interface ConduitState {
+        version: {
+            combined: string;
+            destiny: string;
+            deepsight: string;
+            clarity: string;
+            updated: boolean;
+        };
+        authed: boolean;
+        profiles: number;
+    }
+    export default ConduitState;
+}
 declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type { AuthState, CustomBungieApp } from 'conduit.deepsight.gg/Auth';
     import type Collections from 'conduit.deepsight.gg/Collections';
+    import type ConduitState from 'conduit.deepsight.gg/ConduitState';
     import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type { Profile } from 'conduit.deepsight.gg/Profile';
     export interface ConduitFunctionRegistry {
@@ -103,6 +118,15 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         bumpProfile(displayName: string, displayNameCode: number): Promise<void>;
         getCollections(): Promise<Collections>;
         getComponentNames(): Promise<AllComponentNames[]>;
+        /**
+         * Get the current state of conduit — defs versions, profiles, etc.
+         *
+         * Only checks if defs versions have updated if the cache is old enough.
+         * Returns `version.updated: true` if there's been a defs update.
+         */
+        getState(): Promise<ConduitState>;
+        /** Perform a hard defs update check, ignoring how recently they were cached */
+        checkUpdate(): Promise<ConduitState>;
     }
     export interface ConduitBroadcastRegistry {
         ready: void;

@@ -5,6 +5,6 @@
 	"version": "1.0.0",
 	"dependencies": {
 		"bungie-api-ts": "^5.9.0",
-		"deepsight.gg": "^1.0.1570"
+		"deepsight.gg": "^1.0.1571"
 	}
 }
