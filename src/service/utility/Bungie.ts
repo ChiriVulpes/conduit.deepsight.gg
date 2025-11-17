@@ -41,13 +41,14 @@ namespace Bungie {
 		return promise
 	}
 
-	export async function get<T> (url: string, body?: Record<string, Jsonable>) {
+	export async function get<T> (url: string, body?: Record<string, Jsonable>, options?: RequestInit) {
 		return await queue(async () => {
 			if (!url.startsWith('/')) url = `/${url}`
 			Log.info('GET', url)
 			if (body) url = `${url}?${Jsonable.searchParamsIfy(body ?? {})}`
 			return self.fetch(`${origin}${url}`, {
-				headers: { ...await Auth.getHeaders() },
+				...options,
+				headers: { ...await Auth.getHeaders(), ...options?.headers },
 			})
 				.then(handleBungieResponse) as Promise<T>
 		})

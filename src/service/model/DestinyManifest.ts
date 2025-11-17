@@ -5,7 +5,7 @@ import Bungie from 'utility/Bungie'
 export default Model('DestinyManifest', {
 	cacheDirtyTime: 1000 * 60 * 60, // 1 hour cache time
 	async fetch () {
-		const manifest = await Bungie.get<DestinyManifest>('/Destiny2/Manifest/')
+		const manifest = await Bungie.get<DestinyManifest>('/Destiny2/Manifest/', undefined, { cache: 'reload' })
 		if (typeof manifest?.version !== 'string')
 			throw new Error('Invalid Destiny manifest response')
 
