@@ -22,6 +22,7 @@ export interface ConduitFunctionRegistry {
 	checkUpdate (): Promise<ConduitState>
 	/** @private:start */
 	setOrigin (): Promise<void>
+	_handshake (): Promise<ConduitHandshake>
 	_getAuthState (): Promise<AuthState>
 	_setCustomApp (app?: CustomBungieApp): Promise<void>
 	_authenticate (code: string): Promise<boolean>
@@ -34,6 +35,10 @@ export interface ConduitFunctionRegistry {
 	_getDefinitionWithLinks<NAME extends AllComponentNames> (language: string, component: NAME, hash: number | string): Promise<DefinitionWithLinks<DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never> | undefined>
 	_getDefinitionsReferencingPage<NAME extends AllComponentNames> (language: string, component: NAME, hash: number | string, pageSize: number, page: number): Promise<DefinitionReferencesPage>
 	// the above defs cannot contain a } character or it will break the packager
+}
+
+export interface ConduitHandshake {
+	verboseLogging: boolean
 }
 
 export interface ConduitBroadcastRegistry {

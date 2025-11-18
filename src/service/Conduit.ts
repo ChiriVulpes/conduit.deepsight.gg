@@ -77,6 +77,13 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		////////////////////////////////////
 		//#region Private
 
+		async _handshake (event) {
+			const verboseLogging = await Store.verboseLogging.state()
+			return {
+				verboseLogging: !!verboseLogging.value,
+			}
+		},
+
 		setOrigin (event) { },
 		async _getAuthState (event) {
 			if (event.origin !== self.origin)

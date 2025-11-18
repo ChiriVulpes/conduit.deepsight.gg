@@ -1,6 +1,15 @@
 import type { ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
 import type Frame from 'FrameFunctions'
 
+const VERBOSE_LOGGING = { value: false }
+const ifVerbose = <T> (value: T) => VERBOSE_LOGGING.value ? [value] as const : [] as const
+const printIfVerbose = () => VERBOSE_LOGGING.value ? ' %o' : ''
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+const log = (...args: any[]) => console[VERBOSE_LOGGING.value ? 'info' : 'debug'](...args)
+
+const maxVal = parseInt('z'.repeat(11), 36)
+const colourFromId = (id: string) => `color: oklch(70% 80% ${((parseInt(id || '0', 36) / maxVal) * 360) % 360}deg);`
+
 const parentWindow = window.parent
 if (!parentWindow)
 	throw new Error('This page must be loaded in an iframe')
@@ -48,10 +57,10 @@ void (async () => {
 		for (let i = 0; i < messageListeners.length; i++) {
 			const listener = messageListeners[i]
 			if (listener.type === type && listener.id === id) {
-				console.log(
-					`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cFrame %c\u2B9C Service %c/ %c${type} %o`,
+				log(
+					`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cFrame %c\u2B9C Service %c/ %c${type}${printIfVerbose()}`,
 					PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, FRAME_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
-					data,
+					...ifVerbose(data),
 				)
 
 				listener.callback(data)
@@ -77,10 +86,10 @@ void (async () => {
 		////////////////////////////////////
 
 		if (id !== 'global' && !unresolvedMessages.has(id)) {
-			console.log(
-				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %c/ %cReceived response for unknown message ID %o %o %o`,
+			log(
+				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %c/ %cReceived response for unknown message ID %o %o${printIfVerbose()}`,
 				PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, ERROR_FORMAT,
-				id, type, data,
+				id, type, ...ifVerbose(data),
 			)
 			return
 		}
@@ -99,10 +108,10 @@ void (async () => {
 		unresolvedMessages.delete(id)
 
 		// forward messages from the service worker to the parent window
-		console.log(
-			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %c/ %c${type} %o`,
-			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
-			data,
+		log(
+			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %c${id.padEnd(11, ' ')} %cHost %c\u2B9C Service %c/ %c${type}${printIfVerbose()}`,
+			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, colourFromId(id), HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
+			...ifVerbose(data),
 		)
 		parentWindow.postMessage(event.data, '*')
 	})
@@ -115,10 +124,10 @@ void (async () => {
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 		if (typeof event.data !== 'object' || typeof event.data.type !== 'string') {
-			console.log(
-				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost %c\u2B9E Service %c/ %cUnsupported message %o`,
+			log(
+				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost %c\u2B9E Service %c/ %cUnsupported message${printIfVerbose()}`,
 				PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, ERROR_FORMAT,
-				event.data,
+				...ifVerbose(event.data),
 			)
 			return
 		}
@@ -130,10 +139,10 @@ void (async () => {
 		const frameFunctionType = message.type.slice(1) as keyof Frame.Functions
 		const frameFunction = message.type.startsWith('_') ? functions[frameFunctionType] as ((event: MessageEvent<any>, ...data: unknown[]) => Promise<any>) | undefined : undefined
 		if (frameFunction) {
-			console.log(
-				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost \u2B9E %cFrame %c/ %c${message.type.slice(1)} %o`,
+			log(
+				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost \u2B9E %cFrame %c/ %c${message.type.slice(1)}${printIfVerbose()}`,
 				PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, FRAME_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
-				message.data,
+				...ifVerbose(message.data),
 			)
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			void Promise.resolve(frameFunction(event, ...Array.isArray(message.data) ? message.data : [])).then(
@@ -146,10 +155,10 @@ void (async () => {
 			)
 
 			function reply (message: Message) {
-				console.log(
-					`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost %c\u2B9C Frame %c/ %c${message.type.replace(':_', ':')} %o`,
+				log(
+					`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost %c\u2B9C Frame %c/ %c${message.type.replace(':_', ':')}${printIfVerbose()}`,
 					PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, FRAME_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
-					message.data,
+					...ifVerbose(message.data),
 				)
 				const source = event.source as Window
 				source?.postMessage(message, '*')
@@ -160,10 +169,11 @@ void (async () => {
 		message.origin = event.origin
 
 		// forward messages from the parent window to the service worker
-		console.log(
-			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost \u2B9E %cService %c/ %c${message.type} %o`,
-			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
-			message.data,
+		log(
+			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %c${message.id.padEnd(11, ' ')} %cHost \u2B9E %cService %c/ %c${message.type}`,
+			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, colourFromId(message.id), HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return
+			...(Array.isArray(message.data) ? message.data : [message.data]).map(arg => typeof arg === 'object' && !VERBOSE_LOGGING.value ? '[Object]' : arg),
 		)
 		unresolvedMessages.set(message.id, message)
 		service?.postMessage(message)
@@ -232,10 +242,11 @@ void (async () => {
 	function callPromiseFunction<T> (type: string, ...params: any[]): Promise<T> {
 		const { id, promise } = addPromiseListener<T>(type)
 
-		console.log(
-			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cFrame \u2B9E %cService %c/ %c${type} %o`,
+		log(
+			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cFrame \u2B9E %cService %c/ %c${type}`,
 			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, FRAME_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
-			params,
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+			...params,
 		)
 
 		service?.postMessage({ type, id, data: params, origin: self.origin, frame: true })
@@ -251,7 +262,7 @@ void (async () => {
 		if (!unresolvedMessages.size)
 			return
 
-		console.log(
+		log(
 			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/`,
 			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT,
 			'Service updated, resending unresolved messages',
@@ -259,6 +270,9 @@ void (async () => {
 		for (const [, data] of unresolvedMessages)
 			service?.postMessage(data)
 	}
+
+	const { verboseLogging } = await conduit._handshake()
+	VERBOSE_LOGGING.value = verboseLogging
 
 	parentWindow.postMessage({ type: '_active' }, '*')
 })()

@@ -65,7 +65,7 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		if (index !== -1) messageListeners.splice(index, 1)
 	}
 	function addPromiseListener<T> (type: string): { id: string, promise: Promise<T> } {
-		const id = Math.random().toString(36).slice(2)
+		const id = Math.random().toString(36).slice(2, 13)
 		return {
 			id,
 			promise: new Promise<T>((resolve, reject) => {
