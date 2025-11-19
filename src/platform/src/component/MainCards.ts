@@ -1,6 +1,7 @@
 import ActionRow from 'component/core/ActionRow'
 import Button from 'component/core/Button'
 import Card from 'component/core/Card'
+import Checkbox from 'component/core/Checkbox'
 import Details from 'component/core/Details'
 import FormRow from 'component/core/FormRow'
 import Loading from 'component/core/Loading'
@@ -118,7 +119,7 @@ export default Component(component => {
 
 					Button()
 						.setDisabled(!customApp, 'no custom app set')
-						.text.set(quilt => quilt['main/advanced-card/custom-app/action/clear']())
+						.text.set(quilt => quilt['main/advanced-card/shared-form/action/clear']())
 						.event.subscribe('click', async () => {
 							await conduit._setCustomApp()
 							location.reload()
@@ -130,7 +131,7 @@ export default Component(component => {
 							State.Every(button, apiKeyInput.state, clientIdInput.state, clientSecretInput.state).falsy,
 							'missing input',
 						))
-						.text.set(quilt => quilt['main/advanced-card/custom-app/action/save']())
+						.text.set(quilt => quilt['main/advanced-card/shared-form/action/save']())
 						.event.subscribe('click', async () => {
 							await conduit._setCustomApp({
 								apiKey: apiKeyInput.state.value,
@@ -138,6 +139,40 @@ export default Component(component => {
 								clientSecret: clientSecretInput.state.value,
 							})
 							location.reload()
+						})
+						.appendTo(actions)
+				},
+			))
+			.appendTo(card)
+
+		Details()
+			.summaryText.set(quilt => quilt['main/advanced-card/settings/title']())
+			.append(Loading().appendTo(card).set(
+				async (signal, setProgress) => {
+					setProgress(null, quilt => quilt['main/advanced-card/settings/loading']())
+					const conduit = await Relic.connected
+
+					const verboseLogging = await conduit._getSetting('verboseLogging')
+
+					return {
+						conduit,
+						verboseLogging,
+					}
+				},
+				(slot, { conduit, verboseLogging }) => {
+					const verboseLoggingCheckbox = Checkbox()
+						.tweak(checkbox => checkbox.label.text.set(quilt => quilt['main/advanced-card/settings/verbose-logging/label']()))
+						.setChecked(!!verboseLogging)
+						.appendTo(slot)
+
+					const actions = ActionRow().appendTo(slot)
+
+					Button()
+						.text.set(quilt => quilt['main/advanced-card/shared-form/action/save']())
+						.event.subscribe('click', async () => {
+							await Promise.all([
+								conduit._setSetting('verboseLogging', verboseLoggingCheckbox.checked.value ? true : undefined),
+							])
 						})
 						.appendTo(actions)
 				},

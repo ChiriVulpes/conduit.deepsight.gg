@@ -19,6 +19,10 @@ grant-name: {#B:{1??{0}}}{1? - {0}}
 title: Advanced
 description: Advanced settings for how the deepsight.gg conduit will serve your data to third party applications.
 
+### shared-form
+action/clear: Clear
+action/save: Save
+
 ### custom-app
 title: Custom Bungie.net API Application
 loading: Checking for saved app...
@@ -29,5 +33,8 @@ description:
 api-key/label: API Key
 client-id/label: OAuth Client ID
 client-secret/label: OAuth Client Secret
-action/clear: Clear
-action/save: Save
+
+### settings
+title: Other settings
+loading: Getting settings state...
+verbose-logging/label: Verbose Logging

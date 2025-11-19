@@ -3,6 +3,7 @@ import type Collections from 'Collections'
 import type ConduitState from 'ConduitState'
 import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'DefinitionComponents'
 import type { Profile } from 'Profile'
+import type { ConduitSettings } from 'Settings'
 
 export interface ConduitFunctionRegistry {
 	getProfiles (): Promise<Profile[]>
@@ -22,7 +23,9 @@ export interface ConduitFunctionRegistry {
 	checkUpdate (): Promise<ConduitState>
 	/** @private:start */
 	setOrigin (): Promise<void>
-	_handshake (): Promise<ConduitHandshake>
+	_getSetting<SETTING extends keyof ConduitSettings> (key: SETTING): Promise<ConduitSettings[SETTING] | undefined>
+	_setSetting<SETTING extends keyof ConduitSettings> (key: SETTING, value: ConduitSettings[SETTING]): Promise<void>
+	_resetSetting (key: keyof ConduitSettings): Promise<void>
 	_getAuthState (): Promise<AuthState>
 	_setCustomApp (app?: CustomBungieApp): Promise<void>
 	_authenticate (code: string): Promise<boolean>
@@ -37,11 +40,8 @@ export interface ConduitFunctionRegistry {
 	// the above defs cannot contain a } character or it will break the packager
 }
 
-export interface ConduitHandshake {
-	verboseLogging: boolean
-}
-
 export interface ConduitBroadcastRegistry {
 	ready: void
 	profilesUpdated: Profile[]
+	_updateSettings: void
 }

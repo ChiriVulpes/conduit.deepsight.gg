@@ -105,6 +105,11 @@ void (async () => {
 			return
 		}
 
+		if (id === 'global' && type === '_updateSettings') {
+			void updateSettings()
+			return
+		}
+
 		unresolvedMessages.delete(id)
 
 		// forward messages from the service worker to the parent window
@@ -271,8 +276,18 @@ void (async () => {
 			service?.postMessage(data)
 	}
 
-	const { verboseLogging } = await conduit._handshake()
-	VERBOSE_LOGGING.value = verboseLogging
+	async function updateSettings () {
+		const verboseLogging = await conduit._getSetting('verboseLogging')
+		if (VERBOSE_LOGGING.value !== !!verboseLogging) {
+			console.info(`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cFrame %c/`,
+				PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, FRAME_FORMAT, PUNCT_FORMAT,
+				`${verboseLogging ? 'Enabled' : 'Disabled'} verbose logging`
+			)
+		}
+
+		VERBOSE_LOGGING.value = !!verboseLogging
+	}
+	await updateSettings()
 
 	parentWindow.postMessage({ type: '_active' }, '*')
 })()

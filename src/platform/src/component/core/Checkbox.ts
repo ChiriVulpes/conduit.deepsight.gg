@@ -3,6 +3,7 @@ import { Component, State } from 'kitsui'
 interface CheckboxExtensions {
 	readonly checked: State<boolean>
 	readonly label: Component
+	setChecked (value: boolean): this
 }
 
 interface Checkbox extends Component, CheckboxExtensions { }
@@ -36,6 +37,11 @@ const Checkbox = Component('label', (component): Checkbox => {
 		.extend<CheckboxExtensions>(checkbox => ({
 			checked,
 			label,
+			setChecked (value) {
+				checked.value = value
+				input.element.checked = value
+				return checkbox
+			},
 		}))
 })
 

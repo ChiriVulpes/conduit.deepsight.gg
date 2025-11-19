@@ -1,6 +1,7 @@
+import type { ConduitSettings } from '@shared/Settings'
 import { db } from 'utility/Database'
 
-export interface LocalStorage {
+export interface LocalStorage extends ConduitSettings {
 }
 
 export interface StoreState<T> {
@@ -27,12 +28,17 @@ const methods = {
 		if (tracked)
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			tracked.value = value
+		for (const handler of updateStoreHandlers)
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+			void handler(key as keyof LocalStorage, value)
 	},
 	delete: async (key: string) => {
 		await db.store.delete(key)
 		const tracked = trackedStoreStates[key as keyof LocalStorage]
 		if (tracked)
 			tracked.value = undefined
+		for (const handler of updateStoreHandlers)
+			void handler(key as keyof LocalStorage, undefined)
 	},
 	state: (...args: [key: string] | [key: string, orElse: unknown]) => {
 		const [key, orElse] = args
@@ -76,5 +82,11 @@ const Store = new Proxy({} as StoreProxy, {
 })
 
 export default Store
+
+type UpdateStoreHandler = (key: keyof LocalStorage, value: LocalStorage[keyof LocalStorage]) => unknown
+const updateStoreHandlers: UpdateStoreHandler[] = []
+export function onUpdateStore (callback: UpdateStoreHandler) {
+	updateStoreHandlers.push(callback)
+}
 
 Object.assign(self, { Store })

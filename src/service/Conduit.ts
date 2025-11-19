@@ -1,6 +1,7 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
 import type { AllComponentNames, AllDefinitions, DefinitionLinks, DefinitionReferencesPage } from '@shared/DefinitionComponents'
 import type { Profile } from '@shared/Profile'
+import type { ConduitSettings } from '@shared/Settings'
 import type { DeepsightDefinitionLinkDefinition } from 'deepsight.gg'
 import type { InventoryItemHashes } from 'deepsight.gg/Enums'
 import Auth from 'model/Auth'
@@ -13,7 +14,7 @@ import { db } from 'utility/Database'
 import Env from 'utility/Env'
 import FilterHelper from 'utility/FilterHelper'
 import Service, { SKIP_CLIENT } from 'utility/Service'
-import Store from 'utility/Store'
+import Store, { onUpdateStore } from 'utility/Store'
 
 if (!Env.BUNGIE_API_KEY)
 	throw new Error('BUNGIE_API_KEY is not set')
@@ -42,6 +43,14 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 	},
 	onRegistered (service) {
 		void service.broadcast.ready()
+		onUpdateStore(key => {
+			if (key === 'auth' || key === 'origins' || key === 'customApp')
+				return
+
+			const expectedKeyType: keyof ConduitSettings = key
+			expectedKeyType
+			void service.broadcast._updateSettings()
+		})
 	},
 	onCall: {
 
@@ -77,12 +86,27 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		////////////////////////////////////
 		//#region Private
 
-		async _handshake (event) {
-			const verboseLogging = await Store.verboseLogging.state()
-			return {
-				verboseLogging: !!verboseLogging.value,
-			}
+		////////////////////////////////////
+		//#region Settings
+
+		async _getSetting (event, key) {
+			if (event.origin !== self.origin)
+				throw new ConduitPrivateFunctionError()
+			return await Store[key].get()
 		},
+		async _setSetting (event, key, value) {
+			if (event.origin !== self.origin)
+				throw new ConduitPrivateFunctionError()
+			await Store[key].set(value)
+		},
+		async _resetSetting (event, key) {
+			if (event.origin !== self.origin)
+				throw new ConduitPrivateFunctionError()
+			await Store[key].delete()
+		},
+
+		//#endregion
+		////////////////////////////////////
 
 		setOrigin (event) { },
 		async _getAuthState (event) {
