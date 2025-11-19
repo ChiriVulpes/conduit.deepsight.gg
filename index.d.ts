@@ -1,3 +1,8 @@
+declare module "conduit.deepsight.gg/Settings" {
+    export interface ConduitSettings {
+        verboseLogging: true | undefined;
+    }
+}
 declare module "conduit.deepsight.gg/Profile" {
     import type { BungieMembershipType, DestinyClass, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2';
     export interface Profile {
@@ -111,6 +116,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type ConduitState from 'conduit.deepsight.gg/ConduitState';
     import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type { Profile } from 'conduit.deepsight.gg/Profile';
+    import type { ConduitSettings } from 'conduit.deepsight.gg/Settings';
     export interface ConduitFunctionRegistry {
         getProfiles(): Promise<Profile[]>;
         updateProfiles(): Promise<void>;
@@ -131,6 +137,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     export interface ConduitBroadcastRegistry {
         ready: void;
         profilesUpdated: Profile[];
+        _updateSettings: void;
     }
 }
 declare module "conduit.deepsight.gg/Collections" {

@@ -84,7 +84,7 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
                 messageListeners.splice(index, 1);
         }
         function addPromiseListener(type) {
-            const id = Math.random().toString(36).slice(2);
+            const id = Math.random().toString(36).slice(2, 13);
             return {
                 id,
                 promise: new Promise((resolve, reject) => {
