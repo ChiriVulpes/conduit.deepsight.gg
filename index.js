@@ -64,7 +64,6 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
         iframe.src = `${serviceRoot}service`;
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
-        await new Promise(resolve => iframe.addEventListener('load', resolve, { once: true }));
         const messageListeners = [];
         function addListener(id, type, callback, once = false) {
             const expiry = !once ? undefined : Date.now() + 1000 * 60 * 2; // 2 minute expiry for once listeners
@@ -139,6 +138,7 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
                 return;
             console.log('Unhandled message:', data);
         });
+        await new Promise(resolve => iframe.addEventListener('load', resolve, { once: true }));
         await activePromise;
         const implementation = {
             definitions: undefined,
