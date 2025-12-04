@@ -38,8 +38,6 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 	iframe.style.display = 'none'
 	document.body.appendChild(iframe)
 
-	await new Promise<unknown>(resolve => iframe.addEventListener('load', resolve, { once: true }))
-
 	interface MessageListener {
 		id: string
 		type: string
@@ -130,6 +128,7 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		console.log('Unhandled message:', data)
 	})
 
+	await new Promise<unknown>(resolve => iframe.addEventListener('load', resolve, { once: true }))
 	await activePromise
 
 	const implementation: ConduitImplementation = {

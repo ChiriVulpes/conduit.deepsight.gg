@@ -38,7 +38,8 @@ void (async () => {
 		frame?: true
 	}
 
-	const unresolvedMessages = new Map<string, any>()
+	const unresolvedCalls = new Map<string, Message>()
+	const completedCalls: string[] = []
 
 	const MAIN_FORMAT = 'color: #58946c;'
 	const PUNCT_FORMAT = 'color: #888;'
@@ -85,11 +86,15 @@ void (async () => {
 		// #endregion
 		////////////////////////////////////
 
-		if (id !== 'global' && !unresolvedMessages.has(id)) {
+		if (id !== 'global' && !unresolvedCalls.has(id)) {
+			if (completedCalls.includes(id))
+				// duplicate response, probably service worker updated. ignore it
+				return
+
 			log(
-				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %cHost %c\u2B9C Service %c/ %cReceived response for unknown message ID %o %o${printIfVerbose()}`,
-				PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, ERROR_FORMAT,
-				id, type, ...ifVerbose(data),
+				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %c${id.padEnd(11, ' ')} %cNo Target %c\u2B9C Service %c/ %c${type}${printIfVerbose()}`,
+				ERROR_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, colourFromId(id), ERROR_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
+				...ifVerbose(data),
 			)
 			return
 		}
@@ -110,7 +115,7 @@ void (async () => {
 			return
 		}
 
-		unresolvedMessages.delete(id)
+		unresolvedCalls.delete(id)
 
 		// forward messages from the service worker to the parent window
 		log(
@@ -118,6 +123,11 @@ void (async () => {
 			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, colourFromId(id), HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
 			...ifVerbose(data),
 		)
+
+		completedCalls.push(id)
+		if (completedCalls.length > 100)
+			completedCalls.shift()
+
 		parentWindow.postMessage(event.data, '*')
 	})
 
@@ -180,7 +190,7 @@ void (async () => {
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return
 			...(Array.isArray(message.data) ? message.data : [message.data]).map(arg => typeof arg === 'object' && !VERBOSE_LOGGING.value ? '[Object]' : arg),
 		)
-		unresolvedMessages.set(message.id, message)
+		unresolvedCalls.set(message.id, message)
 		service?.postMessage(message)
 	})
 
@@ -254,7 +264,9 @@ void (async () => {
 			...params,
 		)
 
-		service?.postMessage({ type, id, data: params, origin: self.origin, frame: true })
+		const message: Message<Record<string, any>> = { type, id, data: params, origin: self.origin, frame: true }
+		unresolvedCalls.set(id, message)
+		service?.postMessage(message)
 		return promise
 	}
 
@@ -264,15 +276,15 @@ void (async () => {
 	})
 
 	function resend () {
-		if (!unresolvedMessages.size)
+		if (!unresolvedCalls.size)
 			return
 
 		log(
 			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/`,
 			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT,
-			'Service updated, resending unresolved messages',
+			`Service updated. ${!unresolvedCalls.size ? 'No calls to resend' : `Resending ${unresolvedCalls.size} unresolved messages`}`,
 		)
-		for (const [, data] of unresolvedMessages)
+		for (const [, data] of unresolvedCalls)
 			service?.postMessage(data)
 	}
 
