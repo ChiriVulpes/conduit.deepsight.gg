@@ -9,9 +9,8 @@ importers:
   .:
     dependencies:
       bungie-api-ts:
-        specifier: ^5.9.0
+        specifier: 5.10.0
         version: 5.10.0
-    devDependencies:
       deepsight.gg:
         specifier: 1.0.1577
         version: 1.0.1577

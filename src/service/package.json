@@ -1,11 +1,9 @@
 {
 	"private": true,
 	"dependencies": {
-		"bungie-api-ts": "^5.9.0",
+		"bungie-api-ts": "5.10.0",
+		"deepsight.gg": "1.0.1577",
 		"dexie": "4.0.11",
 		"jsonpath-plus": "10.3.0"
-	},
-	"devDependencies": {
-		"deepsight.gg": "1.0.1577"
 	}
 }
