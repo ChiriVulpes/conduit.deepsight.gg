@@ -26,6 +26,13 @@ export default Task('install', async task => {
 			},
 		},
 		{
+			path: 'src/frame',
+			dependencies: {
+				'deepsight.gg': { name: 'deepsight.gg' },
+				'bungie-api-ts': { name: 'bungie-api-ts' },
+			},
+		},
+		{
 			path: 'src/service',
 			dependencies: {
 				'deepsight.gg': { name: 'deepsight.gg' },

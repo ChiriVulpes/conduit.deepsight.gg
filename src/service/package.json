@@ -6,6 +6,6 @@
 		"jsonpath-plus": "10.3.0"
 	},
 	"devDependencies": {
-		"deepsight.gg": "^1.0.1567"
+		"deepsight.gg": "1.0.1577"
 	}
 }

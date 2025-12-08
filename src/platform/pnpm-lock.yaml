@@ -1,0 +1,23 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      kitsui:
+        specifier: github:fluff4me/kitsui#89d9abef568cb7cba673d3d9d0991ed349f6b30c
+        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/89d9abef568cb7cba673d3d9d0991ed349f6b30c
+
+packages:
+
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/89d9abef568cb7cba673d3d9d0991ed349f6b30c:
+    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/89d9abef568cb7cba673d3d9d0991ed349f6b30c}
+    version: 0.0.1
+
+snapshots:
+
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/89d9abef568cb7cba673d3d9d0991ed349f6b30c: {}

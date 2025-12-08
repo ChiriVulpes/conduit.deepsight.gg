@@ -10,10 +10,12 @@
 		"tinyglobby": "0.2.14",
 		"ts-node": "10.9.2",
 		"typescript": "5.8.3",
-		"typescript-eslint": "8.36.0",
-		"chiri": "github:fluff4me/chiri#package",
-		"lint": "github:fluff4me/lint",
-		"task": "github:chirivulpes/task#package",
-		"weaving": "github:chirivulpes/weaving#package"
+		"typescript-eslint": "8.36.0"
+	},
+	"dependencies": {
+		"chiri": "github:fluff4me/chiri#d381ef046f789e561983f077e0242bce150b09da",
+		"lint": "github:fluff4me/lint#ca79ead3fa0806316fd6e864f911a7f2487a5d5a",
+		"task": "github:chirivulpes/task#a4b516dcf5896f996caaab7e764abb731c5bb0c0",
+		"weaving": "github:chirivulpes/weaving#fc532b3e2025f424747e382caf66ad1661932c9a"
 	}
 }

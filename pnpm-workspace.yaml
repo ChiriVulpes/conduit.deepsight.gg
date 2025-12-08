@@ -1,0 +1,5 @@
+minimumReleaseAgeExclude:
+  - bungie-api-ts
+  - deepsight.gg
+
+sharedWorkspaceLockfile: false

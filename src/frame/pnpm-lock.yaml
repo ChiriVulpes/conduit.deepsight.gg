@@ -1,0 +1,42 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      bungie-api-ts:
+        specifier: ^5.9.0
+        version: 5.10.0
+      dexie:
+        specifier: 4.0.11
+        version: 4.0.11
+    devDependencies:
+      deepsight.gg:
+        specifier: 1.0.1577
+        version: 1.0.1577
+
+packages:
+
+  bungie-api-ts@5.10.0:
+    resolution: {integrity: sha512-3UJCuMJVRrfqUA23mpE/DJ79TWQqhRKuY3hLxUZpcTHQ9wOBWSk6Nyxugx231cIqfPsENnGT0OkBOvIB0s6C5g==}
+    engines: {node: '>=13.2.0'}
+
+  deepsight.gg@1.0.1577:
+    resolution: {integrity: sha512-Feu87NK48oqu+RoFNr72KJH1loyOi1To0Wj+wYu+Asd6Ct+p7ibuZQ627XBK3EF7vfz5k4A1tFWe7Ij+gMWqmg==}
+
+  dexie@4.0.11:
+    resolution: {integrity: sha512-SOKO002EqlvBYYKQSew3iymBoN2EQ4BDw/3yprjh7kAfFzjBYkaMNa/pZvcA7HSWlcKSQb9XhPe3wKyQ0x4A8A==}
+
+snapshots:
+
+  bungie-api-ts@5.10.0: {}
+
+  deepsight.gg@1.0.1577:
+    dependencies:
+      bungie-api-ts: 5.10.0
+
+  dexie@4.0.11: {}
