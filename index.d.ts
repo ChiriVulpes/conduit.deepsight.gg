@@ -203,10 +203,6 @@ declare module "conduit.deepsight.gg/Collections" {
         hash: DestinyAmmunitionType;
         displayProperties: DestinyDisplayPropertiesDefinition;
     }
-    export interface ItemArchetype {
-        hash: number;
-        displayProperties: DestinyDisplayPropertiesDefinition;
-    }
     export interface ItemSocket {
         type: DeepsightPlugFullName;
         plugs: number[];
