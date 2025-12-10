@@ -12,8 +12,8 @@ importers:
         specifier: 5.10.0
         version: 5.10.0
       deepsight.gg:
-        specifier: 1.0.1580
-        version: 1.0.1580
+        specifier: 1.0.1584
+        version: 1.0.1584
       dexie:
         specifier: 4.0.11
         version: 4.0.11
@@ -24,8 +24,8 @@ packages:
     resolution: {integrity: sha512-3UJCuMJVRrfqUA23mpE/DJ79TWQqhRKuY3hLxUZpcTHQ9wOBWSk6Nyxugx231cIqfPsENnGT0OkBOvIB0s6C5g==}
     engines: {node: '>=13.2.0'}
 
-  deepsight.gg@1.0.1580:
-    resolution: {integrity: sha512-Zd95jpknmMx6VykC7xDdgdjWd76bbcQ09LZgdhHBLdNqQY7y1DZDe3/5EX9d53NRGuu4fWaIHRTvIOGlRP9AcQ==}
+  deepsight.gg@1.0.1584:
+    resolution: {integrity: sha512-UHT5lAS5L6v5/Am2gnaUmEZPcnFRX4DAE6q3EwFTQke+fNEIbHfb/sRYJj4zowYNu9rvgRQUpduAGfaJ140Lrw==}
 
   dexie@4.0.11:
     resolution: {integrity: sha512-SOKO002EqlvBYYKQSew3iymBoN2EQ4BDw/3yprjh7kAfFzjBYkaMNa/pZvcA7HSWlcKSQb9XhPe3wKyQ0x4A8A==}
@@ -34,7 +34,7 @@ snapshots:
 
   bungie-api-ts@5.10.0: {}
 
-  deepsight.gg@1.0.1580:
+  deepsight.gg@1.0.1584:
     dependencies:
       bungie-api-ts: 5.10.0
 
