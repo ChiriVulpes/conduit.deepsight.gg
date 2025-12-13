@@ -1,7 +1,7 @@
-import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyEquipableItemSetDefinition, DestinySandboxPerkDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2'
+import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyEquipableItemSetDefinition, DestinySandboxPerkDefinition, DestinySocketCategoryDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2'
 import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, InventoryBucketHashes, ItemCategoryHashes, ItemTierTypeHashes, SandboxPerkHashes, StatHashes } from 'deepsight.gg/Enums'
-import type { ClarityDescription, DeepsightDropTableDefinition, DeepsightItemSourceDefinition, DeepsightItemSourceType, DeepsightMomentDefinition, DeepsightTierTypeDefinition } from 'deepsight.gg/Interfaces'
+import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, InventoryBucketHashes, ItemCategoryHashes, ItemTierTypeHashes, MomentHashes, SandboxPerkHashes, SocketCategoryHashes, StatHashes } from 'deepsight.gg/Enums'
+import type { ClarityDescription, DeepsightDropTableDefinition, DeepsightItemSourceDefinition, DeepsightItemSourceType, DeepsightMomentDefinition, DeepsightTierTypeDefinition, DeepsightWeaponFoundryDefinition } from 'deepsight.gg/Interfaces'
 
 interface Collections {
 	moments: CollectionsMoment[]
@@ -15,7 +15,9 @@ interface Collections {
 	itemSets: Record<EquipableItemSetHashes, DestinyEquipableItemSetDefinition>
 	perks: Partial<Record<SandboxPerkHashes, DestinySandboxPerkDefinition>>
 	sources: Record<DeepsightItemSourceType, DeepsightItemSourceDefinition>
-	dropTables: Record<string, DeepsightDropTableDefinition>
+	dropTables: Record<ActivityHashes, DeepsightDropTableDefinition>
+	socketCategories: Record<SocketCategoryHashes, DestinySocketCategoryDefinition>
+	foundries: Record<FoundryHashes, DeepsightWeaponFoundryDefinition>
 }
 
 export default Collections
@@ -42,22 +44,22 @@ export interface Item {
 	is: 'item'
 	hash: number
 	displayProperties: DestinyDisplayPropertiesDefinition
-	watermark: string
-	featuredWatermark?: string
+	momentHash?: MomentHashes
+	featured: boolean
 	sockets: ItemSocket[]
 	type: string
 	rarity: ItemTierTypeHashes
-	class?: DestinyClass
-	damageTypes?: DamageTypeHashes[]
-	ammo?: DestinyAmmunitionType.Primary | DestinyAmmunitionType.Special | DestinyAmmunitionType.Heavy
+	classType?: DestinyClass
+	damageTypeHashes?: DamageTypeHashes[]
+	ammoType?: DestinyAmmunitionType.Primary | DestinyAmmunitionType.Special | DestinyAmmunitionType.Heavy
 	statGroupHash?: number
 	stats?: Partial<Record<StatHashes, ItemStat>>
 	itemSetHash?: EquipableItemSetHashes
 	flavorText?: string
 	sources?: ItemSource[]
 	previewImage?: string
-	foundryImage?: string
-	categories?: ItemCategoryHashes[]
+	foundryHash?: FoundryHashes
+	categoryHashes?: ItemCategoryHashes[]
 
 	// unique to instances
 	instanceId?: string

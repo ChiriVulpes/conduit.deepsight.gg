@@ -1,15 +1,16 @@
 import type Collections from '@shared/Collections'
 import type { CollectionsBucket, CollectionsMoment } from '@shared/Collections'
-import type { DestinyDamageTypeDefinition, DestinyEquipableItemSetDefinition, DestinyStatDefinition } from 'bungie-api-ts/destiny2/interfaces'
+import type { DestinyDamageTypeDefinition, DestinyEquipableItemSetDefinition, DestinySocketCategoryDefinition, DestinyStatDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import { DestinyAmmunitionType } from 'bungie-api-ts/destiny2/interfaces'
-import type { DamageTypeHashes, EquipableItemSetHashes, StatHashes } from 'deepsight.gg/Enums'
+import type { DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, SocketCategoryHashes, StatHashes } from 'deepsight.gg/Enums'
 import { InventoryBucketHashes, PresentationNodeHashes } from 'deepsight.gg/Enums'
+import type { DeepsightWeaponFoundryDefinition } from 'deepsight.gg/Interfaces'
 import CombinedManifestVersion from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import Model from 'model/Model'
 
-const version = `26.${ITEMS_VERSION}`
+const version = `27.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },
@@ -35,9 +36,11 @@ export default Model<Collections>('Collections', {
 					DeepsightItemSourceDefinition,
 					DeepsightMomentDefinition,
 					DeepsightTierTypeDefinition,
+					DeepsightWeaponFoundryDefinition,
 					DestinyDamageTypeDefinition,
 					DestinyEquipableItemSetDefinition,
 					DestinyPresentationNodeDefinition,
+					DestinySocketCategoryDefinition,
 					DestinyStatDefinition,
 					DestinyStatGroupDefinition,
 				] = await Promise.all([
@@ -46,9 +49,11 @@ export default Model<Collections>('Collections', {
 					Definitions.en.DeepsightItemSourceDefinition.get(),
 					Definitions.en.DeepsightMomentDefinition.get(),
 					Definitions.en.DeepsightTierTypeDefinition.get(),
+					Definitions.en.DeepsightWeaponFoundryDefinition.get(),
 					Definitions.en.DestinyDamageTypeDefinition.get(),
 					Definitions.en.DestinyEquipableItemSetDefinition.get(),
 					Definitions.en.DestinyPresentationNodeDefinition.get(),
+					Definitions.en.DestinySocketCategoryDefinition.get(),
 					Definitions.en.DestinyStatDefinition.get(),
 					Definitions.en.DestinyStatGroupDefinition.get(),
 				])
@@ -94,6 +99,8 @@ export default Model<Collections>('Collections', {
 					perks: resolver.perks,
 					sources: DeepsightItemSourceDefinition,
 					dropTables: DeepsightDropTableDefinition,
+					socketCategories: DestinySocketCategoryDefinition as Record<SocketCategoryHashes, DestinySocketCategoryDefinition>,
+					foundries: DeepsightWeaponFoundryDefinition as Record<FoundryHashes, DeepsightWeaponFoundryDefinition>,
 				}
 			},
 		}

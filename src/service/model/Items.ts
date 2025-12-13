@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import type { Item, ItemPlug, ItemSocket, ItemSourceDefined, ItemSourceDropTable, ItemStat } from '@shared/Collections'
 import type { DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition, DestinySandboxPerkDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import { DestinyItemSubType, SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
@@ -11,7 +10,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '18'
+export const ITEMS_VERSION = '19'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -26,13 +25,15 @@ namespace Items {
 	export async function createResolver (type: 'instance' | 'collections') {
 		const [
 			// ClarityDescriptions,
-			DeepsightFormattedClarityDescriptions,
 			DeepsightDropTableDefinition,
+			DeepsightFormattedClarityDescriptions,
 			DeepsightItemDamageTypesDefinition,
 			DeepsightItemSourceListDefinition,
+			DeepsightMomentDefinition,
 			DeepsightPlugCategorisation,
 			DeepsightSocketCategorisation,
 			DeepsightSocketExtendedDefinition,
+			DeepsightWeaponFoundryDefinition,
 			DestinyEquipableItemSetDefinition,
 			DestinyInventoryItemDefinition,
 			DestinyPlugSetDefinition,
@@ -41,13 +42,15 @@ namespace Items {
 			DestinyStatGroupDefinition,
 		] = await Promise.all([
 			// Definitions.en.ClarityDescriptions.get(),
-			Definitions.en.DeepsightFormattedClarityDescriptions.get(),
 			Definitions.en.DeepsightDropTableDefinition.get(),
+			Definitions.en.DeepsightFormattedClarityDescriptions.get(),
 			Definitions.en.DeepsightItemDamageTypesDefinition.get(),
 			Definitions.en.DeepsightItemSourceListDefinition.get(),
+			Definitions.en.DeepsightMomentDefinition.get(),
 			Definitions.en.DeepsightPlugCategorisation.get(),
 			Definitions.en.DeepsightSocketCategorisation.get(),
 			Definitions.en.DeepsightSocketExtendedDefinition.get(),
+			Definitions.en.DeepsightWeaponFoundryDefinition.get(),
 			Definitions.en.DestinyEquipableItemSetDefinition.get(),
 			Definitions.en.DestinyInventoryItemDefinition.get(),
 			Definitions.en.DestinyPlugSetDefinition.get(),
@@ -75,13 +78,16 @@ namespace Items {
 				is: 'item',
 				hash,
 				displayProperties: def.displayProperties,
-				watermark: def.iconWatermark,
-				featuredWatermark: def.isFeaturedItem ? def.iconWatermarkFeatured : undefined,
+				momentHash: (_
+					?? Object.values(DeepsightMomentDefinition).find(moment => moment.itemHashes?.includes(hash))?.hash
+					?? Object.values(DeepsightMomentDefinition).find(moment => moment.iconWatermark.includes(def.iconWatermark))?.hash
+				),
+				featured: def.isFeaturedItem,
 				type: def.itemTypeDisplayName,
 				rarity: def.inventory?.tierTypeHash ?? ItemTierTypeHashes.Common,
-				class: def.classType,
-				damageTypes: DeepsightItemDamageTypesDefinition[hash]?.damageTypes ?? def.damageTypeHashes,
-				ammo: def.equippingBlock?.ammoType as Item['ammo'],
+				classType: def.classType,
+				damageTypeHashes: DeepsightItemDamageTypesDefinition[hash]?.damageTypes ?? def.damageTypeHashes,
+				ammoType: def.equippingBlock?.ammoType as Item['ammoType'],
 				sockets,
 				statGroupHash: def.stats?.statGroupHash,
 				stats: stats(def, undefined, sockets),
@@ -92,8 +98,8 @@ namespace Items {
 					...dropTableItems.filter(([, items]) => items.includes(hash)).map(([table]): ItemSourceDropTable => ({ type: 'table', id: table.hash })),
 				],
 				previewImage: def.screenshot,
-				foundryImage: def.secondaryIcon,
-				categories: def.itemCategoryHashes as ItemCategoryHashes[],
+				foundryHash: Object.values(DeepsightWeaponFoundryDefinition).find(foundry => foundry.overlay === def.secondaryIcon)?.hash,
+				categoryHashes: def.itemCategoryHashes as ItemCategoryHashes[],
 			}
 			items[hash] = item
 			return hash
