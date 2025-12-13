@@ -9,15 +9,15 @@ importers:
   .:
     dependencies:
       kitsui:
-        specifier: github:fluff4me/kitsui#89d9abef568cb7cba673d3d9d0991ed349f6b30c
-        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/89d9abef568cb7cba673d3d9d0991ed349f6b30c
+        specifier: github:fluff4me/kitsui#a971d0b2563257eed5dee065b21a0f9ea8576bf6
+        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/a971d0b2563257eed5dee065b21a0f9ea8576bf6
 
 packages:
 
-  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/89d9abef568cb7cba673d3d9d0991ed349f6b30c:
-    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/89d9abef568cb7cba673d3d9d0991ed349f6b30c}
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/a971d0b2563257eed5dee065b21a0f9ea8576bf6:
+    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/a971d0b2563257eed5dee065b21a0f9ea8576bf6}
     version: 0.0.1
 
 snapshots:
 
-  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/89d9abef568cb7cba673d3d9d0991ed349f6b30c: {}
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/a971d0b2563257eed5dee065b21a0f9ea8576bf6: {}
