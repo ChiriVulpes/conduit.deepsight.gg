@@ -1,7 +1,7 @@
 import type { AuthState, CustomBungieApp } from 'Auth'
-import type Collections from 'Collections'
 import type ConduitState from 'ConduitState'
 import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'DefinitionComponents'
+import type Collections from 'item/Collections'
 import type { Profile } from 'Profile'
 import type { ConduitSettings } from 'Settings'
 

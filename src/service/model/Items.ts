@@ -1,9 +1,11 @@
-import type { Item, ItemPlug, ItemSocket, ItemSourceDefined, ItemSourceDropTable, ItemStat } from '@shared/Collections'
-import type { DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition, DestinySandboxPerkDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2/interfaces'
+import type { Item, ItemPlug, ItemProvider as ItemProviderDef, ItemSocket, ItemSourceDefined, ItemSourceDropTable, ItemStat } from '@shared/item/Item'
+import { DestinyAmmunitionType } from 'bungie-api-ts/destiny2'
+import type { DestinyDamageTypeDefinition, DestinyEquipableItemSetDefinition, DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition, DestinySandboxPerkDefinition, DestinySocketCategoryDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import { DestinyItemSubType, SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
+import type { DeepsightWeaponFoundryDefinition } from 'deepsight.gg'
 import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { EquipableItemSetHashes, SandboxPerkHashes } from 'deepsight.gg/Enums'
-import { ItemCategoryHashes, ItemTierTypeHashes, StatHashes } from 'deepsight.gg/Enums'
+import type { DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, SandboxPerkHashes, SocketCategoryHashes } from 'deepsight.gg/Enums'
+import { ItemCategoryHashes, ItemTierTypeHashes, PresentationNodeHashes, StatHashes } from 'deepsight.gg/Enums'
 import Categorisation from 'model/Categorisation'
 import Definitions from 'model/Definitions'
 import DestinyProfiles from 'model/DestinyProfiles'
@@ -22,22 +24,53 @@ const STATS_ARMOUR = new Set<StatHashes>([
 ])
 
 namespace Items {
-	export async function createResolver (type: 'instance' | 'collections') {
+
+	interface ItemProviderConfig {
+		DestinyInventoryItemDefinition: Record<number, DestinyInventoryItemDefinition>
+		item (hash: number, def: DestinyInventoryItemDefinition): number
+	}
+
+	export interface ItemProvider extends ItemProviderDef { }
+	export class ItemProvider implements ItemProviderDef {
+
+		#config: ItemProviderConfig
+
+		public constructor (config: ItemProviderConfig, provider: ItemProviderDef) {
+			this.#config = config
+			Object.assign(this, provider)
+		}
+
+		item (hash: number) {
+			const def = this.#config.DestinyInventoryItemDefinition[hash]
+			if (!def)
+				return undefined
+
+			return this.#config.item(hash, def)
+		}
+
+	}
+
+	export async function provider (type: 'instance' | 'collections'): Promise<ItemProvider> {
 		const [
 			// ClarityDescriptions,
 			DeepsightDropTableDefinition,
 			DeepsightFormattedClarityDescriptions,
 			DeepsightItemDamageTypesDefinition,
+			DeepsightItemSourceDefinition,
 			DeepsightItemSourceListDefinition,
 			DeepsightMomentDefinition,
 			DeepsightPlugCategorisation,
 			DeepsightSocketCategorisation,
 			DeepsightSocketExtendedDefinition,
+			DeepsightTierTypeDefinition,
 			DeepsightWeaponFoundryDefinition,
+			DestinyDamageTypeDefinition,
 			DestinyEquipableItemSetDefinition,
 			DestinyInventoryItemDefinition,
 			DestinyPlugSetDefinition,
+			DestinyPresentationNodeDefinition,
 			DestinySandboxPerkDefinition,
+			DestinySocketCategoryDefinition,
 			DestinyStatDefinition,
 			DestinyStatGroupDefinition,
 		] = await Promise.all([
@@ -45,16 +78,21 @@ namespace Items {
 			Definitions.en.DeepsightDropTableDefinition.get(),
 			Definitions.en.DeepsightFormattedClarityDescriptions.get(),
 			Definitions.en.DeepsightItemDamageTypesDefinition.get(),
+			Definitions.en.DeepsightItemSourceDefinition.get(),
 			Definitions.en.DeepsightItemSourceListDefinition.get(),
 			Definitions.en.DeepsightMomentDefinition.get(),
 			Definitions.en.DeepsightPlugCategorisation.get(),
 			Definitions.en.DeepsightSocketCategorisation.get(),
 			Definitions.en.DeepsightSocketExtendedDefinition.get(),
+			Definitions.en.DeepsightTierTypeDefinition.get(),
 			Definitions.en.DeepsightWeaponFoundryDefinition.get(),
+			Definitions.en.DestinyDamageTypeDefinition.get(),
 			Definitions.en.DestinyEquipableItemSetDefinition.get(),
 			Definitions.en.DestinyInventoryItemDefinition.get(),
 			Definitions.en.DestinyPlugSetDefinition.get(),
+			Definitions.en.DestinyPresentationNodeDefinition.get(),
 			Definitions.en.DestinySandboxPerkDefinition.get(),
+			Definitions.en.DestinySocketCategoryDefinition.get(),
 			Definitions.en.DestinyStatDefinition.get(),
 			Definitions.en.DestinyStatGroupDefinition.get(),
 		])
@@ -326,18 +364,37 @@ namespace Items {
 		//#endregion
 		////////////////////////////////////
 
-		return {
-			plugs: plugs as Record<number, ItemPlug>,
+		return new ItemProvider({
+			DestinyInventoryItemDefinition,
+			item,
+		}, {
 			items,
+			plugs: plugs as Record<number, ItemPlug>,
 			perks,
-			item (hash: number) {
-				const def = DestinyInventoryItemDefinition[hash]
-				if (!def)
-					return undefined
-
-				return item(hash, def)
+			ammoTypes: {
+				[DestinyAmmunitionType.Primary]: {
+					hash: DestinyAmmunitionType.Primary,
+					displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Primary_ObjectiveHash1662965554].displayProperties,
+				},
+				[DestinyAmmunitionType.Special]: {
+					hash: DestinyAmmunitionType.Special,
+					displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Special_Scope1].displayProperties,
+				},
+				[DestinyAmmunitionType.Heavy]: {
+					hash: DestinyAmmunitionType.Heavy,
+					displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Heavy_ObjectiveHash3528763451].displayProperties,
+				},
 			},
-		}
+			rarities: DeepsightTierTypeDefinition,
+			damageTypes: DestinyDamageTypeDefinition as Record<DamageTypeHashes, DestinyDamageTypeDefinition>,
+			stats: DestinyStatDefinition as Record<StatHashes, DestinyStatDefinition>,
+			statGroups: DestinyStatGroupDefinition,
+			itemSets: DestinyEquipableItemSetDefinition as Record<EquipableItemSetHashes, DestinyEquipableItemSetDefinition>,
+			sources: DeepsightItemSourceDefinition,
+			dropTables: DeepsightDropTableDefinition,
+			socketCategories: DestinySocketCategoryDefinition as Record<SocketCategoryHashes, DestinySocketCategoryDefinition>,
+			foundries: DeepsightWeaponFoundryDefinition as Record<FoundryHashes, DeepsightWeaponFoundryDefinition>,
+		})
 	}
 
 	/**

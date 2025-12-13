@@ -1,16 +1,12 @@
-import type Collections from '@shared/Collections'
-import type { CollectionsBucket, CollectionsMoment } from '@shared/Collections'
-import type { DestinyDamageTypeDefinition, DestinyEquipableItemSetDefinition, DestinySocketCategoryDefinition, DestinyStatDefinition } from 'bungie-api-ts/destiny2/interfaces'
-import { DestinyAmmunitionType } from 'bungie-api-ts/destiny2/interfaces'
-import type { DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, SocketCategoryHashes, StatHashes } from 'deepsight.gg/Enums'
-import { InventoryBucketHashes, PresentationNodeHashes } from 'deepsight.gg/Enums'
-import type { DeepsightWeaponFoundryDefinition } from 'deepsight.gg/Interfaces'
+import type Collections from '@shared/item/Collections'
+import type { CollectionsBucket, CollectionsMoment } from '@shared/item/Collections'
+import { InventoryBucketHashes } from 'deepsight.gg/Enums'
 import CombinedManifestVersion from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import Model from 'model/Model'
 
-const version = `27.${ITEMS_VERSION}`
+const version = `29.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
 	return {
 		[InventoryBucketHashes.KineticWeapons]: { items: [] },
@@ -32,75 +28,31 @@ export default Model<Collections>('Collections', {
 			value: async (): Promise<Collections> => {
 				const [
 					DeepsightCollectionsDefinition,
-					DeepsightDropTableDefinition,
-					DeepsightItemSourceDefinition,
 					DeepsightMomentDefinition,
-					DeepsightTierTypeDefinition,
-					DeepsightWeaponFoundryDefinition,
-					DestinyDamageTypeDefinition,
-					DestinyEquipableItemSetDefinition,
-					DestinyPresentationNodeDefinition,
-					DestinySocketCategoryDefinition,
-					DestinyStatDefinition,
-					DestinyStatGroupDefinition,
 				] = await Promise.all([
 					Definitions.en.DeepsightCollectionsDefinition.get(),
-					Definitions.en.DeepsightDropTableDefinition.get(),
-					Definitions.en.DeepsightItemSourceDefinition.get(),
 					Definitions.en.DeepsightMomentDefinition.get(),
-					Definitions.en.DeepsightTierTypeDefinition.get(),
-					Definitions.en.DeepsightWeaponFoundryDefinition.get(),
-					Definitions.en.DestinyDamageTypeDefinition.get(),
-					Definitions.en.DestinyEquipableItemSetDefinition.get(),
-					Definitions.en.DestinyPresentationNodeDefinition.get(),
-					Definitions.en.DestinySocketCategoryDefinition.get(),
-					Definitions.en.DestinyStatDefinition.get(),
-					Definitions.en.DestinyStatGroupDefinition.get(),
 				])
 
-				const resolver = await Items.createResolver('collections')
-
-				const ammoTypes: Collections['ammoTypes'] = {
-					[DestinyAmmunitionType.Primary]: {
-						hash: DestinyAmmunitionType.Primary,
-						displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Primary_ObjectiveHash1662965554].displayProperties,
-					},
-					[DestinyAmmunitionType.Special]: {
-						hash: DestinyAmmunitionType.Special,
-						displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Special_Scope1].displayProperties,
-					},
-					[DestinyAmmunitionType.Heavy]: {
-						hash: DestinyAmmunitionType.Heavy,
-						displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Heavy_ObjectiveHash3528763451].displayProperties,
-					},
-				}
+				const provider = await Items.provider('collections')
 
 				return {
-					moments: Object.values(DeepsightMomentDefinition)
+					...{ version },
+					moments: (Object.values(DeepsightMomentDefinition)
 						.map((moment): CollectionsMoment => ({
 							moment,
 							buckets: Object.assign(buckets(),
-								Object.entries(DeepsightCollectionsDefinition[moment.hash]?.buckets || {})
+								(Object.entries(DeepsightCollectionsDefinition[moment.hash]?.buckets || {})
 									.map(([bucketHash, itemHashes]): [string, CollectionsBucket] => [bucketHash, {
-										items: itemHashes.map(resolver.item).filter(item => item !== undefined),
+										items: itemHashes.map(hash => provider.item(hash)).filter(item => item !== undefined),
 									}])
-									.collect(Object.fromEntries) as CollectionsMoment['buckets'],
+									.collect(Object.fromEntries) as CollectionsMoment['buckets']
+								),
 							),
 						}))
-						.sort((a, b) => b.moment.hash - a.moment.hash),
-					items: resolver.items,
-					plugs: resolver.plugs,
-					rarities: DeepsightTierTypeDefinition,
-					damageTypes: DestinyDamageTypeDefinition as Record<DamageTypeHashes, DestinyDamageTypeDefinition>,
-					stats: DestinyStatDefinition as Record<StatHashes, DestinyStatDefinition>,
-					statGroups: DestinyStatGroupDefinition,
-					ammoTypes,
-					itemSets: DestinyEquipableItemSetDefinition as Record<EquipableItemSetHashes, DestinyEquipableItemSetDefinition>,
-					perks: resolver.perks,
-					sources: DeepsightItemSourceDefinition,
-					dropTables: DeepsightDropTableDefinition,
-					socketCategories: DestinySocketCategoryDefinition as Record<SocketCategoryHashes, DestinySocketCategoryDefinition>,
-					foundries: DeepsightWeaponFoundryDefinition as Record<FoundryHashes, DeepsightWeaponFoundryDefinition>,
+						.sort((a, b) => b.moment.hash - a.moment.hash)
+					),
+					...provider,
 				}
 			},
 		}

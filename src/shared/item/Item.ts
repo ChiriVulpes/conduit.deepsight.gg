@@ -1,10 +1,9 @@
 import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyEquipableItemSetDefinition, DestinySandboxPerkDefinition, DestinySocketCategoryDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2'
 import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, InventoryBucketHashes, ItemCategoryHashes, ItemTierTypeHashes, MomentHashes, SandboxPerkHashes, SocketCategoryHashes, StatHashes } from 'deepsight.gg/Enums'
-import type { ClarityDescription, DeepsightDropTableDefinition, DeepsightItemSourceDefinition, DeepsightItemSourceType, DeepsightMomentDefinition, DeepsightTierTypeDefinition, DeepsightWeaponFoundryDefinition } from 'deepsight.gg/Interfaces'
+import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, ItemCategoryHashes, ItemTierTypeHashes, MomentHashes, SandboxPerkHashes, SocketCategoryHashes, StatHashes } from 'deepsight.gg/Enums'
+import type { ClarityDescription, DeepsightDropTableDefinition, DeepsightItemSourceDefinition, DeepsightItemSourceType, DeepsightTierTypeDefinition, DeepsightWeaponFoundryDefinition } from 'deepsight.gg/Interfaces'
 
-interface Collections {
-	moments: CollectionsMoment[]
+export interface ItemProvider {
 	items: Record<number, Item>
 	plugs: Record<number, ItemPlug>
 	rarities: Record<ItemTierTypeHashes, DeepsightTierTypeDefinition>
@@ -18,26 +17,6 @@ interface Collections {
 	dropTables: Record<ActivityHashes, DeepsightDropTableDefinition>
 	socketCategories: Record<SocketCategoryHashes, DestinySocketCategoryDefinition>
 	foundries: Record<FoundryHashes, DeepsightWeaponFoundryDefinition>
-}
-
-export default Collections
-
-export interface CollectionsMoment {
-	moment: DeepsightMomentDefinition
-	buckets: {
-		[InventoryBucketHashes.KineticWeapons]: CollectionsBucket
-		[InventoryBucketHashes.EnergyWeapons]: CollectionsBucket
-		[InventoryBucketHashes.PowerWeapons]: CollectionsBucket
-		[InventoryBucketHashes.Helmet]: CollectionsBucket
-		[InventoryBucketHashes.Gauntlets]: CollectionsBucket
-		[InventoryBucketHashes.ChestArmor]: CollectionsBucket
-		[InventoryBucketHashes.LegArmor]: CollectionsBucket
-		[InventoryBucketHashes.ClassArmor]: CollectionsBucket
-	}
-}
-
-export interface CollectionsBucket {
-	items: number[]
 }
 
 export interface Item {

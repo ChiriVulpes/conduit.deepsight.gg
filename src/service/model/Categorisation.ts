@@ -1,4 +1,4 @@
-import type { ItemPlug, ItemSocket } from '@shared/Collections'
+import type { ItemPlug, ItemSocket } from '@shared/item/Item'
 import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName, DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
 
 type PlugCategorisationExpression =
