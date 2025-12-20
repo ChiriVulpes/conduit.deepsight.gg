@@ -75,6 +75,7 @@ declare module "conduit.deepsight.gg/item/Item" {
     export interface ItemSourceDefined {
         type: 'defined';
         id: DeepsightItemSourceType;
+        eventState?: 'active' | 'upcoming' | 'unknown';
     }
     export interface ItemSourceDropTable {
         type: 'table';
