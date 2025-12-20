@@ -12,7 +12,7 @@ import DestinyProfiles from 'model/DestinyProfiles'
 import Profiles from 'model/Profiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '19'
+export const ITEMS_VERSION = '21'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -62,10 +62,12 @@ namespace Items {
 			DeepsightPlugCategorisation,
 			DeepsightSocketCategorisation,
 			DeepsightSocketExtendedDefinition,
+			DeepsightStats,
 			DeepsightTierTypeDefinition,
 			DeepsightWeaponFoundryDefinition,
 			DestinyDamageTypeDefinition,
 			DestinyEquipableItemSetDefinition,
+			DestinyEventCardDefinition,
 			DestinyInventoryItemDefinition,
 			DestinyPlugSetDefinition,
 			DestinyPresentationNodeDefinition,
@@ -84,10 +86,12 @@ namespace Items {
 			Definitions.en.DeepsightPlugCategorisation.get(),
 			Definitions.en.DeepsightSocketCategorisation.get(),
 			Definitions.en.DeepsightSocketExtendedDefinition.get(),
+			Definitions.en.DeepsightStats.get(),
 			Definitions.en.DeepsightTierTypeDefinition.get(),
 			Definitions.en.DeepsightWeaponFoundryDefinition.get(),
 			Definitions.en.DestinyDamageTypeDefinition.get(),
 			Definitions.en.DestinyEquipableItemSetDefinition.get(),
+			Definitions.en.DestinyEventCardDefinition.get(),
 			Definitions.en.DestinyInventoryItemDefinition.get(),
 			Definitions.en.DestinyPlugSetDefinition.get(),
 			Definitions.en.DestinyPresentationNodeDefinition.get(),
@@ -132,7 +136,14 @@ namespace Items {
 				itemSetHash: itemSetHash(def),
 				flavorText: def.flavorText,
 				sources: [
-					...DeepsightItemSourceListDefinition[hash]?.sources.map((id): ItemSourceDefined => ({ type: 'defined', id })) ?? [],
+					...DeepsightItemSourceListDefinition[hash]?.sources.map((id): ItemSourceDefined => ({
+						type: 'defined',
+						id,
+						eventState: !DeepsightItemSourceDefinition[id]?.event ? undefined
+							: DeepsightItemSourceDefinition[id]?.event === DeepsightStats.activeEvent ? 'active'
+								: new Date(DestinyEventCardDefinition[DeepsightItemSourceDefinition[id]?.event]?.endTime ?? 0).getTime() > Date.now() ? 'upcoming'
+									: 'unknown',
+					})) ?? [],
 					...dropTableItems.filter(([, items]) => items.includes(hash)).map(([table]): ItemSourceDropTable => ({ type: 'table', id: table.hash })),
 				],
 				previewImage: def.screenshot,

@@ -84,6 +84,7 @@ export interface ItemStat {
 export interface ItemSourceDefined {
 	type: 'defined'
 	id: DeepsightItemSourceType
+	eventState?: 'active' | 'upcoming' | 'unknown'
 }
 
 export interface ItemSourceDropTable {
