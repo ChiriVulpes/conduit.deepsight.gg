@@ -19,6 +19,8 @@ import Store, { onUpdateStore } from 'utility/Store'
 if (!Env.BUNGIE_API_KEY)
 	throw new Error('BUNGIE_API_KEY is not set')
 
+const _ = undefined
+
 class ConduitPrivateFunctionError extends Error {
 
 	constructor () {
@@ -72,8 +74,11 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		//#endregion
 		////////////////////////////////////
 
-		async getCollections (event) {
-			return await Collections.get()
+		async getCollections (event, displayName, displayNameCode) {
+			const profile = _
+				?? (!displayName || !displayNameCode ? undefined : await this.getProfile(event, displayName, displayNameCode))
+				?? await Profiles.getCurrentProfile(undefined)
+			return await Collections.for(profile).get()
 		},
 
 		async getComponentNames () {

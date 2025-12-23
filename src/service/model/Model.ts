@@ -1,7 +1,7 @@
 import type { ModelVersion } from 'utility/Database'
 import { db } from 'utility/Database'
 
-interface ModelValue<T> {
+export interface ModelValue<T> {
 	version: string
 	value: T | (() => Promise<T>)
 }

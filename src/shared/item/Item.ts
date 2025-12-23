@@ -19,6 +19,13 @@ export interface ItemProvider {
 	foundries: Record<FoundryHashes, DeepsightWeaponFoundryDefinition>
 }
 
+export interface ItemInstance {
+	is: 'item-instance'
+	id: string
+	itemHash: number
+	tier?: number
+}
+
 export interface Item {
 	is: 'item'
 	hash: number
@@ -39,10 +46,6 @@ export interface Item {
 	previewImage?: string
 	foundryHash?: FoundryHashes
 	categoryHashes?: ItemCategoryHashes[]
-
-	// unique to instances
-	instanceId?: string
-	tier?: number
 }
 
 export interface ItemAmmo {

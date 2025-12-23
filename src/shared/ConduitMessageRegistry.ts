@@ -11,6 +11,7 @@ export interface ConduitFunctionRegistry {
 	getProfile (displayName: string, displayNameCode: number): Promise<Profile | undefined>
 	bumpProfile (displayName: string, displayNameCode: number): Promise<void>
 	getCollections (): Promise<Collections>
+	getCollections (displayName: string, displayNameCode: number): Promise<Collections>
 	getComponentNames (): Promise<AllComponentNames[]>
 	/** 
 	 * Get the current state of conduit — defs versions, profiles, etc. 
@@ -21,6 +22,10 @@ export interface ConduitFunctionRegistry {
 	getState (): Promise<ConduitState>
 	/** Perform a hard defs update check, ignoring how recently they were cached */
 	checkUpdate (): Promise<ConduitState>
+
+	////////////////////////////////////
+	//#region Private
+
 	/** @private:start */
 	setOrigin (): Promise<void>
 	_getSetting<SETTING extends keyof ConduitSettings> (key: SETTING): Promise<ConduitSettings[SETTING] | undefined>
@@ -38,6 +43,9 @@ export interface ConduitFunctionRegistry {
 	_getDefinitionWithLinks<NAME extends AllComponentNames> (language: string, component: NAME, hash: number | string): Promise<DefinitionWithLinks<DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never> | undefined>
 	_getDefinitionsReferencingPage<NAME extends AllComponentNames> (language: string, component: NAME, hash: number | string, pageSize: number, page: number): Promise<DefinitionReferencesPage>
 	// the above defs cannot contain a } character or it will break the packager
+
+	//#endregion
+	////////////////////////////////////
 }
 
 export interface ConduitBroadcastRegistry {

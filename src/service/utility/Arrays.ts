@@ -1,5 +1,13 @@
 import Define from 'utility/Define'
 
+export function NonNullish<T> (value: T | null | undefined): value is T {
+	return value !== null && value !== undefined
+}
+
+export function Truthy<T> (value: T | null | undefined | false | 0 | ''): value is T {
+	return !!value
+}
+
 declare global {
 	interface Array<T> {
 		collect<ARGS extends any[], R> (collector: (array: this, ...args: ARGS) => R, ...args: ARGS): R

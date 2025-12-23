@@ -3,8 +3,9 @@ import type { CollectionsBucket, CollectionsMoment } from '@shared/item/Collecti
 import { InventoryBucketHashes } from 'deepsight.gg/Enums'
 import CombinedManifestVersion from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
+import DestinyProfiles from 'model/DestinyProfiles'
 import Items, { ITEMS_VERSION } from 'model/Items'
-import Model from 'model/Model'
+import { ProfiledModel } from 'model/ProfiledModel'
 
 const version = `29.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
@@ -20,11 +21,12 @@ function buckets (): CollectionsMoment['buckets'] {
 	}
 }
 
-export default Model<Collections>('Collections', {
+export default ProfiledModel<Collections>('Collections', {
 	cacheDirtyTime: 1000 * 60 * 1, // 1 minute cache time
-	async fetch () {
+	async fetch (profile) {
+		const data = await DestinyProfiles.for(profile).get()
 		return {
-			version: `${version}/${await CombinedManifestVersion.get()}`,
+			version: `${version}/${await CombinedManifestVersion.get()}/${data?.responseMintedTimestamp ?? 'n/a'}`,
 			value: async (): Promise<Collections> => {
 				const [
 					DeepsightCollectionsDefinition,
@@ -34,7 +36,7 @@ export default Model<Collections>('Collections', {
 					Definitions.en.DeepsightMomentDefinition.get(),
 				])
 
-				const provider = await Items.provider('collections')
+				const provider = await Items.provider(data, 'collections')
 
 				return {
 					...{ version },

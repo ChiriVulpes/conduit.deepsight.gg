@@ -8,8 +8,7 @@ import type { DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, SandboxPe
 import { ItemCategoryHashes, ItemTierTypeHashes, PresentationNodeHashes, StatHashes } from 'deepsight.gg/Enums'
 import Categorisation from 'model/Categorisation'
 import Definitions from 'model/Definitions'
-import DestinyProfiles from 'model/DestinyProfiles'
-import Profiles from 'model/Profiles'
+import type { DestinyProfile } from 'model/DestinyProfiles'
 import { mutable } from 'utility/Objects'
 
 export const ITEMS_VERSION = '21'
@@ -50,7 +49,7 @@ namespace Items {
 
 	}
 
-	export async function provider (type: 'instance' | 'collections'): Promise<ItemProvider> {
+	export async function provider (profile: DestinyProfile | undefined, type: 'instance' | 'collections'): Promise<ItemProvider> {
 		const [
 			// ClarityDescriptions,
 			DeepsightDropTableDefinition,
@@ -100,8 +99,6 @@ namespace Items {
 			Definitions.en.DestinyStatDefinition.get(),
 			Definitions.en.DestinyStatGroupDefinition.get(),
 		])
-
-		const profile = await Profiles.getCurrentProfile(undefined).then(profile => profile && DestinyProfiles[profile.id].get())
 
 		const perks: Partial<Record<SandboxPerkHashes, DestinySandboxPerkDefinition>> = {}
 
