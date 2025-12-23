@@ -18,6 +18,12 @@ declare module "conduit.deepsight.gg/item/Item" {
         socketCategories: Record<SocketCategoryHashes, DestinySocketCategoryDefinition>;
         foundries: Record<FoundryHashes, DeepsightWeaponFoundryDefinition>;
     }
+    export interface ItemInstance {
+        is: 'item-instance';
+        id: string;
+        itemHash: number;
+        tier?: number;
+    }
     export interface Item {
         is: 'item';
         hash: number;
@@ -38,8 +44,6 @@ declare module "conduit.deepsight.gg/item/Item" {
         previewImage?: string;
         foundryHash?: FoundryHashes;
         categoryHashes?: ItemCategoryHashes[];
-        instanceId?: string;
-        tier?: number;
     }
     export interface ItemAmmo {
         hash: DestinyAmmunitionType;
@@ -233,6 +237,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         getProfile(displayName: string, displayNameCode: number): Promise<Profile | undefined>;
         bumpProfile(displayName: string, displayNameCode: number): Promise<void>;
         getCollections(): Promise<Collections>;
+        getCollections(displayName: string, displayNameCode: number): Promise<Collections>;
         getComponentNames(): Promise<AllComponentNames[]>;
         /**
          * Get the current state of conduit — defs versions, profiles, etc.
