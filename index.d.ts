@@ -1,7 +1,7 @@
 declare module "conduit.deepsight.gg/item/Item" {
     import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyEquipableItemSetDefinition, DestinySandboxPerkDefinition, DestinySocketCategoryDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2';
     import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation';
-    import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, ItemCategoryHashes, ItemTierTypeHashes, MomentHashes, SandboxPerkHashes, SocketCategoryHashes, StatHashes } from 'deepsight.gg/Enums';
+    import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, InventoryBucketHashes, ItemCategoryHashes, ItemTierTypeHashes, MomentHashes, SandboxPerkHashes, SocketCategoryHashes, StatHashes } from 'deepsight.gg/Enums';
     import type { ClarityDescription, DeepsightDropTableDefinition, DeepsightItemSourceDefinition, DeepsightItemSourceType, DeepsightTierTypeDefinition, DeepsightWeaponFoundryDefinition } from 'deepsight.gg/Interfaces';
     export interface ItemProvider {
         items: Record<number, Item>;
@@ -20,8 +20,9 @@ declare module "conduit.deepsight.gg/item/Item" {
     }
     export interface ItemInstance {
         is: 'item-instance';
-        id: string;
+        id?: string;
         itemHash: number;
+        bucketHash: InventoryBucketHashes;
         tier?: number;
     }
     export interface Item {
@@ -86,6 +87,22 @@ declare module "conduit.deepsight.gg/item/Item" {
         id: ActivityHashes;
     }
     export type ItemSource = ItemSourceDefined | ItemSourceDropTable;
+}
+declare module "conduit.deepsight.gg/item/Inventory" {
+    import type { DestinyCharacterComponent, DestinyClassDefinition } from 'bungie-api-ts/destiny2';
+    import type { ItemInstance, ItemProvider } from 'conduit.deepsight.gg/item/Item';
+    import type { ClassHashes } from 'conduit.deepsight.gg/node_modules/deepsight.gg/Enums';
+    interface Inventory extends ItemProvider {
+        characters: Record<string, InventoryCharacter>;
+        profileItems: ItemInstance[];
+        classes: Record<ClassHashes, DestinyClassDefinition>;
+    }
+    export default Inventory;
+    export interface InventoryCharacter {
+        id: string;
+        metadata: DestinyCharacterComponent;
+        items: ItemInstance[];
+    }
 }
 declare module "conduit.deepsight.gg/item/Collections" {
     import type { InventoryBucketHashes } from 'deepsight.gg/Enums';
@@ -229,6 +246,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type ConduitState from 'conduit.deepsight.gg/ConduitState';
     import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type Collections from 'conduit.deepsight.gg/item/Collections';
+    import Inventory from 'conduit.deepsight.gg/item/Inventory';
     import type { Profile } from 'conduit.deepsight.gg/Profile';
     import type { ConduitSettings } from 'conduit.deepsight.gg/Settings';
     export interface ConduitFunctionRegistry {
@@ -238,6 +256,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         bumpProfile(displayName: string, displayNameCode: number): Promise<void>;
         getCollections(): Promise<Collections>;
         getCollections(displayName: string, displayNameCode: number): Promise<Collections>;
+        getInventory(displayName: string, displayNameCode: number): Promise<Inventory | undefined>;
         getComponentNames(): Promise<AllComponentNames[]>;
         /**
          * Get the current state of conduit — defs versions, profiles, etc.
