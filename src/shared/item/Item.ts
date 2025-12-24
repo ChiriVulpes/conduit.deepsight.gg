@@ -1,6 +1,6 @@
 import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyEquipableItemSetDefinition, DestinySandboxPerkDefinition, DestinySocketCategoryDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2'
 import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, ItemCategoryHashes, ItemTierTypeHashes, MomentHashes, SandboxPerkHashes, SocketCategoryHashes, StatHashes } from 'deepsight.gg/Enums'
+import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, InventoryBucketHashes, ItemCategoryHashes, ItemTierTypeHashes, MomentHashes, SandboxPerkHashes, SocketCategoryHashes, StatHashes } from 'deepsight.gg/Enums'
 import type { ClarityDescription, DeepsightDropTableDefinition, DeepsightItemSourceDefinition, DeepsightItemSourceType, DeepsightTierTypeDefinition, DeepsightWeaponFoundryDefinition } from 'deepsight.gg/Interfaces'
 
 export interface ItemProvider {
@@ -21,8 +21,9 @@ export interface ItemProvider {
 
 export interface ItemInstance {
 	is: 'item-instance'
-	id: string
+	id?: string
 	itemHash: number
+	bucketHash: InventoryBucketHashes
 	tier?: number
 }
 

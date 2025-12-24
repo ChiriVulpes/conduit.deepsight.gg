@@ -2,6 +2,7 @@ import type { AuthState, CustomBungieApp } from 'Auth'
 import type ConduitState from 'ConduitState'
 import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'DefinitionComponents'
 import type Collections from 'item/Collections'
+import Inventory from 'item/Inventory'
 import type { Profile } from 'Profile'
 import type { ConduitSettings } from 'Settings'
 
@@ -12,6 +13,7 @@ export interface ConduitFunctionRegistry {
 	bumpProfile (displayName: string, displayNameCode: number): Promise<void>
 	getCollections (): Promise<Collections>
 	getCollections (displayName: string, displayNameCode: number): Promise<Collections>
+	getInventory (displayName: string, displayNameCode: number): Promise<Inventory | undefined>
 	getComponentNames (): Promise<AllComponentNames[]>
 	/** 
 	 * Get the current state of conduit — defs versions, profiles, etc. 

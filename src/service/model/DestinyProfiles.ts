@@ -39,7 +39,7 @@ export default ProfiledModel<DestinyProfile | undefined>('destiny2/profile', {
 
 				// Misc
 				DestinyComponentType.StringVariables,
-			].join(','),
+			],
 		})
 		return {
 			version: profileResponse?.responseMintedTimestamp ?? 'n/a',

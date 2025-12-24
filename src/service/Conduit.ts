@@ -9,6 +9,7 @@ import Collections from 'model/Collections'
 import { getVersions } from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
 import DefinitionsComponentNames from 'model/DefinitionsComponentNames'
+import Inventory from 'model/Inventory'
 import Profiles from 'model/Profiles'
 import { db } from 'utility/Database'
 import Env from 'utility/Env'
@@ -79,6 +80,11 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 				?? (!displayName || !displayNameCode ? undefined : await this.getProfile(event, displayName, displayNameCode))
 				?? await Profiles.getCurrentProfile(undefined)
 			return await Collections.for(profile).get()
+		},
+
+		async getInventory (event, displayName, displayNameCode) {
+			const profile = await this.getProfile(event, displayName, displayNameCode)
+			return profile && await Inventory.for(profile).get()
 		},
 
 		async getComponentNames () {

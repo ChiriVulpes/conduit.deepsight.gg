@@ -20,6 +20,17 @@ namespace Jsonable {
 	}
 }
 
+const mergeSearchParams = (...params: (string | Record<string, Jsonable> | URLSearchParams)[]): string => {
+	return new URLSearchParams(params
+		.filter(param => typeof param !== 'string' || param.includes('?'))
+		.map(param => param instanceof URLSearchParams ? param : new URLSearchParams(typeof param !== 'string'
+			? Jsonable.searchParamsIfy(param)
+			: param.split('?').at(-1)
+		))
+		.flatMap(param => [...param.entries()])
+	).toString()
+}
+
 namespace Bungie {
 
 	const origin = 'https://www.bungie.net/Platform'
@@ -44,8 +55,8 @@ namespace Bungie {
 	export async function get<T> (url: string, body?: Record<string, Jsonable>, options?: RequestInit) {
 		return await queue(async () => {
 			if (!url.startsWith('/')) url = `/${url}`
+			if (body) url = `${url}?${mergeSearchParams(url, body)}`
 			Log.info('GET', url)
-			if (body) url = `${url}?${Jsonable.searchParamsIfy(body ?? {})}`
 			return self.fetch(`${origin}${url}`, {
 				...options,
 				headers: { ...await Auth.getHeaders(), ...options?.headers },
@@ -57,8 +68,8 @@ namespace Bungie {
 	export async function getForUser<T> (url: string, body?: Record<string, Jsonable>) {
 		return await queue(async () => {
 			if (!url.startsWith('/')) url = `/${url}`
+			if (body) url = `${url}?${mergeSearchParams(url, body)}`
 			Log.info('GET:AUTHED', url)
-			if (body) url = `${url}?${Jsonable.searchParamsIfy(body ?? {})}`
 			return self.fetch(`${origin}${url}`, {
 				headers: { ...await Auth.getAuthedHeaders() },
 			})
