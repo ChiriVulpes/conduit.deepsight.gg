@@ -9,9 +9,10 @@ import { ItemCategoryHashes, ItemTierTypeHashes, PresentationNodeHashes, StatHas
 import Categorisation from 'model/Categorisation'
 import Definitions from 'model/Definitions'
 import type { DestinyProfile } from 'model/DestinyProfiles'
+import Log from 'utility/Log'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '22'
+export const ITEMS_VERSION = '25'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -110,6 +111,7 @@ namespace Items {
 					.flatMap(encounter => Object.keys(encounter.dropTable ?? {})),
 			].map(item => +item)] as const)
 
+		const moments = Object.values(DeepsightMomentDefinition)
 		const items: Record<number, Item> = {}
 		function item (hash: number, def: DestinyInventoryItemDefinition): number {
 			const sockets = def.sockets?.socketEntries.map((entryDef, i): ItemSocket => socket(hash, i, entryDef)) ?? []
@@ -118,8 +120,8 @@ namespace Items {
 				hash,
 				displayProperties: def.displayProperties,
 				momentHash: (_
-					?? Object.values(DeepsightMomentDefinition).find(moment => moment.itemHashes?.includes(hash))?.hash
-					?? Object.values(DeepsightMomentDefinition).find(moment => moment.iconWatermark.includes(def.iconWatermark))?.hash
+					?? moments.find(moment => moment.itemHashes?.includes(hash))?.hash
+					?? moments.find(moment => [moment.iconWatermark, ...moment.subsumeIconWatermarks ?? []].includes(def.iconWatermark))?.hash
 				),
 				featured: def.isFeaturedItem,
 				type: def.itemTypeDisplayName,
@@ -148,6 +150,10 @@ namespace Items {
 				categoryHashes: def.itemCategoryHashes as ItemCategoryHashes[],
 				bucketHash: def.inventory?.bucketTypeHash as InventoryBucketHashes,
 			}
+
+			if (!item.momentHash && def.iconWatermark)
+				Log.warn(`${def.displayProperties.name} (${def.hash}) has watermark but no moment. https://new.deepsight.gg/data/DestinyInventoryItemDefinition/${def.hash}`)
+
 			items[hash] = item
 			return hash
 		}
