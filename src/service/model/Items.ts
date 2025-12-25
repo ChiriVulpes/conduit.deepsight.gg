@@ -4,14 +4,14 @@ import type { DestinyDamageTypeDefinition, DestinyEquipableItemSetDefinition, De
 import { DestinyItemSubType, SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
 import type { DeepsightWeaponFoundryDefinition } from 'deepsight.gg'
 import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, SandboxPerkHashes, SocketCategoryHashes } from 'deepsight.gg/Enums'
+import type { DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, InventoryBucketHashes, SandboxPerkHashes, SocketCategoryHashes } from 'deepsight.gg/Enums'
 import { ItemCategoryHashes, ItemTierTypeHashes, PresentationNodeHashes, StatHashes } from 'deepsight.gg/Enums'
 import Categorisation from 'model/Categorisation'
 import Definitions from 'model/Definitions'
 import type { DestinyProfile } from 'model/DestinyProfiles'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '21'
+export const ITEMS_VERSION = '22'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -146,6 +146,7 @@ namespace Items {
 				previewImage: def.screenshot,
 				foundryHash: Object.values(DeepsightWeaponFoundryDefinition).find(foundry => foundry.overlay === def.secondaryIcon)?.hash,
 				categoryHashes: def.itemCategoryHashes as ItemCategoryHashes[],
+				bucketHash: def.inventory?.bucketTypeHash as InventoryBucketHashes,
 			}
 			items[hash] = item
 			return hash

@@ -47,6 +47,7 @@ export interface Item {
 	previewImage?: string
 	foundryHash?: FoundryHashes
 	categoryHashes?: ItemCategoryHashes[]
+	bucketHash?: InventoryBucketHashes
 }
 
 export interface ItemAmmo {

@@ -1,7 +1,8 @@
 import type Inventory from '@shared/item/Inventory'
 import type { InventoryCharacter } from '@shared/item/Inventory'
 import type { ItemInstance } from '@shared/item/Item'
-import type { DestinyClassDefinition, DestinyItemComponent } from 'bungie-api-ts/destiny2'
+import type { DestinyClassDefinition, DestinyInventoryBucketDefinition, DestinyItemComponent } from 'bungie-api-ts/destiny2'
+import type { ClassHashes, InventoryBucketHashes } from 'deepsight.gg/Enums'
 import Definitions from 'model/Definitions'
 import DestinyProfiles from 'model/DestinyProfiles'
 import Items, { ITEMS_VERSION } from 'model/Items'
@@ -21,8 +22,10 @@ export default ProfiledModel<Inventory | undefined>('Inventory', {
 
 				const [
 					DestinyClassDefinition,
+					DestinyInventoryBucketDefinition,
 				] = await Promise.all([
 					Definitions.en.DestinyClassDefinition.get(),
+					Definitions.en.DestinyInventoryBucketDefinition.get(),
 				])
 
 				const provider = await Items.provider(data, 'instance')
@@ -50,7 +53,8 @@ export default ProfiledModel<Inventory | undefined>('Inventory', {
 						),
 					} satisfies InventoryCharacter]),
 					profileItems: data.profileInventory?.data?.items?.map(ItemInstance) ?? [],
-					classes: DestinyClassDefinition as Record<number, DestinyClassDefinition>,
+					classes: DestinyClassDefinition as Record<ClassHashes, DestinyClassDefinition>,
+					buckets: DestinyInventoryBucketDefinition as Record<InventoryBucketHashes, DestinyInventoryBucketDefinition>,
 				}
 			},
 		}
