@@ -45,6 +45,7 @@ declare module "conduit.deepsight.gg/item/Item" {
         previewImage?: string;
         foundryHash?: FoundryHashes;
         categoryHashes?: ItemCategoryHashes[];
+        bucketHash?: InventoryBucketHashes;
     }
     export interface ItemAmmo {
         hash: DestinyAmmunitionType;
@@ -89,13 +90,14 @@ declare module "conduit.deepsight.gg/item/Item" {
     export type ItemSource = ItemSourceDefined | ItemSourceDropTable;
 }
 declare module "conduit.deepsight.gg/item/Inventory" {
-    import type { DestinyCharacterComponent, DestinyClassDefinition } from 'bungie-api-ts/destiny2';
+    import type { DestinyCharacterComponent, DestinyClassDefinition, DestinyInventoryBucketDefinition } from 'bungie-api-ts/destiny2';
     import type { ItemInstance, ItemProvider } from 'conduit.deepsight.gg/item/Item';
-    import type { ClassHashes } from 'conduit.deepsight.gg/node_modules/deepsight.gg/Enums';
+    import type { ClassHashes, InventoryBucketHashes } from 'conduit.deepsight.gg/node_modules/deepsight.gg/Enums';
     interface Inventory extends ItemProvider {
         characters: Record<string, InventoryCharacter>;
         profileItems: ItemInstance[];
         classes: Record<ClassHashes, DestinyClassDefinition>;
+        buckets: Record<InventoryBucketHashes, DestinyInventoryBucketDefinition>;
     }
     export default Inventory;
     export interface InventoryCharacter {
