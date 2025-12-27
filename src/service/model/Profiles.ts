@@ -1,3 +1,4 @@
+import type { Character } from '@shared/Character'
 import type { Profile, ProfileCharacter } from '@shared/Profile'
 import type { BungieMembershipType } from 'bungie-api-ts/destiny2'
 import { DestinyComponentType, type DestinyProfileResponse } from 'bungie-api-ts/destiny2'
@@ -147,7 +148,7 @@ namespace Profiles {
 			const newChars = Object.values(destinyProfile.characters.data ?? {})
 				.map((character): ProfileCharacter => ({
 					id: character.characterId,
-					classType: character.classType,
+					metadata: character,
 					emblem: !character.emblemHash ? undefined : {
 						hash: character.emblemHash,
 						displayProperties: emblems[character.emblemHash].displayProperties,
@@ -156,11 +157,10 @@ namespace Profiles {
 						secondaryOverlay: emblems[character.emblemHash].secondaryOverlay,
 						secondarySpecial: emblems[character.emblemHash].secondarySpecial,
 					},
-					power: character.light,
 					lastPlayed: new Date(character.dateLastPlayed).toISOString(),
 				}))
 
-			const DiffableCharacters = (characters: ProfileCharacter[]) => DiffableArray.makeDeep(
+			const DiffableCharacters = (characters: Character[]) => DiffableArray.makeDeep(
 				(characters
 					.sort((a, b) => a.id.localeCompare(b.id))
 				),
@@ -175,9 +175,9 @@ namespace Profiles {
 
 			if (Diff.get(oldDiffChars, newDiffChars).length) {
 				profile.characters = newChars.sort((a, b) => b.lastPlayed.localeCompare(a.lastPlayed))
-				profile.classType = profile.characters[0]?.classType
+				profile.classType = profile.characters[0]?.metadata.classType
 				profile.emblem = profile.characters[0]?.emblem
-				profile.power = profile.characters[0]?.power ?? 0
+				profile.power = profile.characters[0]?.metadata.light ?? 0
 			}
 		}
 

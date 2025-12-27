@@ -208,7 +208,7 @@ namespace Items {
 				return plugs[hash] = undefined
 
 			const categorisation = DeepsightPlugCategorisation[hash]
-			const perkHashes = def.perks.map(perk => perk.perkHash)
+			const perkHashes = def.perks?.map(perk => perk.perkHash) ?? []
 			for (const perkHash of perkHashes)
 				perks[perkHash as SandboxPerkHashes] = DestinySandboxPerkDefinition[perkHash]
 
@@ -259,7 +259,7 @@ namespace Items {
 		function stats (def: DestinyInventoryItemDefinition, ref?: DestinyItemComponent, sockets: ItemSocket[] = []): Partial<Record<StatHashes, ItemStat>> | undefined {
 			if (!def.stats) {
 				const cat = plugCat(def.hash)
-				return Object.fromEntries(def.investmentStats.map(stat => [
+				return Object.fromEntries(def.investmentStats?.map(stat => [
 					stat.statTypeHash,
 					{
 						hash: stat.statTypeHash as StatHashes,
@@ -276,7 +276,7 @@ namespace Items {
 								?? 0
 							),
 					} satisfies ItemStat,
-				]))
+				]) ?? [])
 			}
 
 			const statGroupDefinition = DestinyStatGroupDefinition[def.stats?.statGroupHash ?? NaN] as DestinyStatGroupDefinition | undefined

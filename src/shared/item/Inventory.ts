@@ -1,4 +1,5 @@
-import type { DestinyCharacterComponent, DestinyClassDefinition, DestinyInventoryBucketDefinition } from 'bungie-api-ts/destiny2'
+import type { DestinyClassDefinition, DestinyInventoryBucketDefinition } from 'bungie-api-ts/destiny2'
+import type { Character } from 'Character'
 import type { ItemInstance, ItemProvider } from 'item/Item'
 import type { ClassHashes, InventoryBucketHashes } from 'node_modules/deepsight.gg/Enums'
 
@@ -11,8 +12,7 @@ interface Inventory extends ItemProvider {
 
 export default Inventory
 
-export interface InventoryCharacter {
-	id: string
-	metadata: DestinyCharacterComponent
+export interface InventoryCharacter extends Character {
+	equippedItems: ItemInstance[]
 	items: ItemInstance[]
 }

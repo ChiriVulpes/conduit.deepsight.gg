@@ -7,11 +7,12 @@ import Definitions from 'model/Definitions'
 import DestinyProfiles from 'model/DestinyProfiles'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import { ProfiledModel } from 'model/ProfiledModel'
+import Colour from 'utility/Colour'
 
-const version = `1.${ITEMS_VERSION}`
+const version = `2.${ITEMS_VERSION}`
 
 export default ProfiledModel<Inventory | undefined>('Inventory', {
-	cacheDirtyTime: 1000 * 30, // 30 second cache time
+	cacheDirtyTime: 1000 * 10, // 10 second cache time
 	async fetch (profile) {
 		const data = await DestinyProfiles.for(profile).get()
 		return {
@@ -23,9 +24,11 @@ export default ProfiledModel<Inventory | undefined>('Inventory', {
 				const [
 					DestinyClassDefinition,
 					DestinyInventoryBucketDefinition,
+					DeepsightEmblemDefinition,
 				] = await Promise.all([
 					Definitions.en.DestinyClassDefinition.get(),
 					Definitions.en.DestinyInventoryBucketDefinition.get(),
+					Definitions.en.DeepsightEmblemDefinition.get(),
 				])
 
 				const provider = await Items.provider(data, 'instance')
@@ -48,6 +51,17 @@ export default ProfiledModel<Inventory | undefined>('Inventory', {
 					characters: characters.toObject(character => [character.characterId, {
 						id: character.characterId,
 						metadata: character,
+						emblem: !character.emblemHash ? undefined : {
+							hash: character.emblemHash,
+							displayProperties: DeepsightEmblemDefinition[character.emblemHash].displayProperties,
+							background: Colour.fromDestiny(DeepsightEmblemDefinition[character.emblemHash].backgroundColor),
+							secondaryIcon: DeepsightEmblemDefinition[character.emblemHash].secondaryIcon,
+							secondaryOverlay: DeepsightEmblemDefinition[character.emblemHash].secondaryOverlay,
+							secondarySpecial: DeepsightEmblemDefinition[character.emblemHash].secondarySpecial,
+						},
+						equippedItems: ((data.characterEquipment?.data?.[character.characterId]?.items ?? [])
+							.map(ItemInstance)
+						),
 						items: ((data.characterInventories?.data?.[character.characterId]?.items ?? [])
 							.map(ItemInstance)
 						),

@@ -1,4 +1,5 @@
-import type { BungieMembershipType, DestinyClass, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2'
+import type { BungieMembershipType, DestinyClass } from 'bungie-api-ts/destiny2'
+import type { Character, Emblem } from 'Character'
 
 export interface Profile {
 	id: string
@@ -11,7 +12,7 @@ export interface Profile {
 	guardianRank?: ProfileGuardianRank
 	power: number
 	characters: ProfileCharacter[]
-	emblem?: ProfileEmblem
+	emblem?: Emblem
 	classType?: DestinyClass
 	clan?: ProfileClan
 
@@ -20,21 +21,8 @@ export interface Profile {
 	version: string
 }
 
-export interface ProfileCharacter {
-	id: string
-	classType: DestinyClass
-	emblem?: ProfileEmblem
-	power: number
+export interface ProfileCharacter extends Character {
 	lastPlayed: string
-}
-
-export interface ProfileEmblem {
-	hash: number
-	displayProperties: DestinyDisplayPropertiesDefinition
-	background: number
-	secondaryIcon: string
-	secondaryOverlay: string
-	secondarySpecial: string
 }
 
 export interface ProfileClan {
