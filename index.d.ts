@@ -24,6 +24,7 @@ declare module "conduit.deepsight.gg/item/Item" {
         itemHash: number;
         bucketHash: InventoryBucketHashes;
         tier?: number;
+        quantity?: number;
     }
     export interface Item {
         is: 'item';
@@ -46,6 +47,7 @@ declare module "conduit.deepsight.gg/item/Item" {
         foundryHash?: FoundryHashes;
         categoryHashes?: ItemCategoryHashes[];
         bucketHash?: InventoryBucketHashes;
+        maxStackSize?: number;
     }
     export interface ItemAmmo {
         hash: DestinyAmmunitionType;
