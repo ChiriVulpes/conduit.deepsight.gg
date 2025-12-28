@@ -90,7 +90,8 @@ declare module "conduit.deepsight.gg/item/Item" {
     export type ItemSource = ItemSourceDefined | ItemSourceDropTable;
 }
 declare module "conduit.deepsight.gg/item/Inventory" {
-    import type { DestinyCharacterComponent, DestinyClassDefinition, DestinyInventoryBucketDefinition } from 'bungie-api-ts/destiny2';
+    import type { DestinyClassDefinition, DestinyInventoryBucketDefinition } from 'bungie-api-ts/destiny2';
+    import type { Character } from 'conduit.deepsight.gg/Character';
     import type { ItemInstance, ItemProvider } from 'conduit.deepsight.gg/item/Item';
     import type { ClassHashes, InventoryBucketHashes } from 'conduit.deepsight.gg/node_modules/deepsight.gg/Enums';
     interface Inventory extends ItemProvider {
@@ -100,9 +101,8 @@ declare module "conduit.deepsight.gg/item/Inventory" {
         buckets: Record<InventoryBucketHashes, DestinyInventoryBucketDefinition>;
     }
     export default Inventory;
-    export interface InventoryCharacter {
-        id: string;
-        metadata: DestinyCharacterComponent;
+    export interface InventoryCharacter extends Character {
+        equippedItems: ItemInstance[];
         items: ItemInstance[];
     }
 }
@@ -137,7 +137,8 @@ declare module "conduit.deepsight.gg/Settings" {
     }
 }
 declare module "conduit.deepsight.gg/Profile" {
-    import type { BungieMembershipType, DestinyClass, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2';
+    import type { BungieMembershipType, DestinyClass } from 'bungie-api-ts/destiny2';
+    import type { Character, Emblem } from 'conduit.deepsight.gg/Character';
     export interface Profile {
         id: string;
         type: BungieMembershipType;
@@ -147,27 +148,15 @@ declare module "conduit.deepsight.gg/Profile" {
         guardianRank?: ProfileGuardianRank;
         power: number;
         characters: ProfileCharacter[];
-        emblem?: ProfileEmblem;
+        emblem?: Emblem;
         classType?: DestinyClass;
         clan?: ProfileClan;
         lastUpdate: string;
         lastAccess: string;
         version: string;
     }
-    export interface ProfileCharacter {
-        id: string;
-        classType: DestinyClass;
-        emblem?: ProfileEmblem;
-        power: number;
+    export interface ProfileCharacter extends Character {
         lastPlayed: string;
-    }
-    export interface ProfileEmblem {
-        hash: number;
-        displayProperties: DestinyDisplayPropertiesDefinition;
-        background: number;
-        secondaryIcon: string;
-        secondaryOverlay: string;
-        secondarySpecial: string;
     }
     export interface ProfileClan {
         name: string;
@@ -332,6 +321,22 @@ declare module "conduit.deepsight.gg/Clarity" {
         type: string;
         uploadedBy: string;
         descriptions: Record<string, string | ClarityDescriptionComponent[]>;
+    }
+}
+declare module "conduit.deepsight.gg/Character" {
+    import type { DestinyCharacterComponent, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2';
+    export interface Character {
+        id: string;
+        metadata: DestinyCharacterComponent;
+        emblem?: Emblem;
+    }
+    export interface Emblem {
+        hash: number;
+        displayProperties: DestinyDisplayPropertiesDefinition;
+        background: number;
+        secondaryIcon: string;
+        secondaryOverlay: string;
+        secondarySpecial: string;
     }
 }
 declare module "conduit.deepsight.gg/Auth" {
