@@ -18,7 +18,7 @@
 		}
 	},
 	"dependencies": {
-		"chiri": "github:fluff4me/chiri#d381ef046f789e561983f077e0242bce150b09da",
+		"chiri": "github:fluff4me/chiri#6f49a9bcaa77e450cc599a61f44e83079bd303f3",
 		"lint": "github:fluff4me/lint#c0ccd500c35a06157376a78ac911147be44c27cd",
 		"task": "github:chirivulpes/task#ef1975228fec597c8112a51ec4786b5b210c83d9",
 		"weaving": "github:chirivulpes/weaving#fc532b3e2025f424747e382caf66ad1661932c9a"

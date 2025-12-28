@@ -2,6 +2,6 @@
 	"name": "@conduit.deepsight.gg/platform",
 	"private": true,
 	"dependencies": {
-		"kitsui": "github:fluff4me/kitsui#a971d0b2563257eed5dee065b21a0f9ea8576bf6"
+		"kitsui": "github:fluff4me/kitsui#29f46c1f0df401ee9e8448a59d53125e66f8bca6"
 	}
 }

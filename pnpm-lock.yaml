@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       chiri:
-        specifier: github:fluff4me/chiri#d381ef046f789e561983f077e0242bce150b09da
-        version: https://codeload.github.com/fluff4me/chiri/tar.gz/d381ef046f789e561983f077e0242bce150b09da
+        specifier: github:fluff4me/chiri#6f49a9bcaa77e450cc599a61f44e83079bd303f3
+        version: https://codeload.github.com/fluff4me/chiri/tar.gz/6f49a9bcaa77e450cc599a61f44e83079bd303f3
       lint:
         specifier: github:fluff4me/lint#c0ccd500c35a06157376a78ac911147be44c27cd
         version: https://codeload.github.com/fluff4me/lint/tar.gz/c0ccd500c35a06157376a78ac911147be44c27cd(typescript@5.8.3)
@@ -423,8 +423,8 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
-  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/d381ef046f789e561983f077e0242bce150b09da:
-    resolution: {tarball: https://codeload.github.com/fluff4me/chiri/tar.gz/d381ef046f789e561983f077e0242bce150b09da}
+  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/6f49a9bcaa77e450cc599a61f44e83079bd303f3:
+    resolution: {tarball: https://codeload.github.com/fluff4me/chiri/tar.gz/6f49a9bcaa77e450cc599a61f44e83079bd303f3}
     version: 1.0.1
     hasBin: true
 
@@ -1569,7 +1569,7 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
-  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/d381ef046f789e561983f077e0242bce150b09da:
+  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/6f49a9bcaa77e450cc599a61f44e83079bd303f3:
     dependencies:
       chokidar: 3.6.0
       del-cli: 7.0.0

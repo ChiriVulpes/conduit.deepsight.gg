@@ -389,7 +389,7 @@ namespace Items {
 			ammoTypes: {
 				[DestinyAmmunitionType.Primary]: {
 					hash: DestinyAmmunitionType.Primary,
-					displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Primary_ObjectiveHash1662965554].displayProperties,
+					displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Primary1731162900].displayProperties,
 				},
 				[DestinyAmmunitionType.Special]: {
 					hash: DestinyAmmunitionType.Special,
@@ -397,7 +397,7 @@ namespace Items {
 				},
 				[DestinyAmmunitionType.Heavy]: {
 					hash: DestinyAmmunitionType.Heavy,
-					displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Heavy_ObjectiveHash3528763451].displayProperties,
+					displayProperties: DestinyPresentationNodeDefinition[PresentationNodeHashes.Heavy3253265639].displayProperties,
 				},
 			},
 			rarities: DeepsightTierTypeDefinition,
