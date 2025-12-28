@@ -9,7 +9,7 @@ import Items, { ITEMS_VERSION } from 'model/Items'
 import { ProfiledModel } from 'model/ProfiledModel'
 import Colour from 'utility/Colour'
 
-const version = `2.${ITEMS_VERSION}`
+const version = `3.${ITEMS_VERSION}`
 
 export default ProfiledModel<Inventory | undefined>('Inventory', {
 	cacheDirtyTime: 1000 * 10, // 10 second cache time
@@ -42,6 +42,7 @@ export default ProfiledModel<Inventory | undefined>('Inventory', {
 						itemHash: item.itemHash,
 						bucketHash: item.bucketHash,
 						tier: itemInstance?.gearTier,
+						quantity: item.quantity,
 					}
 				}
 

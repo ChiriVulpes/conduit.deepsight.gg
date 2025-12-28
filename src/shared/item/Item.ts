@@ -25,6 +25,7 @@ export interface ItemInstance {
 	itemHash: number
 	bucketHash: InventoryBucketHashes
 	tier?: number
+	quantity?: number
 }
 
 export interface Item {
@@ -48,6 +49,7 @@ export interface Item {
 	foundryHash?: FoundryHashes
 	categoryHashes?: ItemCategoryHashes[]
 	bucketHash?: InventoryBucketHashes
+	maxStackSize?: number
 }
 
 export interface ItemAmmo {

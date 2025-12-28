@@ -149,6 +149,7 @@ namespace Items {
 				foundryHash: Object.values(DeepsightWeaponFoundryDefinition).find(foundry => foundry.overlay === def.secondaryIcon)?.hash,
 				categoryHashes: def.itemCategoryHashes as ItemCategoryHashes[],
 				bucketHash: def.inventory?.bucketTypeHash as InventoryBucketHashes,
+				maxStackSize: def.inventory?.maxStackSize,
 			}
 
 			if (!item.momentHash && def.iconWatermark)
