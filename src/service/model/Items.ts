@@ -9,10 +9,11 @@ import { ItemCategoryHashes, ItemTierTypeHashes, PresentationNodeHashes, StatHas
 import Categorisation from 'model/Categorisation'
 import Definitions from 'model/Definitions'
 import type { DestinyProfile } from 'model/DestinyProfiles'
+import { Truthy } from 'utility/Arrays'
 import Log from 'utility/Log'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '25'
+export const ITEMS_VERSION = '27'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -147,7 +148,12 @@ namespace Items {
 				],
 				previewImage: def.screenshot,
 				foundryHash: Object.values(DeepsightWeaponFoundryDefinition).find(foundry => foundry.overlay === def.secondaryIcon)?.hash,
-				categoryHashes: def.itemCategoryHashes as ItemCategoryHashes[],
+				categoryHashes: [
+					...def.itemCategoryHashes as ItemCategoryHashes[],
+					(!def.itemCategoryHashes?.includes(ItemCategoryHashes.Engrams) && def.uiItemDisplayStyle === 'ui_display_style_engram'
+						&& ItemCategoryHashes.Engrams
+					),
+				].filter(Truthy),
 				bucketHash: def.inventory?.bucketTypeHash as InventoryBucketHashes,
 				maxStackSize: def.inventory?.maxStackSize,
 			}
