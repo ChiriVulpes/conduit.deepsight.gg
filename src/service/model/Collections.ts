@@ -46,7 +46,7 @@ export default ProfiledModel<Collections>('Collections', {
 							buckets: Object.assign(buckets(),
 								(Object.entries(DeepsightCollectionsDefinition[moment.hash]?.buckets || {})
 									.map(([bucketHash, itemHashes]): [string, CollectionsBucket] => [bucketHash, {
-										items: itemHashes.map(hash => provider.item(hash)).filter(item => item !== undefined),
+										items: itemHashes.map(hash => provider.item(hash)?.hash).filter(item => item !== undefined),
 									}])
 									.collect(Object.fromEntries) as CollectionsMoment['buckets']
 								),

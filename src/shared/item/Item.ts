@@ -1,6 +1,6 @@
-import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyEquipableItemSetDefinition, DestinySandboxPerkDefinition, DestinySocketCategoryDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2'
+import type { DestinyAmmunitionType, DestinyClass, DestinyDamageTypeDefinition, DestinyDisplayPropertiesDefinition, DestinyEquipableItemSetDefinition, DestinyItemPlugBase, DestinySandboxPerkDefinition, DestinySocketCategoryDefinition, DestinyStatDefinition, DestinyStatGroupDefinition, ItemState } from 'bungie-api-ts/destiny2'
 import type { DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, InventoryBucketHashes, ItemCategoryHashes, ItemTierTypeHashes, MomentHashes, SandboxPerkHashes, SocketCategoryHashes, StatHashes } from 'deepsight.gg/Enums'
+import type { ActivityHashes, DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, InventoryBucketHashes, ItemCategoryHashes, ItemTierTypeHashes, MomentHashes, PlugCategoryHashes, PlugSetHashes, SandboxPerkHashes, SocketCategoryHashes, SocketTypeHashes, StatHashes } from 'deepsight.gg/Enums'
 import type { ClarityDescription, DeepsightDropTableDefinition, DeepsightItemSourceDefinition, DeepsightItemSourceType, DeepsightTierTypeDefinition, DeepsightWeaponFoundryDefinition } from 'deepsight.gg/Interfaces'
 
 export interface ItemProvider {
@@ -26,6 +26,16 @@ export interface ItemInstance {
 	bucketHash: InventoryBucketHashes
 	tier?: number
 	quantity?: number
+	sockets?: ItemSocket[]
+	state: ItemState
+}
+
+export interface ItemSocket {
+	plugHash?: number
+	availableReusablePlugs?: DestinyItemPlugBase[]
+	availableCharacterPlugSet?: PlugSetHashes
+	availableProfilePlugSet?: PlugSetHashes
+	availableInventoryPlugsSocketType?: SocketTypeHashes
 }
 
 export interface Item {
@@ -34,7 +44,7 @@ export interface Item {
 	displayProperties: DestinyDisplayPropertiesDefinition
 	momentHash?: MomentHashes
 	featured: boolean
-	sockets: ItemSocket[]
+	sockets: ItemSocketDefinition[]
 	type: string
 	rarity: ItemTierTypeHashes
 	classType?: DestinyClass
@@ -57,7 +67,7 @@ export interface ItemAmmo {
 	displayProperties: DestinyDisplayPropertiesDefinition
 }
 
-export interface ItemSocket {
+export interface ItemSocketDefinition {
 	type: DeepsightPlugFullName
 	plugs: number[]
 	defaultPlugHash?: number
@@ -72,6 +82,7 @@ export interface ItemPlug {
 	clarity?: ClarityDescription
 	perks?: SandboxPerkHashes[]
 	stats?: Partial<Record<StatHashes, ItemStat>>
+	categoryHash: PlugCategoryHashes
 }
 
 export interface ItemStat {

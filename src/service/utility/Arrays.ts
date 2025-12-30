@@ -11,10 +11,15 @@ export function Truthy<T> (value: T | null | undefined | false | 0 | ''): value 
 declare global {
 	interface Array<T> {
 		collect<ARGS extends any[], R> (collector: (array: this, ...args: ARGS) => R, ...args: ARGS): R
+
 		groupBy<K> (keyGetter: (item: T, index: number, array: this) => K): Map<K, T[]>
 		groupBy<K, R> (keyGetter: (item: T, index: number, array: this) => K, resultMapper: (array: this) => R): Map<K, R>
+
 		toObject<K extends PropertyKey, V> (this: [K, V][]): Record<K, V>
 		toObject<K extends PropertyKey, V> (mapper: (item: T, index: number, array: this) => [K, V]): Record<K, V>
+
+		distinct (): this
+		distinct (mapper: (value: T) => any): this
 	}
 }
 
@@ -59,6 +64,27 @@ namespace Arrays {
 					obj[key] = value
 
 			return obj
+		})
+
+		Define(Array.prototype, 'distinct', function <T> (this: T[], mapper?: (value: T) => any) {
+			const result: T[] = []
+			const encountered = mapper ? [] : result
+
+			for (const value of this) {
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				const encounterValue = mapper ? mapper(value) : value
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+				if (encountered.includes(encounterValue))
+					continue
+
+				if (mapper)
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+					encountered.push(encounterValue)
+
+				result.push(value)
+			}
+
+			return result
 		})
 	}
 

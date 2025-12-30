@@ -1,4 +1,4 @@
-import type { ItemPlug, ItemSocket } from '@shared/item/Item'
+import type { ItemPlug, ItemSocketDefinition } from '@shared/item/Item'
 import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName, DeepsightPlugFullName } from 'deepsight.gg/DeepsightPlugCategorisation'
 
 type PlugCategorisationExpression =
@@ -26,9 +26,9 @@ namespace Categorisation {
 
 		return matcher
 
-		function matcher (categorised?: ItemPlug | ItemSocket | DeepsightPlugCategorisation | DeepsightPlugFullName): boolean
+		function matcher (categorised?: ItemPlug | ItemSocketDefinition | DeepsightPlugCategorisation | DeepsightPlugFullName): boolean
 		function matcher<CATEGORY extends DeepsightPlugCategoryName> (categorised?: DeepsightPlugCategorisation): categorised is DeepsightPlugCategorisation & DeepsightPlugCategorisation<typeof DeepsightPlugCategory[CATEGORY]>
-		function matcher (categorised?: ItemPlug | ItemSocket | DeepsightPlugCategorisation | DeepsightPlugFullName): boolean {
+		function matcher (categorised?: ItemPlug | ItemSocketDefinition | DeepsightPlugCategorisation | DeepsightPlugFullName): boolean {
 			const categorisation = typeof categorised === 'string' ? categorised
 				: !categorised ? undefined
 					: 'fullName' in categorised ? categorised.fullName

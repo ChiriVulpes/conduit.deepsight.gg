@@ -1,10 +1,10 @@
-import type { Item, ItemPlug, ItemProvider as ItemProviderDef, ItemSocket, ItemSourceDefined, ItemSourceDropTable, ItemStat } from '@shared/item/Item'
+import type { Item, ItemPlug, ItemProvider as ItemProviderDef, ItemSocketDefinition, ItemSourceDefined, ItemSourceDropTable, ItemStat } from '@shared/item/Item'
 import { DestinyAmmunitionType } from 'bungie-api-ts/destiny2'
 import type { DestinyDamageTypeDefinition, DestinyEquipableItemSetDefinition, DestinyInventoryItemDefinition, DestinyItemComponent, DestinyItemSocketEntryDefinition, DestinySandboxPerkDefinition, DestinySocketCategoryDefinition, DestinyStatDefinition, DestinyStatGroupDefinition } from 'bungie-api-ts/destiny2/interfaces'
 import { DestinyItemSubType, SocketPlugSources } from 'bungie-api-ts/destiny2/interfaces'
 import type { DeepsightWeaponFoundryDefinition } from 'deepsight.gg'
 import type { DeepsightPlugCategorisation, DeepsightPlugCategory, DeepsightPlugCategoryName } from 'deepsight.gg/DeepsightPlugCategorisation'
-import type { DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, InventoryBucketHashes, SandboxPerkHashes, SocketCategoryHashes } from 'deepsight.gg/Enums'
+import type { DamageTypeHashes, EquipableItemSetHashes, FoundryHashes, InventoryBucketHashes, PlugCategoryHashes, SandboxPerkHashes, SocketCategoryHashes } from 'deepsight.gg/Enums'
 import { ItemCategoryHashes, ItemTierTypeHashes, PresentationNodeHashes, StatHashes } from 'deepsight.gg/Enums'
 import Categorisation from 'model/Categorisation'
 import Definitions from 'model/Definitions'
@@ -13,7 +13,7 @@ import { Truthy } from 'utility/Arrays'
 import Log from 'utility/Log'
 import { mutable } from 'utility/Objects'
 
-export const ITEMS_VERSION = '27'
+export const ITEMS_VERSION = '29'
 
 const STATS_ARMOUR = new Set<StatHashes>([
 	StatHashes.Health,
@@ -29,6 +29,7 @@ namespace Items {
 	interface ItemProviderConfig {
 		DestinyInventoryItemDefinition: Record<number, DestinyInventoryItemDefinition>
 		item (hash: number, def: DestinyInventoryItemDefinition): number
+		plug (hash: number): ItemPlug | undefined
 	}
 
 	export interface ItemProvider extends ItemProviderDef { }
@@ -41,12 +42,23 @@ namespace Items {
 			Object.assign(this, provider)
 		}
 
-		item (hash: number) {
+		item (hash?: number) {
+			if (!hash)
+				return undefined
+
 			const def = this.#config.DestinyInventoryItemDefinition[hash]
 			if (!def)
 				return undefined
 
-			return this.#config.item(hash, def)
+			this.#config.item(hash, def)
+			return def
+		}
+
+		plug (hash?: number) {
+			if (!hash)
+				return undefined
+
+			return this.#config.plug(hash)
 		}
 
 	}
@@ -115,7 +127,7 @@ namespace Items {
 		const moments = Object.values(DeepsightMomentDefinition)
 		const items: Record<number, Item> = {}
 		function item (hash: number, def: DestinyInventoryItemDefinition): number {
-			const sockets = def.sockets?.socketEntries.map((entryDef, i): ItemSocket => socket(hash, i, entryDef)) ?? []
+			const sockets = def.sockets?.socketEntries.map((entryDef, i): ItemSocketDefinition => socket(hash, i, entryDef)) ?? []
 			const item: Item = {
 				is: 'item',
 				hash,
@@ -161,6 +173,9 @@ namespace Items {
 			if (!item.momentHash && def.iconWatermark)
 				Log.warn(`${def.displayProperties.name} (${def.hash}) has watermark but no moment. https://new.deepsight.gg/data/DestinyInventoryItemDefinition/${def.hash}`)
 
+			if (def.plug)
+				plug(hash)
+
 			items[hash] = item
 			return hash
 		}
@@ -180,7 +195,7 @@ namespace Items {
 		////////////////////////////////////
 		//#region Plugs
 
-		function socket (itemHash: number, socketIndex: number, entryDef: DestinyItemSocketEntryDefinition): ItemSocket {
+		function socket (itemHash: number, socketIndex: number, entryDef: DestinyItemSocketEntryDefinition): ItemSocketDefinition {
 			const categorisationFullName = DeepsightSocketCategorisation[itemHash]?.categorisation[socketIndex]?.fullName ?? 'None'
 
 			if (!entryDef.plugSources)
@@ -211,7 +226,7 @@ namespace Items {
 				return plugs[hash]
 
 			const def = DestinyInventoryItemDefinition[hash]
-			if (!def)
+			if (!def.plug)
 				return plugs[hash] = undefined
 
 			const categorisation = DeepsightPlugCategorisation[hash]
@@ -228,14 +243,15 @@ namespace Items {
 				clarity: DeepsightFormattedClarityDescriptions[hash],
 				perks: perkHashes,
 				stats: stats(def),
+				categoryHash: def.plug.plugCategoryHash as PlugCategoryHashes,
 			}
 		}
 
-		function socketedPlug (socket: ItemSocket): ItemPlug | undefined {
+		function socketedPlug (socket: ItemSocketDefinition): ItemPlug | undefined {
 			return plugs[socket.defaultPlugHash!]
 		}
 
-		function socketedPlugDef (socket: ItemSocket): DestinyInventoryItemDefinition | undefined {
+		function socketedPlugDef (socket: ItemSocketDefinition): DestinyInventoryItemDefinition | undefined {
 			const plug = socketedPlug(socket)
 			return plug ? DestinyInventoryItemDefinition[plug.hash] : undefined
 		}
@@ -263,7 +279,7 @@ namespace Items {
 		const HasMasterworkStats = Categorisation.matcher('Masterwork/*', 'Intrinsic/FrameEnhanced')
 		const NotMasterworkNotIntrinsic = Categorisation.matcher('!Intrinsic/*', '!Masterwork/*')
 		const ArmorMod = Categorisation.matcher('Mod/Armor')
-		function stats (def: DestinyInventoryItemDefinition, ref?: DestinyItemComponent, sockets: ItemSocket[] = []): Partial<Record<StatHashes, ItemStat>> | undefined {
+		function stats (def: DestinyInventoryItemDefinition, ref?: DestinyItemComponent, sockets: ItemSocketDefinition[] = []): Partial<Record<StatHashes, ItemStat>> | undefined {
 			if (!def.stats) {
 				const cat = plugCat(def.hash)
 				return Object.fromEntries(def.investmentStats?.map(stat => [
@@ -389,6 +405,7 @@ namespace Items {
 		return new ItemProvider({
 			DestinyInventoryItemDefinition,
 			item,
+			plug,
 		}, {
 			items,
 			plugs: plugs as Record<number, ItemPlug>,
