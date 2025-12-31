@@ -249,10 +249,12 @@ declare module "conduit.deepsight.gg/ConduitState" {
 }
 declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type { AuthState, CustomBungieApp } from 'conduit.deepsight.gg/Auth';
+    import type { Character } from 'conduit.deepsight.gg/Character';
     import type ConduitState from 'conduit.deepsight.gg/ConduitState';
     import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type Collections from 'conduit.deepsight.gg/item/Collections';
-    import Inventory from 'conduit.deepsight.gg/item/Inventory';
+    import type Inventory from 'conduit.deepsight.gg/item/Inventory';
+    import type { Item, ItemInstance } from 'conduit.deepsight.gg/item/Item';
     import type { Profile } from 'conduit.deepsight.gg/Profile';
     import type { ConduitSettings } from 'conduit.deepsight.gg/Settings';
     export interface ConduitFunctionRegistry {
@@ -274,9 +276,26 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         /** Perform a hard defs update check, ignoring how recently they were cached */
         checkUpdate(): Promise<ConduitState>;
     }
+    export type RelatedItem = Item | ItemInstance | Character;
+    export type ConduitWarningMessageType = 'Item has watermark but no moment';
+    export interface ConduitWarningMessage {
+        type: ConduitWarningMessageType;
+        /** Who this warning should be displayed to */
+        category: 'user' | 'developer' | 'conduit';
+        related?: RelatedItem[];
+    }
+    export type ConduitOperationType = 'Searching Destiny players' | 'Updating player profiles' | 'Updating your player profile' | 'Validating Bungie.net access token' | 'Fetching Destiny profile' | 'Resolving inventory' | 'Resolving collections' | 'Checking for new definitions' | 'Downloading definitions';
+    export interface ConduitOperation {
+        id: string;
+        type: ConduitOperationType;
+        related?: RelatedItem[];
+    }
     export interface ConduitBroadcastRegistry {
         ready: void;
         profilesUpdated: Profile[];
+        warning: ConduitWarningMessage;
+        startOperation: ConduitOperation;
+        endOperation: string;
         _updateSettings: void;
     }
 }
@@ -341,6 +360,7 @@ declare module "conduit.deepsight.gg/Clarity" {
 declare module "conduit.deepsight.gg/Character" {
     import type { DestinyCharacterComponent, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2';
     export interface Character {
+        is: 'character';
         id: string;
         metadata: DestinyCharacterComponent;
         emblem?: Emblem;
