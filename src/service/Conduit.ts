@@ -87,13 +87,6 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 			return profile && await Inventory.for(profile).get()
 		},
 
-		async vaultItem (event, item) {
-
-		},
-		async moveItemToCharacter (event, item, characterId) {
-
-		},
-
 		async getComponentNames () {
 			return await DefinitionsComponentNames.get()
 		},
