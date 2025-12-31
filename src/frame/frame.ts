@@ -119,11 +119,12 @@ void (async () => {
 		unresolvedCalls.delete(id)
 
 		// forward messages from the service worker to the parent window
-		log(
-			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %c${id.padEnd(11, ' ')} %cHost %c\u2B9C Service %c/ %c${type}${printIfVerbose()}`,
-			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, colourFromId(id), HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
-			...ifVerbose(data),
-		)
+		if (id !== 'global' || (type !== 'startOperation' && type !== 'endOperation' && type !== 'warning'))
+			log(
+				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %c${id.padEnd(11, ' ')} %cHost %c\u2B9C Service %c/ %c${type}${printIfVerbose()}`,
+				PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, colourFromId(id), HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, MESSAGE_FORMAT,
+				...ifVerbose(data),
+			)
 
 		completedCalls.push(id)
 		if (completedCalls.length > 100)

@@ -171,7 +171,7 @@ namespace Items {
 				maxStackSize: def.inventory?.maxStackSize,
 			}
 
-			if (!item.momentHash && def.iconWatermark) {
+			if (!item.momentHash && def.iconWatermark && !def.plug) {
 				Log.warn(`${def.displayProperties.name} (${def.hash}) has watermark but no moment. https://new.deepsight.gg/data/DestinyInventoryItemDefinition/${def.hash}`)
 				Broadcast.warning('conduit', 'Item has watermark but no moment', [item])
 			}
