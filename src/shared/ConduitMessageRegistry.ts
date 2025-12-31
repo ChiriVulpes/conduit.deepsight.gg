@@ -1,8 +1,10 @@
 import type { AuthState, CustomBungieApp } from 'Auth'
+import type { Character } from 'Character'
 import type ConduitState from 'ConduitState'
 import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'DefinitionComponents'
 import type Collections from 'item/Collections'
-import Inventory from 'item/Inventory'
+import type Inventory from 'item/Inventory'
+import type { Item, ItemInstance } from 'item/Item'
 import type { Profile } from 'Profile'
 import type { ConduitSettings } from 'Settings'
 
@@ -50,8 +52,43 @@ export interface ConduitFunctionRegistry {
 	////////////////////////////////////
 }
 
+export type RelatedItem =
+	| Item
+	| ItemInstance
+	| Character
+
+export type ConduitWarningMessageType =
+	| 'Item has watermark but no moment'
+
+export interface ConduitWarningMessage {
+	type: ConduitWarningMessageType
+	/** Who this warning should be displayed to */
+	category: 'user' | 'developer' | 'conduit'
+	related?: RelatedItem[]
+}
+
+export type ConduitOperationType =
+	| 'Searching Destiny players'
+	| 'Updating player profiles'
+	| 'Updating your player profile'
+	| 'Validating Bungie.net access token'
+	| 'Fetching Destiny profile'
+	| 'Resolving inventory'
+	| 'Resolving collections'
+	| 'Checking for new definitions'
+	| 'Downloading definitions'
+
+export interface ConduitOperation {
+	id: string
+	type: ConduitOperationType
+	related?: RelatedItem[]
+}
+
 export interface ConduitBroadcastRegistry {
 	ready: void
 	profilesUpdated: Profile[]
+	warning: ConduitWarningMessage
+	startOperation: ConduitOperation
+	endOperation: string
 	_updateSettings: void
 }

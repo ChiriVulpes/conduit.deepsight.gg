@@ -8,28 +8,28 @@
  * @property {function(ExtendableMessageEvent): Promise<unknown>} onCall
  */
 
-const service = /** @type {ServiceWorkerGlobalScope & Service} */ (self)
-const registrationPromise = new Promise(resolve => service.setRegistered = resolve)
+const serviceWorkerSelf = /** @type {ServiceWorkerGlobalScope & Service} */ (self)
+const registrationPromise = new Promise(resolve => serviceWorkerSelf.setRegistered = resolve)
 
-service.addEventListener('install', event => {
+serviceWorkerSelf.addEventListener('install', event => {
 	event.waitUntil((async () => {
 		await registrationPromise
-		await service.onInstall?.(event)
+		await serviceWorkerSelf.onInstall?.(event)
 	})())
 
-	void service.skipWaiting()
+	void serviceWorkerSelf.skipWaiting()
 })
 
-service.addEventListener('activate', event => {
+serviceWorkerSelf.addEventListener('activate', event => {
 	event.waitUntil((async () => {
-		await service.onActivate?.(event)
-		await service.clients.claim()
+		await serviceWorkerSelf.onActivate?.(event)
+		await serviceWorkerSelf.clients.claim()
 	})())
 })
 
-service.addEventListener('message', event => {
+serviceWorkerSelf.addEventListener('message', event => {
 	event.waitUntil((async () => {
-		await service.onCall?.(event)
+		await serviceWorkerSelf.onCall?.(event)
 	})())
 })
 

@@ -1,6 +1,7 @@
 import type { DestinyCharacterComponent, DestinyDisplayPropertiesDefinition } from 'bungie-api-ts/destiny2'
 
 export interface Character {
+	is: 'character'
 	id: string
 	metadata: DestinyCharacterComponent
 	emblem?: Emblem

@@ -10,6 +10,7 @@ import Categorisation from 'model/Categorisation'
 import Definitions from 'model/Definitions'
 import type { DestinyProfile } from 'model/DestinyProfiles'
 import { Truthy } from 'utility/Arrays'
+import Broadcast from 'utility/Broadcast'
 import Log from 'utility/Log'
 import { mutable } from 'utility/Objects'
 
@@ -170,8 +171,10 @@ namespace Items {
 				maxStackSize: def.inventory?.maxStackSize,
 			}
 
-			if (!item.momentHash && def.iconWatermark)
+			if (!item.momentHash && def.iconWatermark) {
 				Log.warn(`${def.displayProperties.name} (${def.hash}) has watermark but no moment. https://new.deepsight.gg/data/DestinyInventoryItemDefinition/${def.hash}`)
+				Broadcast.warning('conduit', 'Item has watermark but no moment', [item])
+			}
 
 			if (def.plug)
 				plug(hash)

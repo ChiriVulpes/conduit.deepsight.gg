@@ -1,5 +1,6 @@
 import { DestinyComponentType, type DestinyProfileResponse } from 'bungie-api-ts/destiny2'
 import { ProfiledModel } from 'model/ProfiledModel'
+import Broadcast from 'utility/Broadcast'
 import Bungie from 'utility/Bungie'
 
 export interface DestinyProfile extends
@@ -10,37 +11,39 @@ export interface DestinyProfile extends
 export default ProfiledModel<DestinyProfile | undefined>('destiny2/profile', {
 	cacheDirtyTime: 1000 * 30, // 30 second cache time
 	async fetch (profile) {
-		const profileResponse = profile && await Bungie.getForUser<DestinyProfile>(`/Destiny2/${profile.type}/Profile/${profile.id}/`, {
-			components: [
-				DestinyComponentType.Profiles,
+		const profileResponse = profile && await Broadcast.operation('Fetching Destiny profile', () =>
+			Bungie.getForUser<DestinyProfile>(`/Destiny2/${profile.type}/Profile/${profile.id}/`, {
+				components: [
+					DestinyComponentType.Profiles,
 
-				// Characters
-				DestinyComponentType.Characters,
-				DestinyComponentType.ProfileProgression,
-				DestinyComponentType.CharacterLoadouts,
+					// Characters
+					DestinyComponentType.Characters,
+					DestinyComponentType.ProfileProgression,
+					DestinyComponentType.CharacterLoadouts,
 
-				// Items
-				DestinyComponentType.CharacterInventories,
-				DestinyComponentType.CharacterEquipment,
-				DestinyComponentType.ProfileInventories,
-				DestinyComponentType.ItemInstances,
-				DestinyComponentType.ItemPlugObjectives,
-				DestinyComponentType.ItemStats,
-				DestinyComponentType.Records,
-				DestinyComponentType.ItemSockets,
-				DestinyComponentType.ItemReusablePlugs,
-				DestinyComponentType.ItemPlugStates,
-				DestinyComponentType.ItemPerks,
-				DestinyComponentType.CharacterProgressions,
+					// Items
+					DestinyComponentType.CharacterInventories,
+					DestinyComponentType.CharacterEquipment,
+					DestinyComponentType.ProfileInventories,
+					DestinyComponentType.ItemInstances,
+					DestinyComponentType.ItemPlugObjectives,
+					DestinyComponentType.ItemStats,
+					DestinyComponentType.Records,
+					DestinyComponentType.ItemSockets,
+					DestinyComponentType.ItemReusablePlugs,
+					DestinyComponentType.ItemPlugStates,
+					DestinyComponentType.ItemPerks,
+					DestinyComponentType.CharacterProgressions,
 
-				// Collections
-				DestinyComponentType.Collectibles,
-				DestinyComponentType.CharacterActivities, // displaying whether items are currently obtainable
+					// Collections
+					DestinyComponentType.Collectibles,
+					DestinyComponentType.CharacterActivities, // displaying whether items are currently obtainable
 
-				// Misc
-				DestinyComponentType.StringVariables,
-			],
-		})
+					// Misc
+					DestinyComponentType.StringVariables,
+				],
+			})
+		)
 		return {
 			version: profileResponse?.responseMintedTimestamp ?? 'n/a',
 			value: profileResponse,

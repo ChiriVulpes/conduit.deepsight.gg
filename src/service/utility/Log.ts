@@ -18,6 +18,7 @@ namespace Log {
 			PUNCT_FORMAT,
 			SERVICE_FORMAT,
 			PUNCT_FORMAT,
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			...args,
 		)
 	}
@@ -28,6 +29,7 @@ namespace Log {
 			WARN_FORMAT,
 			SERVICE_FORMAT,
 			PUNCT_FORMAT,
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			...args,
 		)
 	}
@@ -38,6 +40,7 @@ namespace Log {
 			ERROR_FORMAT,
 			SERVICE_FORMAT,
 			PUNCT_FORMAT,
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			...args,
 		)
 	}

@@ -6,6 +6,7 @@ import Definitions from 'model/Definitions'
 import DestinyProfiles from 'model/DestinyProfiles'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import { ProfiledModel } from 'model/ProfiledModel'
+import Broadcast from 'utility/Broadcast'
 
 const version = `29.${ITEMS_VERSION}`
 function buckets (): CollectionsMoment['buckets'] {
@@ -28,34 +29,36 @@ export default ProfiledModel<Collections>('Collections', {
 		return {
 			version: `${version}/${await CombinedManifestVersion.get()}/${data?.responseMintedTimestamp ?? 'n/a'}`,
 			value: async (): Promise<Collections> => {
-				const [
-					DeepsightCollectionsDefinition,
-					DeepsightMomentDefinition,
-				] = await Promise.all([
-					Definitions.en.DeepsightCollectionsDefinition.get(),
-					Definitions.en.DeepsightMomentDefinition.get(),
-				])
+				return await Broadcast.operation('Resolving collections', async () => {
+					const [
+						DeepsightCollectionsDefinition,
+						DeepsightMomentDefinition,
+					] = await Promise.all([
+						Definitions.en.DeepsightCollectionsDefinition.get(),
+						Definitions.en.DeepsightMomentDefinition.get(),
+					])
 
-				const provider = await Items.provider(data, 'collections')
+					const provider = await Items.provider(data, 'collections')
 
-				return {
-					...{ version },
-					moments: (Object.values(DeepsightMomentDefinition)
-						.map((moment): CollectionsMoment => ({
-							moment,
-							buckets: Object.assign(buckets(),
-								(Object.entries(DeepsightCollectionsDefinition[moment.hash]?.buckets || {})
-									.map(([bucketHash, itemHashes]): [string, CollectionsBucket] => [bucketHash, {
-										items: itemHashes.map(hash => provider.item(hash)?.hash).filter(item => item !== undefined),
-									}])
-									.collect(Object.fromEntries) as CollectionsMoment['buckets']
+					return {
+						...{ version },
+						moments: (Object.values(DeepsightMomentDefinition)
+							.map((moment): CollectionsMoment => ({
+								moment,
+								buckets: Object.assign(buckets(),
+									(Object.entries(DeepsightCollectionsDefinition[moment.hash]?.buckets || {})
+										.map(([bucketHash, itemHashes]): [string, CollectionsBucket] => [bucketHash, {
+											items: itemHashes.map(hash => provider.item(hash)?.hash).filter(item => item !== undefined),
+										}])
+										.collect(Object.fromEntries) as CollectionsMoment['buckets']
+									),
 								),
-							),
-						}))
-						.sort((a, b) => b.moment.hash - a.moment.hash)
-					),
-					...provider,
-				}
+							}))
+							.sort((a, b) => b.moment.hash - a.moment.hash)
+						),
+						...provider,
+					}
+				})
 			},
 		}
 	},

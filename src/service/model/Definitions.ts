@@ -3,6 +3,7 @@ import ClarityManifest from 'model/ClarityManifest'
 import DeepsightManifest from 'model/DeepsightManifest'
 import DestinyManifest from 'model/DestinyManifest'
 import Model from 'model/Model'
+import Broadcast from 'utility/Broadcast'
 import Clarity from 'utility/Clarity'
 import Deepsight from 'utility/Deepsight'
 
@@ -34,8 +35,10 @@ const Definitions = new Proxy({} as Record<string, Definitions>, {
 									version: manifest.version,
 									value: async () => {
 										const componentURI = manifest.value[componentLanguage][componentName]
-										return fetch(`https://www.bungie.net${componentURI}`)
-											.then(response => response.json()) as Promise<DefinitionsForComponentName<NAME>>
+										return Broadcast.operation('Downloading definitions', () =>
+											fetch(`https://www.bungie.net${componentURI}`)
+												.then(response => response.json()) as Promise<DefinitionsForComponentName<NAME>>
+										)
 									},
 								}
 							}
@@ -44,7 +47,9 @@ const Definitions = new Proxy({} as Record<string, Definitions>, {
 								const manifest = await DeepsightManifest.use()
 								return {
 									version: `${(manifest.value.manifest as any as Record<string, number>)[componentName]}`,
-									value: async () => await Deepsight.get<DefinitionsForComponentName<NAME>>(`/${componentName}.json`, !manifest.value.isLocal),
+									value: async () => await Broadcast.operation('Downloading definitions', () =>
+										Deepsight.get<DefinitionsForComponentName<NAME>>(`/${componentName}.json`, !manifest.value.isLocal)
+									),
 								}
 							}
 
@@ -57,7 +62,9 @@ const Definitions = new Proxy({} as Record<string, Definitions>, {
 
 								return {
 									version: manifest.version,
-									value: async () => await Clarity.get<DefinitionsForComponentName<NAME>>(filename),
+									value: async () => await Broadcast.operation('Downloading definitions', () =>
+										Clarity.get<DefinitionsForComponentName<NAME>>(filename)
+									),
 								}
 							}
 

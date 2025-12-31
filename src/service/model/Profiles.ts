@@ -8,6 +8,7 @@ import type { UserMembershipData } from 'bungie-api-ts/user'
 import { type UserInfoCard } from 'bungie-api-ts/user'
 import type Auth from 'model/Auth'
 import Definitions from 'model/Definitions'
+import Broadcast from 'utility/Broadcast'
 import Bungie from 'utility/Bungie'
 import Colour from 'utility/Colour'
 import { db } from 'utility/Database'
@@ -21,46 +22,54 @@ namespace Profiles {
 	export async function get () {
 		let updated = false
 		const profiles = await db.profiles.toArray()
-		await Promise.all(profiles.map(async profile => {
-			const thisProfileUpdated = await updateProfile(profile).catch(() => false)
-			updated ||= thisProfileUpdated ?? false
-		}))
+		await Broadcast.operation('Updating player profiles', () =>
+			Promise.all(profiles.map(async profile => {
+				const thisProfileUpdated = await updateProfile(profile).catch(() => false)
+				updated ||= thisProfileUpdated ?? false
+			}))
+		)
 		return { profiles, updated }
 	}
 
 	export async function searchDestinyPlayerByBungieName (displayName: string, displayNameCode: number) {
 		const profile = await db.profiles.get({ name: displayName, code: displayNameCode })
 		if (profile) {
-			await updateProfile(profile, true)
+			await Broadcast.operation('Updating player profiles', () =>
+				updateProfile(profile, true)
+			)
 			return profile
 		}
 
-		return await Bungie.post<UserInfoCard[]>('/Destiny2/SearchDestinyPlayerByBungieName/-1/', {
-			displayName,
-			displayNameCode,
-		}).then(resolveProfile)
+		return await Broadcast.operation('Searching Destiny players', () =>
+			Bungie.post<UserInfoCard[]>('/Destiny2/SearchDestinyPlayerByBungieName/-1/', {
+				displayName,
+				displayNameCode,
+			}).then(resolveProfile)
+		)
 	}
 
 	export async function getCurrentProfile (auth: Auth | undefined) {
 		if (!auth)
 			return undefined
 
-		const profiles = await db.profiles.toArray()
+		return await Broadcast.operation('Updating your player profile', async () => {
+			const profiles = await db.profiles.toArray()
 
-		const userMembershipData = await Bungie.getForUser<UserMembershipData>('/User/GetMembershipsForCurrentUser/')
-		if (!userMembershipData?.destinyMemberships?.length)
-			return undefined
+			const userMembershipData = await Bungie.getForUser<UserMembershipData>('/User/GetMembershipsForCurrentUser/')
+			if (!userMembershipData?.destinyMemberships?.length)
+				return undefined
 
-		let profile = profiles.find(profile => userMembershipData.destinyMemberships.some(membership => membership.membershipId === profile.id))
-		if (profile) {
-			await updateProfile(profile, true)
+			let profile = profiles.find(profile => userMembershipData.destinyMemberships.some(membership => membership.membershipId === profile.id))
+			if (profile) {
+				await updateProfile(profile, true)
+				await updateAuthProfile(auth, profile)
+				return profile
+			}
+
+			profile = await resolveProfile(userMembershipData.destinyMemberships)
 			await updateAuthProfile(auth, profile)
 			return profile
-		}
-
-		profile = await resolveProfile(userMembershipData.destinyMemberships)
-		await updateAuthProfile(auth, profile)
-		return profile
+		})
 	}
 
 	async function updateAuthProfile (auth: Auth, profile?: Profile) {
@@ -147,6 +156,7 @@ namespace Profiles {
 
 			const newChars = Object.values(destinyProfile.characters.data ?? {})
 				.map((character): ProfileCharacter => ({
+					is: 'character',
 					id: character.characterId,
 					metadata: character,
 					emblem: !character.emblemHash ? undefined : {

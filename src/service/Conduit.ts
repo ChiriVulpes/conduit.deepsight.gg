@@ -38,7 +38,7 @@ class ConduitFunctionRequiresTrustedOriginError extends Error {
 
 }
 
-const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
+const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 	async onInstall (service, event) {
 	},
 	async onActivate (service, event) {
@@ -85,6 +85,13 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 		async getInventory (event, displayName, displayNameCode) {
 			const profile = await this.getProfile(event, displayName, displayNameCode)
 			return profile && await Inventory.for(profile).get()
+		},
+
+		async vaultItem (event, item) {
+
+		},
+		async moveItemToCharacter (event, item, characterId) {
+
 		},
 
 		async getComponentNames () {
@@ -384,6 +391,12 @@ const service = Service<ConduitFunctionRegistry, ConduitBroadcastRegistry>({
 
 	},
 })
+
+declare global {
+	const service: Service<ConduitBroadcastRegistry>
+}
+
+Object.assign(self, { service })
 
 function followLinkPath (obj: any, path: (string | number)[]): (number | string)[] {
 	if (!path.length && (typeof obj === 'number' || typeof obj === 'string'))
