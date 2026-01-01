@@ -2,6 +2,7 @@ import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/
 import type { AllComponentNames, AllDefinitions, DefinitionLinks, DefinitionReferencesPage } from '@shared/DefinitionComponents'
 import type { Profile } from '@shared/Profile'
 import type { ConduitSettings } from '@shared/Settings'
+import ItemTransfer from 'action/ItemTransfer'
 import type { DeepsightDefinitionLinkDefinition } from 'deepsight.gg'
 import type { InventoryItemHashes } from 'deepsight.gg/Enums'
 import Auth from 'model/Auth'
@@ -47,7 +48,7 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 	onRegistered (service) {
 		void service.broadcast.ready()
 		onUpdateStore(key => {
-			if (key === 'auth' || key === 'origins' || key === 'customApp')
+			if (key === 'auth' || key === 'origins' || key === 'customApp' || key === 'destinyProfileOverrides')
 				return
 
 			const expectedKeyType: keyof ConduitSettings = key
@@ -84,7 +85,16 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 
 		async getInventory (event, displayName, displayNameCode) {
 			const profile = await this.getProfile(event, displayName, displayNameCode)
-			return profile && await Inventory.for(profile).get()
+			const inventory = profile && await Inventory.for(profile).get()
+			// Broadcast.warning('conduit', 'Item has watermark but no moment', [inventory?.profileItems[0]!])
+			return inventory
+		},
+
+		async vaultItem (event, item) {
+			return ItemTransfer.vaultItem(item)
+		},
+		async moveItemToCharacter (event, characterId, item) {
+			return ItemTransfer.moveItemToCharacter(characterId, item)
 		},
 
 		async getComponentNames () {

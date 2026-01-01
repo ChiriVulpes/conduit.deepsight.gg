@@ -15,6 +15,7 @@ interface Model<T> {
 interface ModelDefinition<T> {
 	cacheDirtyTime: number
 	fetch (): Promise<ModelValue<T>>
+	tweak?(value: T): unknown
 }
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
@@ -26,7 +27,9 @@ function Model<T> (id: string, def: ModelDefinition<T>): Model<T> {
 	return Object.assign(def, {
 		id,
 		async get () {
-			return (await this.use()).value
+			const value = (await this.use()).value
+			await def.tweak?.(value)
+			return value
 		},
 		async use (hard?: true) {
 			if (hard && currentIsSoft) {

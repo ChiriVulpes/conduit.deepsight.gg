@@ -5,6 +5,7 @@ import Model from 'model/Model'
 interface ProfiledModelDefinition<T> {
 	cacheDirtyTime: number
 	fetch (profile?: Profile): Promise<ModelValue<T>>
+	tweak?(value: T, profile?: Profile): unknown
 }
 
 export function ProfiledModel<T> (name: string, definition: ProfiledModelDefinition<T>) {
@@ -15,6 +16,7 @@ export function ProfiledModel<T> (name: string, definition: ProfiledModelDefinit
 			return cache[membershipTypeAndId] ??= Model<T>(`${name}:${membershipTypeAndId}`, {
 				cacheDirtyTime: definition.cacheDirtyTime,
 				fetch: () => definition.fetch(profile),
+				tweak: definition.tweak && (value => definition.tweak!(value, profile)),
 			})
 		},
 	}

@@ -16,6 +16,8 @@ export interface ConduitFunctionRegistry {
 	getCollections (): Promise<Collections>
 	getCollections (displayName: string, displayNameCode: number): Promise<Collections>
 	getInventory (displayName: string, displayNameCode: number): Promise<Inventory | undefined>
+	vaultItem (item: ItemTransferReference): Promise<ItemTransferAction[]>
+	moveItemToCharacter (characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]>
 	getComponentNames (): Promise<AllComponentNames[]>
 	/** 
 	 * Get the current state of conduit — defs versions, profiles, etc. 
@@ -52,6 +54,20 @@ export interface ConduitFunctionRegistry {
 	////////////////////////////////////
 }
 
+export interface ItemTransferReference {
+	instanceId?: string
+	itemHash: number
+	characterId?: string
+	stackSize?: number
+	isLostItem?: true
+}
+
+export interface ItemTransferAction {
+	item: ItemTransferReference
+	to: 'vault' | 'character'
+	newCharacterId?: string
+}
+
 export type RelatedItem =
 	| Item
 	| ItemInstance
@@ -59,6 +75,9 @@ export type RelatedItem =
 
 export type ConduitWarningMessageType =
 	| 'Item has watermark but no moment'
+	| 'Unable to transfer item: Not authenticated'
+	| 'Unable to transfer item: Character required'
+	| 'Unable to pull item from postmaster: Unknown item'
 
 export interface ConduitWarningMessage {
 	type: ConduitWarningMessageType

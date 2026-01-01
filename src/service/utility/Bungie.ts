@@ -3,7 +3,7 @@ import { PlatformErrorCodes } from 'bungie-api-ts/common'
 import Auth from 'model/Auth'
 import Log from 'utility/Log'
 
-type Jsonable = string | number | boolean | null | Jsonable[] | { [key: string | number]: Jsonable }
+type Jsonable = string | number | boolean | null | undefined | Jsonable[] | { [key: string | number]: Jsonable }
 namespace Jsonable {
 	export function searchParamsIfy (value: Jsonable): string {
 		if (Array.isArray(value))
@@ -15,6 +15,9 @@ namespace Jsonable {
 			return Object.entries(value)
 				.map(([key, val]) => `${encodeURIComponent(key)}=${encodeURIComponent(searchParamsIfy(val))}`)
 				.join('&')
+
+		if (value === undefined)
+			return ''
 
 		return encodeURIComponent(String(value))
 	}
