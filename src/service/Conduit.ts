@@ -1,6 +1,7 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
 import type { AllComponentNames, AllDefinitions, DefinitionLinks, DefinitionReferencesPage, DefinitionWithLinks, DefinitionsForComponentName } from '@shared/DefinitionComponents'
 import type { Profile } from '@shared/Profile'
+import type { ConduitSettings } from '@shared/Settings'
 import ItemTransfer from 'action/ItemTransfer'
 import type { DeepsightDefinitionLinkDefinition } from 'deepsight.gg'
 import type { InventoryItemHashes } from 'deepsight.gg/Enums'
@@ -91,9 +92,11 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 		},
 
 		async vaultItem (event, item) {
+			await Auth.assertOriginAccess(event.origin)
 			return ItemTransfer.vaultItem(item)
 		},
 		async moveItemToCharacter (event, characterId, item) {
+			await Auth.assertOriginAccess(event.origin)
 			return ItemTransfer.moveItemToCharacter(characterId, item)
 		},
 
@@ -111,18 +114,15 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 		//#region Settings
 
 		async _getSetting (event, key) {
-			if (event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
+			assertOwnOrigin(event.origin)
 			return await Store[key].get()
 		},
 		async _setSetting (event, key, value) {
-			if (event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
+			assertOwnOrigin(event.origin)
 			await Store[key].set(value)
 		},
 		async _resetSetting (event, key) {
-			if (event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
+			assertOwnOrigin(event.origin)
 			await Store[key].delete()
 		},
 
@@ -131,13 +131,11 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 
 		setOrigin (event) { },
 		async _getAuthState (event) {
-			if (event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
+			assertOwnOrigin(event.origin)
 			return await Auth.getAuthState()
 		},
 		async _setCustomApp (event, app) {
-			if (event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
+			assertOwnOrigin(event.origin)
 			if (app)
 				await Store.customApp.set(app)
 			else
@@ -145,24 +143,21 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 			await Store.auth.delete() // must re-auth when changing app
 		},
 		async _authenticate (event, code) {
-			if (event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
+			assertOwnOrigin(event.origin)
 			const authed = !!await Auth.complete(code)
 			if (authed)
 				await updateProfiles()
 			return authed
 		},
 		async _grantAccess (event, origin, appName) {
-			if (event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
+			assertOwnOrigin(event.origin)
 			const granted = await Auth.grantAccess(origin, appName)
 			if (granted) {
 				await updateProfiles(origin)
 			}
 		},
 		async _denyAccess (event, origin) {
-			if (event.origin !== self.origin)
-				throw new ConduitPrivateFunctionError()
+			assertOwnOrigin(event.origin)
 			return await Auth.denyAccess(origin)
 		},
 
@@ -400,6 +395,11 @@ declare global {
 }
 
 Object.assign(self, { service })
+
+function assertOwnOrigin (origin: string) {
+	if (origin !== self.origin)
+		throw new ConduitPrivateFunctionError()
+}
 
 function followLinkPath (obj: any, path: (string | number)[]): (number | string)[] {
 	if (!path.length && (typeof obj === 'number' || typeof obj === 'string'))

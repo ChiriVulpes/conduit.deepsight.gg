@@ -21,6 +21,14 @@ declare module 'utility/Store' {
 	}
 }
 
+class ConduitFunctionOriginRequiresAccessError extends Error {
+
+	constructor () {
+		super('This action can only be performed by an origin with account access')
+	}
+
+}
+
 namespace Auth {
 
 	const AUTH_EXPIRY = 1000 * 60 * 60 * 24 * 30 // 30 days
@@ -51,6 +59,13 @@ namespace Auth {
 		delete origins[origin]
 		await Store.origins.set(origins)
 		return undefined
+	}
+
+	export async function assertOriginAccess (origin: string): Promise<AccessGrant> {
+		const access = await getOriginAccess(origin)
+		if (!access)
+			throw new ConduitFunctionOriginRequiresAccessError()
+		return access
 	}
 
 	export async function getOriginGrants (): Promise<AccessGrant[]> {
