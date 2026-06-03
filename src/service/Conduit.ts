@@ -1,7 +1,6 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
-import type { AllComponentNames, AllDefinitions, DefinitionLinks, DefinitionReferencesPage } from '@shared/DefinitionComponents'
+import type { AllComponentNames, AllDefinitions, DefinitionLinks, DefinitionReferencesPage, DefinitionWithLinks, DefinitionsForComponentName } from '@shared/DefinitionComponents'
 import type { Profile } from '@shared/Profile'
-import type { ConduitSettings } from '@shared/Settings'
 import ItemTransfer from 'action/ItemTransfer'
 import type { DeepsightDefinitionLinkDefinition } from 'deepsight.gg'
 import type { InventoryItemHashes } from 'deepsight.gg/Enums'
@@ -52,6 +51,7 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 				return
 
 			const expectedKeyType: keyof ConduitSettings = key
+			// eslint-disable-next-line fluff/no-unused-expressions
 			expectedKeyType
 			void service.broadcast._updateSettings()
 		})
@@ -336,11 +336,11 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 			const [def, links] = await Promise.all([
 				this._getDefinition(event, language, component, hash),
 				this._getDefinitionLinks(event, language, component, hash),
-			])
+			]) as [DefinitionsForComponentName<typeof component>[keyof DefinitionsForComponentName<typeof component>], DefinitionLinks | undefined]
 			if (!def)
 				return undefined
 
-			return { definition: def, links }
+			return { definition: def, links } satisfies DefinitionWithLinks<typeof def>
 		},
 		//#endregion
 		////////////////////////////////////

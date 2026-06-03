@@ -24,7 +24,6 @@ const Loading = Component((component): Loading => {
 
 	const spinner = Component().style('loading-spinner')
 		.append(...([1, 2, 3, 4] as const).map(i => Component().style('loading-spinner-dot', `loading-spinner-dot-${i}`)))
-	// eslint-disable-next-line @typescript-eslint/no-misused-promises
 	const interval = setInterval(async () => {
 		for (const dot of spinner.getChildren())
 			dot.style('loading-spinner-dot--no-animate')

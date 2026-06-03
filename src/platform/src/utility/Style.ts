@@ -1,6 +1,6 @@
-import { style } from "kitsui/utility/StyleManipulator"
+import { style } from 'kitsui/utility/StyleManipulator'
 import chiristyle from 'style'
-import Script from "utility/Script"
+import Script from 'utility/Script'
 
 type Chiristyles = typeof chiristyle
 declare module 'kitsui/utility/StyleManipulator' {
@@ -11,9 +11,9 @@ style.value = chiristyle
 
 namespace Style {
 	export async function reload () {
-		reloadStylesheet('./style/index.css')
+		void reloadStylesheet('./style/index.css')
 		Script.allowModuleRedefinition('style')
-		await Script.reload(`./style/index.js`)
+		await Script.reload('./style/index.js')
 		style.value = await import('style').then(module => module.default)
 	}
 
