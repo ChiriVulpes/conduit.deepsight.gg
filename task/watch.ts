@@ -24,7 +24,7 @@ export default Task('watch', async task => {
 	task.watch([
 		'src/platform/*.html',
 		'.env',
-		'src/platform/node_modules/**/*.js',
+		'node_modules/kitsui/**/*.js',
 		'src/platform/static/**/*',
 	], _static)
 
@@ -32,7 +32,7 @@ export default Task('watch', async task => {
 		'out/shared/**/*.d.ts',
 		'out/client/index.d.ts',
 		'out/client/index.js',
-		'src/client/package.json',
+		'package.json',
 	], _package)
 
 	await Promise.all([

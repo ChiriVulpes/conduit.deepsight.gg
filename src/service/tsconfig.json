@@ -7,6 +7,7 @@
 		"outFile": "../../out/service/index.js",
 		"module": "AMD",
 		"baseUrl": ".",
+		"types": [],
 		"incremental": true,
 		"esModuleInterop": true,
 		"noImplicitOverride": true,
@@ -21,6 +22,18 @@
 			"@shared/*": [
 				"../shared/*"
 			],
+			"bungie-api-ts": [
+				"../../node_modules/bungie-api-ts/index.d.ts"
+			],
+			"bungie-api-ts/*": [
+				"../../node_modules/bungie-api-ts/*"
+			],
+			"deepsight.gg": [
+				"../../node_modules/deepsight.gg/Interfaces.d.ts"
+			],
+			"deepsight.gg/*": [
+				"../../node_modules/deepsight.gg/*"
+			],
 		}
 	},
 	"references": [
@@ -29,9 +42,9 @@
 	"include": [
 		"bundle/amd.js",
 		"bundle/dexie.js",
-		"node_modules/dexie/dist/dexie.min.js",
+		"../../node_modules/dexie/dist/dexie.min.js",
 		"bundle/jsonpath.js",
-		"node_modules/jsonpath-plus/dist/index-browser-umd.min.js",
+		"../../node_modules/jsonpath-plus/dist/index-browser-umd.min.js",
 		"**/*.ts",
 		"bundle/init.js"
 	]

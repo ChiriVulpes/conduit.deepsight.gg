@@ -1,8 +1,0 @@
-{
-	"private": true,
-	"dependencies": {
-		"bungie-api-ts": "5.10.0",
-		"deepsight.gg": "1.0.1848",
-		"dexie": "4.0.11"
-	}
-}

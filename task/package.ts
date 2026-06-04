@@ -32,11 +32,27 @@ export default Task('package', async () => {
 	await fs.mkdir('out/package', { recursive: true })
 	await fs.writeFile('out/package/index.d.ts', injectFile, 'utf8')
 
-	const packageJsonString = await fs.readFile('src/client/package.json', 'utf8')
-	// eslint-disable-next-line @typescript-eslint/consistent-type-imports
-	const packageJson = JSON.parse(packageJsonString) as Partial<typeof import('../src/client/package.json')>
-	// delete packageJson.devDependencies
-	delete packageJson.private
+	const packageJsonString = await fs.readFile('package.json', 'utf8')
+	const rootPackageJson = JSON.parse(packageJsonString) as {
+		version?: string
+		dependencies?: Record<string, string>
+	}
+	const packageDependencies = Object.fromEntries(
+		['bungie-api-ts', 'deepsight.gg'].map(dependency => {
+			const version = rootPackageJson.dependencies?.[dependency]
+			if (!version)
+				throw new Error(`Missing ${dependency} dependency in root package.json`)
+
+			return [dependency, version]
+		})
+	)
+	const packageJson = {
+		name: 'conduit.deepsight.gg',
+		main: 'index.js',
+		types: 'index.d.ts',
+		version: rootPackageJson.version,
+		dependencies: packageDependencies,
+	}
 	await fs.writeFile('out/package/package.json', JSON.stringify(packageJson, null, '\t'), 'utf8')
 
 	let indexJs = await fs.readFile('out/client/index.js', 'utf8').catch(() => '')
