@@ -27,8 +27,8 @@ importers:
         specifier: github:fluff4me/chiri#6f49a9bcaa77e450cc599a61f44e83079bd303f3
         version: https://codeload.github.com/fluff4me/chiri/tar.gz/6f49a9bcaa77e450cc599a61f44e83079bd303f3
       deepsight.gg:
-        specifier: 1.0.1848
-        version: 1.0.1848
+        specifier: 1.0.1850
+        version: 1.0.1850
       dexie:
         specifier: 4.0.11
         version: 4.0.11
@@ -36,8 +36,8 @@ importers:
         specifier: 10.3.0
         version: 10.3.0
       kitsui:
-        specifier: github:fluff4me/kitsui#57743f6ef882624654572ef4f2b64b2a41750f01
-        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/57743f6ef882624654572ef4f2b64b2a41750f01
+        specifier: github:fluff4me/kitsui#6338022e7c010b32bdf6ee47b4b1ae73af9ff05f
+        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/6338022e7c010b32bdf6ee47b4b1ae73af9ff05f
       lint:
         specifier: github:fluff4me/lint#18e68efcac4346991489629ee2e668931924ae69
         version: https://codeload.github.com/fluff4me/lint/tar.gz/18e68efcac4346991489629ee2e668931924ae69(typescript@5.8.3)
@@ -610,6 +610,9 @@ packages:
   deepsight.gg@1.0.1848:
     resolution: {integrity: sha512-CB2tP5tianAV5M2Xq6504U+1GM+TvMY8wySztHD5S1jRjS/z2igIX2Rh/KTO5HKPpWnDjjHUHfgy9xSoPBZmnA==}
 
+  deepsight.gg@1.0.1850:
+    resolution: {integrity: sha512-LVc2EJ9FfOGMOWHjy6qO20uN6QIyzwnm6wAw10toe7LM8Lud02srAIFxM800d61zHGRLq2Zfg8wSGrkqK7i+ug==}
+
   del-cli@7.0.0:
     resolution: {integrity: sha512-fRl4pWJYu9WFQH8jXdQUYvcD0IMtij9WEc7qmB7xOyJEweNJNuE7iKmqNeoOT1DbBUjtRjxlw8Y63qKBI/NQ1g==}
     engines: {node: '>=18'}
@@ -874,8 +877,8 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/57743f6ef882624654572ef4f2b64b2a41750f01:
-    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/57743f6ef882624654572ef4f2b64b2a41750f01}
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/6338022e7c010b32bdf6ee47b4b1ae73af9ff05f:
+    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/6338022e7c010b32bdf6ee47b4b1ae73af9ff05f}
     version: 0.0.1
 
   levn@0.4.1:
@@ -1752,6 +1755,10 @@ snapshots:
     dependencies:
       bungie-api-ts: 5.10.0
 
+  deepsight.gg@1.0.1850:
+    dependencies:
+      bungie-api-ts: 5.10.0
+
   del-cli@7.0.0:
     dependencies:
       del: 8.0.1
@@ -2035,7 +2042,7 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/57743f6ef882624654572ef4f2b64b2a41750f01: {}
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/6338022e7c010b32bdf6ee47b4b1ae73af9ff05f: {}
 
   levn@0.4.1:
     dependencies:

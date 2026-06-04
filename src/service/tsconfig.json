@@ -42,9 +42,9 @@
 	"include": [
 		"bundle/amd.js",
 		"bundle/dexie.js",
-		"../../node_modules/dexie/dist/dexie.min.js",
+		"bundle/dexie.min.js",
 		"bundle/jsonpath.js",
-		"../../node_modules/jsonpath-plus/dist/index-browser-umd.min.js",
+		"bundle/jsonpath-plus.min.js",
 		"**/*.ts",
 		"bundle/init.js"
 	]

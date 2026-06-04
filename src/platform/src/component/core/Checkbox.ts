@@ -14,7 +14,16 @@ const Checkbox = Component('label', (component): Checkbox => {
 	const input = Component('input')
 		.style('checkbox-input')
 		.attributes.set('type', 'checkbox')
-		.event.subscribe('change', event => checked.value = event.host.element.checked)
+		.event.subscribe('change', event => checked.value = event.host.element?.checked ?? checked.value)
+		.tweak(input => {
+			input.onRealise(syncChecked)
+			checked.subscribe(input, syncChecked)
+
+			function syncChecked () {
+				if (input.element)
+					input.element.checked = checked.value
+			}
+		})
 
 	return component.style('checkbox')
 		.append(input)
@@ -39,7 +48,6 @@ const Checkbox = Component('label', (component): Checkbox => {
 			label,
 			setChecked (value) {
 				checked.value = value
-				input.element.checked = value
 				return checkbox
 			},
 		}))

@@ -26,10 +26,10 @@
 	"dependencies": {
 		"bungie-api-ts": "5.10.0",
 		"chiri": "github:fluff4me/chiri#6f49a9bcaa77e450cc599a61f44e83079bd303f3",
-		"deepsight.gg": "1.0.1848",
+		"deepsight.gg": "1.0.1850",
 		"dexie": "4.0.11",
 		"jsonpath-plus": "10.3.0",
-		"kitsui": "github:fluff4me/kitsui#57743f6ef882624654572ef4f2b64b2a41750f01",
+		"kitsui": "github:fluff4me/kitsui#6338022e7c010b32bdf6ee47b4b1ae73af9ff05f",
 		"lint": "github:fluff4me/lint#18e68efcac4346991489629ee2e668931924ae69",
 		"task": "github:chirivulpes/task#4743b1177d35a1fa751de5fed6362e5d4e36ce0e",
 		"weaving": "github:chirivulpes/weaving#fc532b3e2025f424747e382caf66ad1661932c9a"

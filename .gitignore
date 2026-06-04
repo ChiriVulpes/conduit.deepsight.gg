@@ -3,5 +3,6 @@ out/
 **/bundle/amd.js
 .env
 src/platform/**/*.d.ts
+src/service/bundle/*.min.js
 *.tsbuildinfo
 src/client/frame/
