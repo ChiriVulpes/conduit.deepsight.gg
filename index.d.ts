@@ -265,6 +265,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         getCollections(): Promise<Collections>;
         getCollections(displayName: string, displayNameCode: number): Promise<Collections>;
         getInventory(displayName: string, displayNameCode: number): Promise<Inventory | undefined>;
+        getInventoryCached(displayName: string, displayNameCode: number): Promise<Inventory | undefined>;
         vaultItem(item: ItemTransferReference): Promise<ItemTransferAction[]>;
         moveItemToCharacter(characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]>;
         getComponentNames(): Promise<AllComponentNames[]>;
@@ -304,9 +305,14 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         type: ConduitOperationType;
         related?: RelatedItem[];
     }
+    export interface InventoryUpdated {
+        profile: Profile;
+        inventory: Inventory;
+    }
     export interface ConduitBroadcastRegistry {
         ready: void;
         profilesUpdated: Profile[];
+        inventoryUpdated: InventoryUpdated;
         warning: ConduitWarningMessage;
         startOperation: ConduitOperation;
         endOperation: string;
