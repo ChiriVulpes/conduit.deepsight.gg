@@ -1,5 +1,6 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
 import type { AllComponentNames, AllDefinitions, DefinitionLinks, DefinitionReferencesPage, DefinitionWithLinks, DefinitionsForComponentName } from '@shared/DefinitionComponents'
+import type InventoryData from '@shared/item/Inventory'
 import type { Profile } from '@shared/Profile'
 import type { ConduitSettings } from '@shared/Settings'
 import ItemTransfer from 'action/ItemTransfer'
@@ -43,7 +44,7 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 	async onInstall (service, event) {
 	},
 	async onActivate (service, event) {
-		console.log(await Definitions.en.DestinySeasonDefinition.get())
+
 	},
 	onRegistered (service) {
 		void service.broadcast.ready()
@@ -89,6 +90,13 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 			const inventory = profile && await Inventory.for(profile).get()
 			// Broadcast.warning('conduit', 'Item has watermark but no moment', [inventory?.profileItems[0]!])
 			return inventory
+		},
+		async getInventoryCached (event, displayName, displayNameCode) {
+			const profile = await this.getProfile(event, displayName, displayNameCode)
+			if (!profile)
+				return undefined
+
+			return await Inventory.for(profile).getCached(inventory => broadcastInventoryUpdated(event, profile, inventory))
 		},
 
 		async vaultItem (event, item) {
@@ -507,4 +515,23 @@ async function getProfilesForOrigin (profiles: Profile[], origin: string): Promi
 		...profile,
 		authed: undefined,
 	}))
+}
+
+function broadcastInventoryUpdated (event: ExtendableMessageEvent, profile: Profile, inventory: InventoryData | undefined) {
+	if (!inventory)
+		return
+
+	void service.broadcast.inventoryUpdated(async origin => {
+		if (origin !== event.origin)
+			return SKIP_CLIENT
+
+		const [profileForOrigin] = await getProfilesForOrigin([profile], origin)
+		if (!profileForOrigin)
+			return SKIP_CLIENT
+
+		return {
+			profile: profileForOrigin,
+			inventory,
+		}
+	})
 }

@@ -9,6 +9,7 @@ export interface ModelValue<T> {
 interface Model<T> {
 	id: string
 	get (): Promise<T>
+	getCached (onUpdate?: (value: T) => unknown): Promise<T>
 	use (hard?: true): Promise<{ version: string, value: T, updated: boolean }>
 }
 
@@ -30,6 +31,22 @@ function Model<T> (id: string, def: ModelDefinition<T>): Model<T> {
 			const value = (await this.use()).value
 			await def.tweak?.(value)
 			return value
+		},
+		async getCached (onUpdate) {
+			const cached = await db.data.get(id).then(data => data?.data as T | undefined)
+			if (cached === undefined)
+				return await this.get()
+
+			void this.use()
+				.then(async ({ value, updated }) => {
+					await def.tweak?.(value)
+					if (updated)
+						await onUpdate?.(value)
+				})
+				.catch(console.error)
+
+			await def.tweak?.(cached)
+			return cached
 		},
 		async use (hard?: true) {
 			if (hard && currentIsSoft) {
