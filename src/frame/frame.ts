@@ -17,7 +17,9 @@ if (!parentWindow)
 let origin: string | undefined
 
 void (async () => {
-	const registration = await navigator.serviceWorker.register('./index.js')
+	const registration = await navigator.serviceWorker.register('./index.js', {
+		scope: '/__conduit_worker__/',
+	})
 	let service = registration.active ?? await new Promise(resolve => {
 		const service = registration.waiting ?? registration.installing
 		service?.addEventListener('statechange', onStateChange)
