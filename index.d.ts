@@ -249,12 +249,10 @@ declare module "conduit.deepsight.gg/ConduitState" {
 }
 declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type { AuthState, CustomBungieApp } from 'conduit.deepsight.gg/Auth';
-    import type { Character } from 'conduit.deepsight.gg/Character';
     import type ConduitState from 'conduit.deepsight.gg/ConduitState';
     import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type Collections from 'conduit.deepsight.gg/item/Collections';
     import type Inventory from 'conduit.deepsight.gg/item/Inventory';
-    import type { Item, ItemInstance } from 'conduit.deepsight.gg/item/Item';
     import type { Profile } from 'conduit.deepsight.gg/Profile';
     import type { ConduitSettings } from 'conduit.deepsight.gg/Settings';
     export interface ConduitFunctionRegistry {
@@ -268,6 +266,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         getInventoryCached(displayName: string, displayNameCode: number): Promise<Inventory | undefined>;
         vaultItem(item: ItemTransferReference): Promise<ItemTransferAction[]>;
         moveItemToCharacter(characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]>;
+        equipItemOnCharacter(characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]>;
         getComponentNames(): Promise<AllComponentNames[]>;
         /**
          * Get the current state of conduit — defs versions, profiles, etc.
@@ -284,22 +283,88 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         itemHash: number;
         characterId?: string;
         stackSize?: number;
+        bucketHash?: number;
         isLostItem?: true;
     }
     export interface ItemTransferAction {
         item: ItemTransferReference;
-        to: 'vault' | 'character';
+        to: 'vault' | 'character' | 'equipped';
         newCharacterId?: string;
     }
-    export type RelatedItem = Item | ItemInstance | Character;
-    export type ConduitWarningMessageType = 'Item has watermark but no moment' | 'Unable to transfer item: Not authenticated' | 'Unable to transfer item: Character required' | 'Unable to pull item from postmaster: Unknown item';
+    export type ItemTransferRecoveryPolicy = 'leave-partial-success' | 'best-effort-revert';
+    export type ItemTransferRecoveryResult = 'none' | 'not-attempted' | 'succeeded' | 'failed';
+    export interface ItemTransferIntent {
+        operationId: string;
+        action: 'vault-item' | 'move-item-to-character' | 'equip-item-on-character';
+        item: ItemTransferReference;
+        to?: 'vault' | 'character' | 'equipped';
+        characterId?: string;
+        recoveryPolicy?: ItemTransferRecoveryPolicy;
+    }
+    export interface InventoryPatchItemReference {
+        instanceId?: string;
+        itemHash: number;
+        stackSize?: number;
+    }
+    export type InventoryPatchLocation = {
+        container: 'vault';
+    } | {
+        container: 'characterInventory';
+        characterId: string;
+    } | {
+        container: 'characterEquipment';
+        characterId: string;
+    } | {
+        container: 'postmaster';
+        characterId: string;
+    };
+    export type InventoryPatch = {
+        type: 'move';
+        item: InventoryPatchItemReference;
+        from: InventoryPatchLocation;
+        to: InventoryPatchLocation;
+    } | {
+        type: 'bucket-correction';
+        item: InventoryPatchItemReference;
+        location: InventoryPatchLocation;
+        bucketHash: number;
+    };
+    export interface InventoryPatchEvent {
+        operationId: string;
+        profile: Profile;
+        patches: InventoryPatch[];
+    }
+    export interface ItemTransferFailure {
+        operationId: string;
+        failedStep: string;
+        reason: 'auth' | 'bungie' | 'unknown';
+        recoveryPolicy?: ItemTransferRecoveryPolicy;
+        recoveryResult: ItemTransferRecoveryResult;
+        finalBestKnownState?: InventoryPatch[];
+    }
+    export interface ItemTransferComplete {
+        operationId: string;
+        actions: ItemTransferAction[];
+    }
+    export type RelatedItem = RelatedItemReference | RelatedCharacterReference;
+    export interface RelatedItemReference {
+        is: 'item-reference';
+        itemHash: number;
+        instanceId?: string;
+        stackSize?: number;
+    }
+    export interface RelatedCharacterReference {
+        is: 'character-reference';
+        characterId: string;
+    }
+    export type ConduitWarningMessageType = 'Item has watermark but no moment' | 'Unable to transfer item: Not authenticated' | 'Unable to transfer item: Character required' | 'Unable to equip item: Instance required' | 'Unable to equip item: Planner support required' | 'Unable to pull item from postmaster: Unknown item';
     export interface ConduitWarningMessage {
         type: ConduitWarningMessageType;
         /** Who this warning should be displayed to */
         category: 'user' | 'developer' | 'conduit';
         related?: RelatedItem[];
     }
-    export type ConduitOperationType = 'Searching Destiny players' | 'Updating player profiles' | 'Updating your player profile' | 'Validating Bungie.net access token' | 'Fetching Destiny profile' | 'Resolving inventory' | 'Resolving collections' | 'Checking for new definitions' | 'Downloading definitions';
+    export type ConduitOperationType = 'Searching Destiny players' | 'Updating player profiles' | 'Updating your player profile' | 'Validating Bungie.net access token' | 'Fetching Destiny profile' | 'Resolving inventory' | 'Resolving collections' | 'Checking for new definitions' | 'Downloading definitions' | 'Vaulting item' | 'Moving item to character' | 'Pulling item from postmaster' | 'Transferring item to vault' | 'Transferring item to character' | 'Equipping item';
     export interface ConduitOperation {
         id: string;
         type: ConduitOperationType;
@@ -313,6 +378,10 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         ready: void;
         profilesUpdated: Profile[];
         inventoryUpdated: InventoryUpdated;
+        itemTransferIntent: ItemTransferIntent;
+        inventoryPatch: InventoryPatchEvent;
+        itemTransferFailure: ItemTransferFailure;
+        itemTransferComplete: ItemTransferComplete;
         warning: ConduitWarningMessage;
         startOperation: ConduitOperation;
         endOperation: string;
@@ -384,6 +453,7 @@ declare module "conduit.deepsight.gg/Character" {
         id: string;
         metadata: DestinyCharacterComponent;
         emblem?: Emblem;
+        title?: string;
     }
     export interface Emblem {
         hash: number;
@@ -436,8 +506,83 @@ declare module "conduit.deepsight.gg/Definitions" {
     export default Definitions;
 }
 declare module "conduit.deepsight.gg/Inventory" {
+    import type { InventoryPatch, ItemTransferFailure, ItemTransferIntent, ItemTransferReference } from 'conduit.deepsight.gg/ConduitMessageRegistry';
+    import type InventoryModel from 'conduit.deepsight.gg/item/Inventory';
+    import type { ItemInstance } from 'conduit.deepsight.gg/item/Item';
+    export interface InventoryTransferEventSource {
+        on: {
+            itemTransferIntent(handler: (data: ItemTransferIntent) => unknown): () => void;
+            inventoryPatch(handler: (data: {
+                operationId: string;
+                profile: {
+                    id: string;
+                };
+                patches: InventoryPatch[];
+            }) => unknown): () => void;
+            itemTransferFailure(handler: (data: ItemTransferFailure) => unknown): () => void;
+            itemTransferComplete(handler: (data: {
+                operationId: string;
+            }) => unknown): () => void;
+        };
+    }
+    export interface InventoryTransferCommandSource extends InventoryTransferEventSource {
+        vaultItem(item: ItemTransferReference): Promise<unknown>;
+        moveItemToCharacter(characterId: string, item: ItemTransferReference): Promise<unknown>;
+        equipItemOnCharacter(characterId: string, item: ItemTransferReference): Promise<unknown>;
+    }
+    export interface InventoryTransferOperationState extends ItemTransferIntent {
+        affectedItems: readonly ItemTransferReference[];
+    }
+    export interface InventoryTransferFailureState extends InventoryTransferOperationState {
+        failure: ItemTransferFailure;
+    }
+    export interface InventoryTransferPatchMiss {
+        operation?: InventoryTransferOperationState;
+        patch: InventoryPatch;
+    }
+    export interface InventoryTransferDisplayState {
+        pending: readonly InventoryTransferOperationState[];
+        failures: readonly InventoryTransferFailureState[];
+        patchMisses?: readonly InventoryTransferPatchMiss[];
+    }
+    export interface InventoryTransferObserverOptions {
+        getInventory(): InventoryModel | undefined;
+        setInventory(inventory: InventoryModel): void;
+        refreshInventory?(): void;
+        getCurrentProfileId(): string | undefined;
+        onTransferStateChange?(state: InventoryTransferDisplayState): void;
+    }
+    export type InventoryTransferPredictedOperation = Omit<InventoryTransferOperationState, 'operationId'> & {
+        operationId?: string;
+    };
+    export interface InventoryTransferObserver {
+        addPredictedOperation(operation: InventoryTransferPredictedOperation): () => void;
+        setBaseInventory(inventory: InventoryModel | undefined): void;
+        unsubscribe(): void;
+    }
+    export interface InventoryTransferControllerOptions extends InventoryTransferObserverOptions {
+        getDefaultCharacterId?(): string | undefined;
+    }
+    export interface InventoryTransferController {
+        equipItem(item: InventoryTransferItemLike): Promise<void>;
+        vaultItem(item: InventoryTransferItemLike): Promise<void>;
+        moveItemToCharacter(item: InventoryTransferItemLike, characterId?: string): Promise<void>;
+        setBaseInventory(inventory: InventoryModel | undefined): void;
+        unsubscribe(): void;
+    }
+    export type InventoryTransferItemLike = ItemInstance | {
+        instance?: ItemInstance;
+    } | undefined;
+    export interface InventoryPatchApplyResult {
+        inventory: InventoryModel;
+        applied: boolean;
+    }
     namespace Inventory {
-        function test(): void;
+        function applyPatch(inventory: InventoryModel, patch: InventoryPatch): InventoryModel;
+        function applyPatchResult(inventory: InventoryModel, patch: InventoryPatch): InventoryPatchApplyResult;
+        function applyPatches(inventory: InventoryModel, patches: readonly InventoryPatch[]): InventoryModel;
+        function observeTransfers(source: InventoryTransferEventSource, options: InventoryTransferObserverOptions): InventoryTransferObserver;
+        function transfers(source: InventoryTransferCommandSource, options: InventoryTransferControllerOptions): InventoryTransferController;
     }
     export default Inventory;
 }
