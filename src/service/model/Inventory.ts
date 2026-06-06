@@ -10,15 +10,25 @@ import Items, { ITEMS_VERSION } from 'model/Items'
 import { ProfiledModel } from 'model/ProfiledModel'
 import Broadcast from 'utility/Broadcast'
 import Colour from 'utility/Colour'
+import Store from 'utility/Store'
 
 const version = `8.${ITEMS_VERSION}`
+
+async function profileOverrideVersion (profileId: string | undefined) {
+	const overrides = (await Store.destinyProfileOverrides.get())?.[profileId ?? ''] ?? []
+	if (!overrides.length)
+		return '0'
+
+	return `${overrides.length}.${Math.max(...overrides.map(override => override.time))}`
+}
 
 export default ProfiledModel<Inventory | undefined>('Inventory', {
 	cacheDirtyTime: 1000 * 10, // 10 second cache time
 	async fetch (profile) {
 		const data = await DestinyProfiles.for(profile).get()
+		const overridesVersion = await profileOverrideVersion(profile?.id)
 		return {
-			version: `${version}/${data?.responseMintedTimestamp ?? 'n/a'}`,
+			version: `${version}/${data?.responseMintedTimestamp ?? 'n/a'}/${overridesVersion}`,
 			value: async (): Promise<Inventory | undefined> => {
 				if (!data)
 					return undefined

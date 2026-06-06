@@ -138,7 +138,7 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 				return (handler: (data: any) => unknown) => {
 					addListener('global', eventName, handler)
 					return () => {
-						const index = messageListeners.findIndex(listener => listener.type === 'global' && listener.type === eventName && listener.callback === handler)
+						const index = messageListeners.findIndex(listener => listener.id === 'global' && listener.type === eventName && listener.callback === handler)
 						if (index !== -1) messageListeners.splice(index, 1)
 					}
 				}

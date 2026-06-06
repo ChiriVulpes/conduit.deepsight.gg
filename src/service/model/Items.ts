@@ -173,7 +173,7 @@ namespace Items {
 
 			if (!item.momentHash && def.iconWatermark && !def.plug) {
 				Log.warn(`${def.displayProperties.name} (${def.hash}) has watermark but no moment. https://new.deepsight.gg/data/DestinyInventoryItemDefinition/${def.hash}`)
-				Broadcast.warning('conduit', 'Item has watermark but no moment', [item])
+				Broadcast.warning('conduit', 'Item has watermark but no moment', [{ is: 'item-reference', itemHash: item.hash }])
 			}
 
 			if (def.plug)

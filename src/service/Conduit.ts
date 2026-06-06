@@ -101,11 +101,15 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 
 		async vaultItem (event, item) {
 			await Auth.assertOriginAccess(event.origin)
-			return ItemTransfer.vaultItem(item)
+			return ItemTransfer.vaultItem(event.origin, item)
 		},
 		async moveItemToCharacter (event, characterId, item) {
 			await Auth.assertOriginAccess(event.origin)
-			return ItemTransfer.moveItemToCharacter(characterId, item)
+			return ItemTransfer.moveItemToCharacter(event.origin, characterId, item)
+		},
+		async equipItemOnCharacter (event, characterId, item) {
+			await Auth.assertOriginAccess(event.origin)
+			return ItemTransfer.equipItemOnCharacter(event.origin, characterId, item)
 		},
 
 		async getComponentNames () {

@@ -1,3 +1,5 @@
+import Log from 'utility/Log'
+
 interface Service<BROADCASTS extends Record<string, any> = Record<string, any>> extends ServiceWorkerGlobalScope {
 	onInstall (event: ExtendableEvent): Promise<unknown>
 	onActivate (event: ExtendableEvent): Promise<unknown>
@@ -9,6 +11,7 @@ interface Service<BROADCASTS extends Record<string, any> = Record<string, any>> 
 // const origins = new Map<string, string>()
 
 export const SKIP_CLIENT = Symbol('SKIP_CLIENT')
+const ORIGIN_CACHE_TTL = 1000
 
 const service: Service = Object.assign(self as any as Service, {
 	broadcast: new Proxy({}, {
@@ -17,39 +20,99 @@ const service: Service = Object.assign(self as any as Service, {
 				if (typeof type !== 'string' || !type)
 					throw new Error('Invalid broadcast type')
 
-				for (const client of await service.clients.matchAll({ includeUncontrolled: true, type: 'window' })) {
-					void (async () => {
+				const clients = await service.clients.matchAll({ includeUncontrolled: true, type: 'window' })
+				const delivery = {
+					delivered: 0,
+					skipped: 0,
+					missingOrigin: 0,
+					failed: 0,
+				}
+				await Promise.all(clients.map(async client => {
+					try {
 						if (typeof data === 'function') {
 							const origin = await getOrigin(client)
-							if (!origin)
+							if (!origin) {
+								delivery.missingOrigin++
 								return
+							}
 
 							const clientData = await data(origin)
-							if (clientData === SKIP_CLIENT)
+							if (clientData === SKIP_CLIENT) {
+								delivery.skipped++
 								return
+							}
 
 							client.postMessage({ id: 'global', type, data: clientData }, options)
+							delivery.delivered++
 						}
-						else
+						else {
 							client.postMessage({ id: 'global', type, data }, options)
-					})().catch(() => { })
-				}
+							delivery.delivered++
+						}
+					}
+					catch (err) {
+						delivery.failed++
+						Log.warn('Broadcast delivery failed', type, `client=${client.id}`, err)
+					}
+				}))
+
+				if (clients.length && delivery.delivered === 0)
+					Log.info(
+						'Broadcast delivered to no clients',
+						type,
+						`clients=${clients.length}`,
+						`delivered=${delivery.delivered}`,
+						`skipped=${delivery.skipped}`,
+						`missingOrigin=${delivery.missingOrigin}`,
+						`failed=${delivery.failed}`,
+					)
 			}
 		},
 	}),
 })
 
-const awaitingOrigins: Map<string, (origin: string) => void> = new Map()
+interface CachedOrigin {
+	origin: string
+	expires: number
+}
+
+interface AwaitingOrigin {
+	promise: Promise<string | undefined>
+	resolve (origin: string | undefined): void
+}
+
+const cachedOrigins = new Map<string, CachedOrigin>()
+const awaitingOrigins: Map<string, AwaitingOrigin> = new Map()
 async function getOrigin (client: WindowClient): Promise<string | undefined> {
-	client.postMessage({ id: 'global', type: '_getOrigin' })
-	return new Promise<string | undefined>(resolve => {
-		const timeout = self.setTimeout(() => resolve(undefined), 500)
-		awaitingOrigins.set(client.id, origin => {
-			resolve(origin)
+	const cachedOrigin = cachedOrigins.get(client.id)
+	if (cachedOrigin) {
+		if (cachedOrigin.expires > Date.now())
+			return cachedOrigin.origin
+
+		cachedOrigins.delete(client.id)
+	}
+
+	const awaitingOrigin = awaitingOrigins.get(client.id)
+	if (awaitingOrigin)
+		return awaitingOrigin.promise
+
+	let timeout: number | undefined
+	let resolveOrigin!: (origin: string | undefined) => void
+	const promise = new Promise<string | undefined>(resolve => {
+		resolveOrigin = origin => {
+			if (timeout !== undefined)
+				clearTimeout(timeout)
+
 			awaitingOrigins.delete(client.id)
-			clearTimeout(timeout)
-		})
+			if (origin)
+				cachedOrigins.set(client.id, { origin, expires: Date.now() + ORIGIN_CACHE_TTL })
+			resolve(origin)
+		}
+		timeout = self.setTimeout(() => resolveOrigin(undefined), 500)
 	})
+	awaitingOrigins.set(client.id, { promise, resolve: resolveOrigin })
+	client.postMessage({ id: 'global', type: '_getOrigin' })
+	return promise
 }
 
 type Messages = Record<string, any>
@@ -79,7 +142,7 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 		const { id, type, origin, data, frame } = event.data as { id: string, type: string, origin: string, data?: unknown, frame?: true }
 		if (id === 'global' && type === 'resolve:_getOrigin') {
 			if (Array.isArray(data) && typeof data[0] === 'string')
-				awaitingOrigins.get((event.source as WindowClient).id)?.(data[0])
+				awaitingOrigins.get((event.source as WindowClient).id)?.resolve(data[0])
 			return
 		}
 

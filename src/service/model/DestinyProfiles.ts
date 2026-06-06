@@ -7,23 +7,23 @@ import Broadcast from 'utility/Broadcast'
 import Bungie from 'utility/Bungie'
 import Store from 'utility/Store'
 
-interface ProfileOverrideBase {
+export interface ProfileOverrideBase {
 	time: number
 	type: string
 }
 
-interface ProfileOverrideDelete extends ProfileOverrideBase {
+export interface ProfileOverrideDelete extends ProfileOverrideBase {
 	type: 'delete'
 	path: string[]
 }
 
-interface ProfileOverrideSet extends ProfileOverrideBase {
+export interface ProfileOverrideSet extends ProfileOverrideBase {
 	type: 'set'
 	path: string[]
 	value: unknown
 }
 
-interface ProfileOverrideMove extends ProfileOverrideBase {
+export interface ProfileOverrideMove extends ProfileOverrideBase {
 	type: 'move'
 	fromPath: string[]
 	toPath: string[]
@@ -53,20 +53,20 @@ export type ProfileOverrideWhere =
 	| ProfileOverrideWhereOr
 	| ProfileOverrideWhereAnd
 
-interface ProfileOverrideSpliceWhere extends ProfileOverrideBase {
+export interface ProfileOverrideSpliceWhere extends ProfileOverrideBase {
 	type: 'splice-where'
 	arrayPath: string[]
 	where: ProfileOverrideWhere[]
 }
 
-interface ProfileOverrideMoveWhere extends ProfileOverrideBase {
+export interface ProfileOverrideMoveWhere extends ProfileOverrideBase {
 	type: 'move-where'
 	fromArrayPath: string[]
 	where: ProfileOverrideWhere[]
 	toArrayPath: string[]
 }
 
-interface ProfileOverrideSetWhere extends ProfileOverrideBase {
+export interface ProfileOverrideSetWhere extends ProfileOverrideBase {
 	type: 'set-where'
 	arrayPath: string[]
 	where: ProfileOverrideWhere[]
@@ -74,7 +74,7 @@ interface ProfileOverrideSetWhere extends ProfileOverrideBase {
 	value: unknown
 }
 
-type ProfileOverride =
+export type ProfileOverride =
 	| ProfileOverrideDelete
 	| ProfileOverrideSet
 	| ProfileOverrideMove

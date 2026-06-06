@@ -26,12 +26,13 @@ namespace Broadcast {
 			block = related, related = undefined
 
 		const operation = startOperation(type, related)
-		const [, result] = await Promise.all([
-			operation.broadcastComplete,
-			block!(),
-		])
-		void service.broadcast.endOperation(operation.id)
-		return result
+		await operation.broadcastComplete
+		try {
+			return await block!()
+		}
+		finally {
+			void service.broadcast.endOperation(operation.id)
+		}
 	}
 
 	export function warning (category: ConduitWarningMessage['category'], type: ConduitWarningMessageType, related?: RelatedItem[]): void {

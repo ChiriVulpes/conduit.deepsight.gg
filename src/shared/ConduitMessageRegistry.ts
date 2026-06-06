@@ -1,10 +1,8 @@
 import type { AuthState, CustomBungieApp } from 'Auth'
-import type { Character } from 'Character'
 import type ConduitState from 'ConduitState'
 import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'DefinitionComponents'
 import type Collections from 'item/Collections'
 import type Inventory from 'item/Inventory'
-import type { Item, ItemInstance } from 'item/Item'
 import type { Profile } from 'Profile'
 import type { ConduitSettings } from 'Settings'
 
@@ -19,6 +17,7 @@ export interface ConduitFunctionRegistry {
 	getInventoryCached (displayName: string, displayNameCode: number): Promise<Inventory | undefined>
 	vaultItem (item: ItemTransferReference): Promise<ItemTransferAction[]>
 	moveItemToCharacter (characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]>
+	equipItemOnCharacter (characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]>
 	getComponentNames (): Promise<AllComponentNames[]>
 	/** 
 	 * Get the current state of conduit — defs versions, profiles, etc. 
@@ -65,19 +64,97 @@ export interface ItemTransferReference {
 
 export interface ItemTransferAction {
 	item: ItemTransferReference
-	to: 'vault' | 'character'
+	to: 'vault' | 'character' | 'equipped'
 	newCharacterId?: string
 }
 
+export type ItemTransferRecoveryPolicy =
+	| 'leave-partial-success'
+	| 'best-effort-revert'
+
+export type ItemTransferRecoveryResult =
+	| 'none'
+	| 'not-attempted'
+	| 'succeeded'
+	| 'failed'
+
+export interface ItemTransferIntent {
+	operationId: string
+	action: 'vault-item' | 'move-item-to-character' | 'equip-item-on-character'
+	item: ItemTransferReference
+	to?: 'vault' | 'character' | 'equipped'
+	characterId?: string
+	recoveryPolicy?: ItemTransferRecoveryPolicy
+}
+
+export interface InventoryPatchItemReference {
+	instanceId?: string
+	itemHash: number
+	stackSize?: number
+}
+
+export type InventoryPatchLocation =
+	| { container: 'vault' }
+	| { container: 'characterInventory', characterId: string }
+	| { container: 'characterEquipment', characterId: string }
+	| { container: 'postmaster', characterId: string }
+
+export type InventoryPatch =
+	| {
+		type: 'move'
+		item: InventoryPatchItemReference
+		from: InventoryPatchLocation
+		to: InventoryPatchLocation
+	}
+	| {
+		type: 'bucket-correction'
+		item: InventoryPatchItemReference
+		location: InventoryPatchLocation
+		bucketHash: number
+	}
+
+export interface InventoryPatchEvent {
+	operationId: string
+	profile: Profile
+	patches: InventoryPatch[]
+}
+
+export interface ItemTransferFailure {
+	operationId: string
+	failedStep: string
+	reason: 'auth' | 'bungie' | 'unknown'
+	recoveryPolicy?: ItemTransferRecoveryPolicy
+	recoveryResult: ItemTransferRecoveryResult
+	finalBestKnownState?: InventoryPatch[]
+}
+
+export interface ItemTransferComplete {
+	operationId: string
+	actions: ItemTransferAction[]
+}
+
 export type RelatedItem =
-	| Item
-	| ItemInstance
-	| Character
+	| RelatedItemReference
+	| RelatedCharacterReference
+
+export interface RelatedItemReference {
+	is: 'item-reference'
+	itemHash: number
+	instanceId?: string
+	stackSize?: number
+}
+
+export interface RelatedCharacterReference {
+	is: 'character-reference'
+	characterId: string
+}
 
 export type ConduitWarningMessageType =
 	| 'Item has watermark but no moment'
 	| 'Unable to transfer item: Not authenticated'
 	| 'Unable to transfer item: Character required'
+	| 'Unable to equip item: Instance required'
+	| 'Unable to equip item: Planner support required'
 	| 'Unable to pull item from postmaster: Unknown item'
 
 export interface ConduitWarningMessage {
@@ -97,6 +174,12 @@ export type ConduitOperationType =
 	| 'Resolving collections'
 	| 'Checking for new definitions'
 	| 'Downloading definitions'
+	| 'Vaulting item'
+	| 'Moving item to character'
+	| 'Pulling item from postmaster'
+	| 'Transferring item to vault'
+	| 'Transferring item to character'
+	| 'Equipping item'
 
 export interface ConduitOperation {
 	id: string
@@ -113,6 +196,10 @@ export interface ConduitBroadcastRegistry {
 	ready: void
 	profilesUpdated: Profile[]
 	inventoryUpdated: InventoryUpdated
+	itemTransferIntent: ItemTransferIntent
+	inventoryPatch: InventoryPatchEvent
+	itemTransferFailure: ItemTransferFailure
+	itemTransferComplete: ItemTransferComplete
 	warning: ConduitWarningMessage
 	startOperation: ConduitOperation
 	endOperation: string
