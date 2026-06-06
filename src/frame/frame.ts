@@ -17,21 +17,6 @@ if (!parentWindow)
 let origin: string | undefined
 
 void (async () => {
-	const registration = await navigator.serviceWorker.register('./index.js', {
-		scope: '/__conduit_worker__/',
-	})
-	let service = registration.active ?? await new Promise(resolve => {
-		const service = registration.waiting ?? registration.installing
-		service?.addEventListener('statechange', onStateChange)
-		function onStateChange () {
-			if (service?.state !== 'activated')
-				return
-
-			service.removeEventListener('statechange', onStateChange)
-			resolve(service)
-		}
-	})
-
 	interface Message<T = any> {
 		id: string
 		type: keyof T & string
@@ -42,6 +27,25 @@ void (async () => {
 
 	const unresolvedCalls = new Map<string, Message>()
 	const completedCalls: string[] = []
+	const frameInstanceId = Math.random().toString(36).slice(2, 7)
+
+	const registration = await navigator.serviceWorker.register('./index.js', {
+		scope: '/__conduit_worker__/',
+	})
+
+	let service: ServiceWorker | undefined
+	let pendingServiceUpdate: Promise<ServiceWorker | undefined> | undefined
+	let serviceUpdateResendPending = false
+	registration.addEventListener('updatefound', () => {
+		serviceUpdateResendPending = true
+		pendingServiceUpdate = trackServiceWorker(registration.installing, 'updatefound')
+	})
+	service = await waitForActivation(registration.active ?? registration.waiting ?? registration.installing)
+	const startupServiceUpdate = registration.waiting ?? registration.installing
+	if (startupServiceUpdate) {
+		serviceUpdateResendPending = true
+		void trackServiceWorker(startupServiceUpdate, 'startup')
+	}
 
 	const MAIN_FORMAT = 'color: #58946c;'
 	const PUNCT_FORMAT = 'color: #888;'
@@ -52,6 +56,8 @@ void (async () => {
 	// const WARN_FORMAT = 'color: #ee942e;'
 	const ERROR_FORMAT = 'color: #d9534f;'
 	navigator.serviceWorker.addEventListener('message', event => {
+		const sourceService = event.source instanceof ServiceWorker ? event.source : undefined
+
 		const { id, type, data, frame } = event.data as Message
 
 		////////////////////////////////////
@@ -103,13 +109,12 @@ void (async () => {
 		}
 
 		if (id === 'global' && type === 'ready') {
-			resend()
 			return
 		}
 
 		if (id === 'global' && type === '_getOrigin') {
 			if (origin)
-				service?.postMessage({ id: 'global', type: 'resolve:_getOrigin', data: [origin] })
+				(sourceService ?? service)?.postMessage({ id: 'global', type: 'resolve:_getOrigin', data: [origin] })
 			return
 		}
 
@@ -200,7 +205,7 @@ void (async () => {
 
 	const functions: { [KEY in keyof Frame.Functions]: (...params: [event: MessageEvent<any>, ...Parameters<Frame.Functions[KEY]>]) => ReturnType<Frame.Functions[KEY]> } = {
 		async update () {
-			await registration.update()
+			await updateServiceWorker('manual update')
 		},
 		async needsAuth (event) {
 			const authState = await conduit._getAuthState()
@@ -275,21 +280,113 @@ void (async () => {
 	}
 
 	navigator.serviceWorker.addEventListener('controllerchange', () => {
-		service = registration.active
-		resend()
+		setService(registration.active, 'controllerchange')
 	})
 
-	function resend () {
+	async function updateServiceWorker (fallbackReason: string): Promise<void> {
+		pendingServiceUpdate = undefined
+		await registration.update()
+		const nextService = registration.installing ?? registration.waiting
+		const pendingUpdate = pendingServiceUpdate as Promise<ServiceWorker | undefined> | undefined
+		if (pendingUpdate)
+			await pendingUpdate
+		else if (nextService) {
+			serviceUpdateResendPending = true
+			await trackServiceWorker(nextService, fallbackReason)
+		}
+	}
+
+	function waitForActivation (worker: ServiceWorker | null | undefined): Promise<ServiceWorker | undefined> {
+		if (!worker)
+			return Promise.resolve(undefined)
+
+		const trackedWorker = worker
+		if (trackedWorker.state === 'activated')
+			return Promise.resolve(trackedWorker)
+
+		if (trackedWorker.state === 'redundant')
+			return Promise.resolve(undefined)
+
+		return new Promise(resolve => {
+			trackedWorker.addEventListener('statechange', onStateChange)
+			function onStateChange () {
+				if (trackedWorker.state !== 'activated' && trackedWorker.state !== 'redundant')
+					return
+
+				trackedWorker.removeEventListener('statechange', onStateChange)
+				resolve(trackedWorker.state === 'activated' ? trackedWorker : undefined)
+			}
+		})
+	}
+
+	async function trackServiceWorker (worker: ServiceWorker | null | undefined, reason: string): Promise<ServiceWorker | undefined> {
+		const nextService = await waitForActivation(worker)
+		if (!nextService) {
+			serviceUpdateResendPending = false
+			return undefined
+		}
+
+		setService(nextService, reason)
+		return nextService
+	}
+
+	function setService (nextService: ServiceWorker | null | undefined, reason = 'unknown') {
+		if (!nextService || service === nextService)
+			return
+
+		service = nextService
+		if (!serviceUpdateResendPending)
+			return
+
+		serviceUpdateResendPending = false
+		resend(reason)
+	}
+
+	function resend (reason = 'unknown') {
 		if (!unresolvedCalls.size)
 			return
 
 		log(
 			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/`,
 			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT,
-			`Service updated. ${!unresolvedCalls.size ? 'No calls to resend' : `Resending ${unresolvedCalls.size} unresolved messages`}`,
+			`Frame ${frameInstanceId}. Service updated (${reason}). Resending ${unresolvedCalls.size} unresolved messages`,
 		)
 		for (const [, data] of unresolvedCalls)
 			service?.postMessage(data)
+	}
+
+	async function retryStartupTask (label: string, task: () => Promise<void>) {
+		const attempts = 3
+		for (let attempt = 1; attempt <= attempts; attempt++) {
+			try {
+				await withTimeout(task(), 2000)
+				return
+			}
+			catch (err) {
+				if (attempt === attempts) {
+					console.warn(`Conduit frame startup ${label} failed:`, err)
+					return
+				}
+
+				await new Promise(resolve => setTimeout(resolve, 250 * attempt))
+			}
+		}
+	}
+
+	function withTimeout<T> (promise: Promise<T>, timeout: number): Promise<T> {
+		return new Promise<T>((resolve, reject) => {
+			const timeoutId = setTimeout(() => reject(new Error(`Timed out after ${timeout}ms`)), timeout)
+			promise.then(
+				value => {
+					clearTimeout(timeoutId)
+					resolve(value)
+				},
+				err => {
+					clearTimeout(timeoutId)
+					reject(err instanceof Error ? err : new Error('Promise rejected', { cause: err }))
+				},
+			)
+		})
 	}
 
 	async function updateSettings () {
@@ -303,7 +400,8 @@ void (async () => {
 
 		VERBOSE_LOGGING.value = !!verboseLogging
 	}
-	await updateSettings()
 
 	parentWindow.postMessage({ type: '_active' }, '*')
+	void retryStartupTask('settings update', updateSettings)
+	void updateServiceWorker('startup update').catch(err => console.warn('Conduit service worker startup update failed:', err))
 })()

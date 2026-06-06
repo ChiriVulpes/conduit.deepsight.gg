@@ -14,6 +14,5 @@ export default async function () {
 
 	Object.assign(self, { _: undefined })
 
-	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	require('../Conduit')
 }

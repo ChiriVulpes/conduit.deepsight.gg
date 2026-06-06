@@ -11,17 +11,17 @@ import type { Profile } from '@shared/Profile'
 import type { DestinyItemTransferRequest, DestinyPostmasterTransferRequest } from 'bungie-api-ts/destiny2'
 import Auth from 'model/Auth'
 import Definitions from 'model/Definitions'
-import {
-	ProfilePatch,
-	type ProfilePatchApplyContext,
-} from 'model/ProfilePatch'
 import type {
-	ProfilePatchRecord,
 	ProfileOverride,
 	ProfileOverrideMoveWhere,
 	ProfileOverrideSetWhere,
 	ProfileOverrideWhere,
+	ProfilePatchRecord,
 } from 'model/DestinyProfiles'
+import {
+	ProfilePatch,
+	type ProfilePatchApplyContext,
+} from 'model/ProfilePatch'
 import Profiles from 'model/Profiles'
 import Broadcast from 'utility/Broadcast'
 import Bungie from 'utility/Bungie'
@@ -410,7 +410,7 @@ function broadcastComplete (origin: string, operationId: string, actions: ItemTr
 	return service.broadcast.itemTransferComplete(clientOrigin => {
 		if (clientOrigin !== origin)
 			return SKIP_CLIENT
-		
+
 		return {
 			operationId,
 			actions,
