@@ -1,7 +1,7 @@
 import type { Character } from '@shared/Character'
 import type { Profile, ProfileCharacter } from '@shared/Profile'
 import type { BungieMembershipType } from 'bungie-api-ts/destiny2'
-import { DestinyComponentType, type DestinyProfileResponse } from 'bungie-api-ts/destiny2'
+import { DestinyComponentType, type DestinyProfileResponse, type DestinyRecordDefinition } from 'bungie-api-ts/destiny2'
 import type { GetGroupsForMemberResponse } from 'bungie-api-ts/groupv2'
 import { GroupsForMemberFilter, GroupType } from 'bungie-api-ts/groupv2'
 import type { UserMembershipData } from 'bungie-api-ts/user'
@@ -53,15 +53,21 @@ namespace Profiles {
 			return undefined
 
 		return await Broadcast.operation('Updating your player profile', async () => {
-			const profiles = await db.profiles.toArray()
+			const cachedProfile = await getCurrentProfileFromCache(auth)
+			if (cachedProfile) {
+				await touchProfileAccess(cachedProfile)
+				await updateAuthProfile(auth, cachedProfile)
+				return cachedProfile
+			}
 
+			const profiles = await db.profiles.toArray()
 			const userMembershipData = await Bungie.getForUser<UserMembershipData>('/User/GetMembershipsForCurrentUser/')
 			if (!userMembershipData?.destinyMemberships?.length)
 				return undefined
 
 			let profile = profiles.find(profile => userMembershipData.destinyMemberships.some(membership => membership.membershipId === profile.id))
 			if (profile) {
-				await updateProfile(profile, true)
+				await touchProfileAccess(profile)
 				await updateAuthProfile(auth, profile)
 				return profile
 			}
@@ -72,15 +78,40 @@ namespace Profiles {
 		})
 	}
 
+	async function getCurrentProfileFromCache (auth: Auth): Promise<Profile | undefined> {
+		if (auth.profileId) {
+			const profile = await db.profiles.get(auth.profileId)
+			if (profile && (!auth.profileType || profile.type === auth.profileType))
+				return profile
+		}
+
+		if (auth.displayName !== undefined && auth.displayNameCode !== undefined)
+			return await db.profiles.get({ name: auth.displayName, code: auth.displayNameCode })
+
+		return undefined
+	}
+
+	async function touchProfileAccess (profile: Profile) {
+		profile.lastAccess = new Date().toISOString()
+		await db.profiles.put(profile)
+	}
+
 	async function updateAuthProfile (auth: Auth, profile?: Profile) {
 		if (!profile)
 			return
 
-		if (auth.displayName === profile.name && auth.displayNameCode === profile.code)
+		if (
+			auth.displayName === profile.name
+			&& auth.displayNameCode === profile.code
+			&& auth.profileId === profile.id
+			&& auth.profileType === profile.type
+		)
 			return
 
 		auth.displayName = profile.name
 		auth.displayNameCode = profile.code
+		auth.profileId = profile.id
+		auth.profileType = profile.type
 		await Store.auth.set(auth)
 	}
 
@@ -152,13 +183,17 @@ namespace Profiles {
 
 		if (destinyProfile?.characters) {
 			updated = true
-			const emblems = await Definitions.en.DeepsightEmblemDefinition.get()
+			const [emblems, DestinyRecordDefinition] = await Promise.all([
+				Definitions.en.DeepsightEmblemDefinition.get(),
+				Definitions.en.DestinyRecordDefinition.get(),
+			])
 
 			const newChars = Object.values(destinyProfile.characters.data ?? {})
 				.map((character): ProfileCharacter => ({
 					is: 'character',
 					id: character.characterId,
 					metadata: character,
+					title: characterTitle(character, DestinyRecordDefinition),
 					emblem: !character.emblemHash ? undefined : {
 						hash: character.emblemHash,
 						displayProperties: emblems[character.emblemHash].displayProperties,
@@ -211,6 +246,13 @@ namespace Profiles {
 			.catch(() => undefined)
 	}
 
+}
+
+function characterTitle (character: { titleRecordHash?: number, genderHash: number }, DestinyRecordDefinition: Record<number, DestinyRecordDefinition>) {
+	if (character.titleRecordHash === undefined)
+		return undefined
+
+	return DestinyRecordDefinition[character.titleRecordHash]?.titleInfo.titlesByGenderHash[character.genderHash]
 }
 
 export default Profiles

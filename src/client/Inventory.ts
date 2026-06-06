@@ -456,6 +456,7 @@ namespace Inventory {
 			operation.item.itemHash,
 			operation.item.characterId ?? '',
 			operation.item.stackSize ?? '',
+			operation.item.bucketHash ?? '',
 		].join(':')
 	}
 
@@ -465,6 +466,7 @@ namespace Inventory {
 			itemHash: item.itemHash,
 			characterId,
 			stackSize: item.quantity,
+			bucketHash: item.bucketHash,
 		}
 	}
 

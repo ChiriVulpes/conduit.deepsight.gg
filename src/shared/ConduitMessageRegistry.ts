@@ -59,6 +59,7 @@ export interface ItemTransferReference {
 	itemHash: number
 	characterId?: string
 	stackSize?: number
+	bucketHash?: number
 	isLostItem?: true
 }
 

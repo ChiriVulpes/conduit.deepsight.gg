@@ -82,9 +82,39 @@ export type ProfileOverride =
 	| ProfileOverrideMoveWhere
 	| ProfileOverrideSetWhere
 
+export interface ProfilePatchRecord {
+	id: string
+	time: number
+	overrides: ProfileOverride[]
+}
+
+export type ProfilePatchRecordEntry =
+	| ProfileOverride
+	| ProfilePatchRecord
+
+export function isProfilePatchRecord (entry: ProfilePatchRecordEntry): entry is ProfilePatchRecord {
+	return 'overrides' in entry && Array.isArray(entry.overrides)
+}
+
+export function profilePatchRecordTime (entry: ProfilePatchRecordEntry) {
+	return isProfilePatchRecord(entry) ? entry.time : entry.time
+}
+
+export function profilePatchRecordOverrides (entry: ProfilePatchRecordEntry): ProfileOverride[] {
+	return isProfilePatchRecord(entry) ? entry.overrides : [entry]
+}
+
+export function normaliseProfilePatchRecords (entries: ProfilePatchRecordEntry[] | undefined): ProfilePatchRecord[] {
+	return entries?.map(entry => isProfilePatchRecord(entry) ? entry : {
+		id: 'legacy',
+		time: entry.time,
+		overrides: [entry],
+	}) ?? []
+}
+
 declare module 'utility/Store' {
 	export interface LocalStorage {
-		destinyProfileOverrides: Record<string, ProfileOverride[]>
+		destinyProfileOverrides: Record<string, ProfilePatchRecordEntry[]>
 	}
 }
 
@@ -136,75 +166,77 @@ export default ProfiledModel<DestinyProfile | undefined>('destiny2/profile', {
 	},
 	async tweak (value, profile) {
 		const allOverrides = await Store.destinyProfileOverrides.get()
-		const overrides = allOverrides?.[profile?.id ?? ''] ?? []
-		if (!overrides || !value)
+		const records = normaliseProfilePatchRecords(allOverrides?.[profile?.id ?? ''])
+		if (!records.length || !value)
 			return
 
 		const profileMinted = new Date(value.responseMintedTimestamp).getTime()
-		for (const override of overrides) {
-			if (profileMinted > override.time)
+		for (const record of records) {
+			if (profileMinted > record.time)
 				continue
 
-			switch (override.type) {
-				case 'delete': {
-					const parent = getNestedParent(value, override.path)
-					if (parent)
-						delete parent[override.path.at(-1)!]
-					break
-				}
-				case 'set': {
-					const parent = getNestedParent(value, override.path)
-					if (parent)
-						parent[override.path.at(-1)!] = override.value
-					break
-				}
-				case 'move': {
-					const fromParent = getNestedParent(value, override.fromPath)
-					const toParent = getNestedParent(value, override.toPath)
-					if (fromParent && toParent) {
-						toParent[override.toPath.at(-1)!] = fromParent[override.fromPath.at(-1)!]
+			for (const override of record.overrides) {
+				switch (override.type) {
+					case 'delete': {
+						const parent = getNestedParent(value, override.path)
+						if (parent)
+							delete parent[override.path.at(-1)!]
+						break
+					}
+					case 'set': {
+						const parent = getNestedParent(value, override.path)
+						if (parent)
+							parent[override.path.at(-1)!] = override.value
+						break
+					}
+					case 'move': {
+						const fromParent = getNestedParent(value, override.fromPath)
+						const toParent = getNestedParent(value, override.toPath)
+						if (fromParent && toParent) {
+							toParent[override.toPath.at(-1)!] = fromParent[override.fromPath.at(-1)!]
 
-						delete fromParent[override.fromPath.at(-1)!]
-					}
-					break
-				}
-				case 'splice-where': {
-					const arrayCursor = getNestedObject(value, override.arrayPath)
-					if (Array.isArray(arrayCursor)) {
-						const index = arrayCursor.findIndex(item => meetsEveryCondition(item, override.where))
-						if (index !== -1)
-							arrayCursor.splice(index, 1)
-					}
-					break
-				}
-				case 'move-where': {
-					const fromArrayCursor = getNestedObject(value, override.fromArrayPath)
-					const toArrayCursor = getNestedObject(value, override.toArrayPath)
-					if (Array.isArray(fromArrayCursor) && Array.isArray(toArrayCursor)) {
-						const index = fromArrayCursor.findIndex(item => meetsEveryCondition(item, override.where))
-						if (index !== -1) {
-							const [item] = fromArrayCursor.splice(index, 1)
-							toArrayCursor.push(item)
+							delete fromParent[override.fromPath.at(-1)!]
 						}
+						break
 					}
-					break
-				}
-				case 'set-where': {
-					const arrayCursor = getNestedObject(value, override.arrayPath)
-					if (Array.isArray(arrayCursor)) {
-						const item = arrayCursor.find(item => meetsEveryCondition(item, override.where))
-						if (item) {
-							const parent = getNestedParent(item, override.modifyPath)
-							if (parent)
-								parent[override.modifyPath.at(-1)!] = override.value
+					case 'splice-where': {
+						const arrayCursor = getNestedObject(value, override.arrayPath)
+						if (Array.isArray(arrayCursor)) {
+							const index = arrayCursor.findIndex(item => meetsEveryCondition(item, override.where))
+							if (index !== -1)
+								arrayCursor.splice(index, 1)
 						}
+						break
 					}
-					break
+					case 'move-where': {
+						const fromArrayCursor = getNestedObject(value, override.fromArrayPath)
+						const toArrayCursor = getNestedObject(value, override.toArrayPath)
+						if (Array.isArray(fromArrayCursor) && Array.isArray(toArrayCursor)) {
+							const index = fromArrayCursor.findIndex(item => meetsEveryCondition(item, override.where))
+							if (index !== -1) {
+								const [item] = fromArrayCursor.splice(index, 1)
+								toArrayCursor.push(item)
+							}
+						}
+						break
+					}
+					case 'set-where': {
+						const arrayCursor = getNestedObject(value, override.arrayPath)
+						if (Array.isArray(arrayCursor)) {
+							const item = arrayCursor.find(item => meetsEveryCondition(item, override.where))
+							if (item) {
+								const parent = getNestedParent(item, override.modifyPath)
+								if (parent)
+									parent[override.modifyPath.at(-1)!] = override.value
+							}
+						}
+						break
+					}
 				}
 			}
 		}
 
-		overrides.splice(0, Infinity, ...overrides.filter(override => override.time > profileMinted))
+		allOverrides![profile?.id ?? ''] = records.filter(record => record.time > profileMinted)
 		await Store.destinyProfileOverrides.set(allOverrides!)
 	},
 })

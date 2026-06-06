@@ -1,4 +1,5 @@
 import type { AccessGrant, AuthState, CustomBungieApp } from '@shared/Auth'
+import type { BungieMembershipType } from 'bungie-api-ts/destiny2'
 import Env from 'utility/Env'
 import Log from 'utility/Log'
 import Store from 'utility/Store'
@@ -11,6 +12,8 @@ interface Auth {
 	membershipId: string
 	displayName?: string
 	displayNameCode?: number
+	profileId?: string
+	profileType?: BungieMembershipType
 }
 
 declare module 'utility/Store' {

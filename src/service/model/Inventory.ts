@@ -1,11 +1,11 @@
 import type Inventory from '@shared/item/Inventory'
 import type { InventoryCharacter } from '@shared/item/Inventory'
 import type { ItemInstance, ItemSocket } from '@shared/item/Item'
-import type { DestinyItemPlug, DestinySocketTypeDefinition } from 'bungie-api-ts/destiny2'
+import type { DestinyItemPlug, DestinyRecordDefinition, DestinySocketTypeDefinition } from 'bungie-api-ts/destiny2'
 import { SocketPlugSources, type DestinyClassDefinition, type DestinyInventoryBucketDefinition, type DestinyItemComponent } from 'bungie-api-ts/destiny2'
 import type { ClassHashes, InventoryBucketHashes, PlugSetHashes, SocketTypeHashes } from 'deepsight.gg/Enums'
 import Definitions from 'model/Definitions'
-import DestinyProfiles from 'model/DestinyProfiles'
+import DestinyProfiles, { normaliseProfilePatchRecords } from 'model/DestinyProfiles'
 import Items, { ITEMS_VERSION } from 'model/Items'
 import { ProfiledModel } from 'model/ProfiledModel'
 import Broadcast from 'utility/Broadcast'
@@ -15,11 +15,11 @@ import Store from 'utility/Store'
 const version = `8.${ITEMS_VERSION}`
 
 async function profileOverrideVersion (profileId: string | undefined) {
-	const overrides = (await Store.destinyProfileOverrides.get())?.[profileId ?? ''] ?? []
-	if (!overrides.length)
+	const records = normaliseProfilePatchRecords((await Store.destinyProfileOverrides.get())?.[profileId ?? ''])
+	if (!records.length)
 		return '0'
 
-	return `${overrides.length}.${Math.max(...overrides.map(override => override.time))}`
+	return `${records.length}.${Math.max(...records.map(record => record.time))}`
 }
 
 export default ProfiledModel<Inventory | undefined>('Inventory', {
@@ -39,12 +39,14 @@ export default ProfiledModel<Inventory | undefined>('Inventory', {
 						DestinyInventoryBucketDefinition,
 						DeepsightEmblemDefinition,
 						// DeepsightSocketCategorisation,
+						DestinyRecordDefinition,
 						DestinySocketTypeDefinition,
 					] = await Promise.all([
 						Definitions.en.DestinyClassDefinition.get(),
 						Definitions.en.DestinyInventoryBucketDefinition.get(),
 						Definitions.en.DeepsightEmblemDefinition.get(),
 						// Definitions.en.DeepsightSocketCategorisation.get(),
+						Definitions.en.DestinyRecordDefinition.get(),
 						Definitions.en.DestinySocketTypeDefinition.get(),
 					])
 
@@ -128,6 +130,7 @@ export default ProfiledModel<Inventory | undefined>('Inventory', {
 							is: 'character',
 							id: character.characterId,
 							metadata: character,
+							title: characterTitle(character, DestinyRecordDefinition),
 							emblem: !character.emblemHash ? undefined : {
 								hash: character.emblemHash,
 								displayProperties: DeepsightEmblemDefinition[character.emblemHash].displayProperties,
@@ -155,3 +158,10 @@ export default ProfiledModel<Inventory | undefined>('Inventory', {
 		}
 	},
 })
+
+function characterTitle (character: { titleRecordHash?: number, genderHash: number }, DestinyRecordDefinition: Record<number, DestinyRecordDefinition>) {
+	if (character.titleRecordHash === undefined)
+		return undefined
+
+	return DestinyRecordDefinition[character.titleRecordHash]?.titleInfo.titlesByGenderHash[character.genderHash]
+}

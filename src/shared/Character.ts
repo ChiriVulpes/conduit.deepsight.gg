@@ -5,6 +5,7 @@ export interface Character {
 	id: string
 	metadata: DestinyCharacterComponent
 	emblem?: Emblem
+	title?: string
 }
 
 export interface Emblem {

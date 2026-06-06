@@ -1,4 +1,4 @@
-import type { ProfileOverride } from 'model/DestinyProfiles'
+import type { ProfileOverride, ProfilePatchRecord } from 'model/DestinyProfiles'
 import type { Profile } from '@shared/Profile'
 import Log from 'utility/Log'
 import Store from 'utility/Store'
@@ -11,9 +11,9 @@ export interface ProfilePatchApplyContext {
 
 interface ProfilePatchDefinition<PARAMS extends object> {
 	id: string
-	fromParams (params: PARAMS): ProfileOverride
-	toParams (override: ProfileOverride): PARAMS | undefined
-	onApply? (profile: Profile, params: PARAMS, override: ProfileOverride, context: ProfilePatchApplyContext): unknown
+	fromParams (params: PARAMS, time: number): ProfileOverride | ProfileOverride[]
+	toParams (record: ProfilePatchRecord): PARAMS | undefined
+	onApply? (profile: Profile, params: PARAMS, record: ProfilePatchRecord, context: ProfilePatchApplyContext): unknown
 }
 
 export class ProfilePatch<PARAMS extends object> {
@@ -40,23 +40,30 @@ export class ProfilePatch<PARAMS extends object> {
 	async apply (profile: Profile, params: PARAMS, context: ProfilePatchApplyContext = {}) {
 		const profileOverrides = await Store.destinyProfileOverrides.get() ?? {}
 		const overrides = profileOverrides[profile.id] ??= []
-		const override = this.fromParams(params)
+		const time = Date.now()
+		const record: ProfilePatchRecord = {
+			id: this.id,
+			time,
+			overrides: array(this.fromParams(params, time)),
+		}
 
-		overrides.push(override)
+		overrides.push(record)
 		await Store.destinyProfileOverrides.set(profileOverrides)
 
-		await ProfilePatch.dispatchApply(profile, override, context)
-		return override
+		await this.dispatchApply(profile, record, context)
+		return record
 	}
 
-	static async dispatchApply (profile: Profile, override: ProfileOverride, context: ProfilePatchApplyContext = {}) {
-		await Promise.all(ProfilePatch.registry.map(async patch => {
-			const params = patch.toParams(override)
-			if (!params)
-				return
+	async dispatchApply (profile: Profile, record: ProfilePatchRecord, context: ProfilePatchApplyContext = {}) {
+		const params = this.toParams(record)
+		if (!params)
+			return
 
-			await patch.onApply?.(profile, params, override, context)
-		}))
+		await this.onApply?.(profile, params, record, context)
 	}
 
+}
+
+function array<T> (value: T | T[]): T[] {
+	return Array.isArray(value) ? value : [value]
 }
