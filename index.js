@@ -62,13 +62,15 @@ define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (requi
                         if (alternateIndex === -1)
                             return { inventory, applied: false };
                         const [item] = alternateSource.splice(alternateIndex, 1);
-                        applyEquipmentDisplacement(next, patch, item);
-                        destination.push(item);
+                        const movedItem = itemForMoveDestination(next, patch, item);
+                        applyEquipmentDisplacement(next, patch, movedItem);
+                        destination.push(movedItem);
                         return { inventory: next, applied: true };
                     }
                     const [item] = source.splice(index, 1);
-                    applyEquipmentDisplacement(next, patch, item);
-                    destination.push(item);
+                    const movedItem = itemForMoveDestination(next, patch, item);
+                    applyEquipmentDisplacement(next, patch, movedItem);
+                    destination.push(movedItem);
                     return { inventory: next, applied: true };
                 }
                 case 'bucket-correction': {
@@ -417,6 +419,20 @@ define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (requi
                 ? inventory.profileItems
                 : undefined;
         }
+        function itemForMoveDestination(inventory, patch, item) {
+            const bucketHash = bucketHashForMoveDestination(inventory, patch, item);
+            return bucketHash === item.bucketHash ? item : { ...item, bucketHash };
+        }
+        function bucketHashForMoveDestination(inventory, patch, item) {
+            switch (patch.to.container) {
+                case 'vault':
+                    return 138197802 /* InventoryBucketHashes.General */;
+                case 'characterInventory':
+                case 'characterEquipment':
+                case 'postmaster':
+                    return inventory.items[item.itemHash]?.bucketHash ?? item.bucketHash;
+            }
+        }
         function applyEquipmentDisplacement(inventory, patch, item) {
             if (patch.from.container !== 'characterInventory' || patch.to.container !== 'characterEquipment' || patch.from.characterId !== patch.to.characterId)
                 return;
@@ -461,7 +477,38 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
     Object.defineProperty(exports, "Inventory", { enumerable: true, get: function () { return __importDefault(Inventory_1).default; } });
     if (!('serviceWorker' in navigator))
         throw new Error('Service Worker is not supported in this browser');
-    const loaded = new Promise(resolve => window.addEventListener('DOMContentLoaded', resolve, { once: true }));
+    const REQUEST_TIMEOUT = 1000 * 60 * 2;
+    const STARTUP_TIMEOUT = 1000 * 30;
+    const loaded = document.readyState === 'loading'
+        ? new Promise(resolve => window.addEventListener('DOMContentLoaded', resolve, { once: true }))
+        : Promise.resolve();
+    function toError(data) {
+        if (data instanceof Error)
+            return data;
+        if (data && typeof data === 'object' && '__conduitError' in data) {
+            const serialized = data;
+            const err = new Error(serialized.message, { cause: serialized.cause });
+            err.name = serialized.name ?? err.name;
+            err.stack = serialized.stack;
+            return err;
+        }
+        return new Error('Promise message rejected', { cause: data });
+    }
+    function timeoutError(label, timeout) {
+        return new Error(`${label} timed out after ${timeout}ms`);
+    }
+    function withTimeout(promise, label, timeout = REQUEST_TIMEOUT) {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => reject(timeoutError(label, timeout)), timeout);
+            promise.then(value => {
+                clearTimeout(timeoutId);
+                resolve(value);
+            }, err => {
+                clearTimeout(timeoutId);
+                reject(err instanceof Error ? err : new Error('Promise rejected', { cause: err }));
+            });
+        });
+    }
     async function Conduit(options) {
         await loaded;
         const iframe = document.createElement('iframe');
@@ -488,29 +535,54 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
             if (index !== -1)
                 messageListeners.splice(index, 1);
         }
+        function removeListeners(id) {
+            for (let i = 0; i < messageListeners.length; i++) {
+                if (messageListeners[i].id !== id)
+                    continue;
+                messageListeners.splice(i, 1);
+                i--;
+            }
+        }
         function addPromiseListener(type) {
             const id = Math.random().toString(36).slice(2, 13);
+            let timeout;
+            let settled = false;
+            function settle(callback, value) {
+                if (settled)
+                    return;
+                settled = true;
+                if (timeout)
+                    clearTimeout(timeout);
+                callback(value);
+            }
             return {
                 id,
                 promise: new Promise((resolve, reject) => {
+                    timeout = setTimeout(() => {
+                        settled = true;
+                        removeListeners(id);
+                        reject(timeoutError(`Conduit request '${type}' (${id})`, REQUEST_TIMEOUT));
+                    }, REQUEST_TIMEOUT);
                     addListener(id, `resolve:${type}`, data => {
-                        resolve(data);
+                        settle(resolve, data);
                         removeListener(id);
                     }, true);
                     addListener(id, `reject:${type}`, data => {
-                        reject(data instanceof Error ? data : new Error('Promise message rejected', { cause: data }));
+                        settle(reject, toError(data));
                         removeListener(id);
                     }, true);
                 }),
             };
         }
         function callPromiseFunction(type, ...params) {
+            if (!iframe.contentWindow)
+                return Promise.reject(new Error(`Conduit iframe is unavailable for '${type}'`));
             const { id, promise } = addPromiseListener(type);
             iframe.contentWindow?.postMessage({ type, id, data: params }, serviceOrigin);
             return promise;
         }
         let setActive;
-        const activePromise = new Promise(resolve => setActive = resolve);
+        const activePromise = withTimeout(new Promise(resolve => setActive = resolve), 'Conduit iframe active signal', STARTUP_TIMEOUT);
         window.addEventListener('message', event => {
             if (event.source !== iframe.contentWindow)
                 return;
@@ -544,7 +616,7 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
                 return;
             console.log('Unhandled message:', data);
         });
-        await new Promise(resolve => iframe.addEventListener('load', resolve, { once: true }));
+        await withTimeout(new Promise(resolve => iframe.addEventListener('load', resolve, { once: true })), 'Conduit iframe load', STARTUP_TIMEOUT);
         await activePromise;
         const implementation = {
             definitions: undefined,
