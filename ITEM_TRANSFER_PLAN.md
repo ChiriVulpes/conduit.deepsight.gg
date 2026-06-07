@@ -92,7 +92,6 @@ Known profile patch shapes:
 - [x] Preserve Level 1 account mutation checks with `Auth.assertOriginAccess(event.origin)` at service entrypoints.
 - [x] Return honest failure for direct equip cases that require planner support.
 - [x] Return honest failure for direct equip cases without an item instance id.
-- [ ] Add explicit public `pullFromPostmaster(characterId, item)` only if a direct Stage 1 test path needs it.
 
 ### Deepsight Inventory Integration
 
@@ -114,17 +113,76 @@ Known profile patch shapes:
 
 ### Stage 1 Manual Validation
 
-- [ ] Character inventory item left click equips it.
-- [ ] Character inventory item Ctrl+left click vaults it.
-- [ ] Vault item left click moves it to the most recently used character.
-- [ ] Direct unsupported equip route reports failure rather than inventing state.
-- [ ] Operation toast shows high-level and concrete nested transfer operations.
-- [ ] Operation rows show related item and character visuals when resolvable.
-- [ ] Confirmed inventory patch updates the displayed inventory without a full inventory refetch.
-- [ ] Failed operation ends all conduit operations and does not leave stuck loading UI.
-- [ ] Reloaded client sees persisted best-known state through conduit cached inventory reads.
+- [x] Character inventory item left click equips it.
+- [x] Character inventory item Ctrl+left click vaults it.
+- [x] Vault item left click moves it to the most recently used character.
+- [-] Operation toast shows high-level and concrete nested transfer operations. (Test result: UX around nested operations is rough, but does show them all)
+- [x] Confirmed inventory patch updates the displayed inventory without a full inventory refetch.
+- [x] Failed operation ends all conduit operations and does not leave stuck loading UI.
+- [x] Reloaded client sees persisted best-known state through conduit cached inventory reads.
 
-## Stage 2 - Transfer Planner
+## Stage 2 - Inventory Drag/Drop
+
+Add reusable drag/drop primitives as part of the deepsight inventory drag/drop implementation.
+
+This stage should make drag/drop a richer input surface over the Stage 1 transfer loop, not a separate transfer system. Unsupported routes should fail honestly through the same conduit APIs, even if they are visible as drop targets in the UI. Unsupported routes become supported as the planner adds support for them.
+
+### Kitsui Drag/Drop Primitives
+
+- [ ] Add `Draggable` component extension or equivalent.
+- [ ] Add `DropTarget` component extension or equivalent.
+- [ ] Support typed payloads.
+- [ ] Support drag groups or channels.
+- [ ] Track active session state.
+- [ ] Track source state.
+- [ ] Track active target state.
+- [ ] Support target priority for nested targets.
+- [ ] Add movement threshold to avoid accidental drags.
+- [ ] Add floating preview hook.
+- [ ] Support async drop handling.
+- [ ] Support cancel cleanup.
+- [ ] Support disabled state.
+- [ ] Preserve pointer offset.
+- [ ] Clean up on route/component removal.
+- [ ] Support viewport and scrolling behavior needed for long inventory pages.
+
+Explicit first-pass exclusions:
+
+- [ ] Keyboard drag/drop.
+- [ ] Screen-reader parity.
+- [ ] Detailed drag diagnostics.
+
+### Deepsight Inventory Drag/Drop UI
+
+- [ ] Use deepsight inventory as the first consumer of the kitsui drag/drop primitives.
+- [ ] Drag items from character inventory.
+- [ ] Drag items from vault.
+- [ ] Drag items from equipped slots.
+- [ ] Drop onto vault bucket/list.
+- [ ] Drop onto character inventory bucket/list.
+- [ ] Drop onto character equipped slot/list.
+- [ ] Route drops through specialized conduit APIs/planner.
+- [ ] Pass default recovery policy `best-effort revert`.
+- [ ] Use existing transfer intent events for pending visuals.
+- [ ] Settle visuals when confirming inventory patches arrive.
+- [ ] Show failure state if conduit reports failure.
+- [ ] Reuse Stage 1 local inventory patch application.
+- [ ] Highlight best-effort legal targets and ignore obviously impossible targets.
+- [ ] Reuse the existing inventory placeholder shimmer animation style for target highlight.
+- [ ] Keep touch drag out of scope; future mobile support should prefer context/menu actions.
+
+### Stage 2 Manual Validation
+
+- [ ] Drag character inventory item to vault.
+- [ ] Drag vault item to character inventory.
+- [ ] Drag character inventory item to equipped slot.
+- [ ] Drag equipped item to vault using planner fallback.
+- [ ] Drag item to unsupported target and get honest failure/no-op.
+- [ ] Cancel drag and verify cleanup.
+- [ ] Navigate away during drag and verify cleanup.
+- [ ] Long-page dragging remains usable near viewport edges.
+
+## Stage 3 - Transfer Planner
 
 Build the service-side planner behind the specialized transfer APIs so currently unsupported routes become supported without requiring new UI for every route.
 
@@ -198,7 +256,7 @@ After each successful Bungie-backed step:
 - [ ] Avoid moving other-character equipment unless necessary.
 - [ ] Fail honestly if no legal fallback exists.
 
-### Stage 2 Manual Validation
+### Stage 3 Manual Validation
 
 - [ ] Current Stage 1 click shortcuts continue to work through the planner.
 - [ ] Unsupported Stage 1 click cases become supported when planner routes exist.
@@ -206,67 +264,6 @@ After each successful Bungie-backed step:
 - [ ] Partial success with leave-partial policy reports final best-known state.
 - [ ] Partial success with best-effort revert reports recovery result.
 - [ ] Postmaster route can be exercised through a manual conduit call while deepsight observes operations and patches.
-
-## Stage 3 - Inventory Drag/Drop
-
-Add reusable drag/drop primitives as part of the deepsight inventory drag/drop implementation.
-
-This stage should make drag/drop a richer input surface over the Stage 1 and Stage 2 transfer loop, not a separate transfer system.
-
-### Kitsui Drag/Drop Primitives
-
-- [ ] Add `Draggable` component extension or equivalent.
-- [ ] Add `DropTarget` component extension or equivalent.
-- [ ] Support typed payloads.
-- [ ] Support drag groups or channels.
-- [ ] Track active session state.
-- [ ] Track source state.
-- [ ] Track active target state.
-- [ ] Support target priority for nested targets.
-- [ ] Add movement threshold to avoid accidental drags.
-- [ ] Add floating preview hook.
-- [ ] Support async drop handling.
-- [ ] Support cancel cleanup.
-- [ ] Support disabled state.
-- [ ] Preserve pointer offset.
-- [ ] Clean up on route/component removal.
-- [ ] Support viewport and scrolling behavior needed for long inventory pages.
-
-Explicit first-pass exclusions:
-
-- [ ] Keyboard drag/drop.
-- [ ] Screen-reader parity.
-- [ ] Detailed drag diagnostics.
-
-### Deepsight Inventory Drag/Drop UI
-
-- [ ] Use deepsight inventory as the first consumer of the kitsui drag/drop primitives.
-- [ ] Drag items from character inventory.
-- [ ] Drag items from vault.
-- [ ] Drag items from equipped slots.
-- [ ] Drop onto vault bucket/list.
-- [ ] Drop onto character inventory bucket/list.
-- [ ] Drop onto character equipped slot/list.
-- [ ] Route drops through specialized conduit APIs/planner.
-- [ ] Pass default recovery policy `best-effort revert`.
-- [ ] Use existing transfer intent events for pending visuals.
-- [ ] Settle visuals when confirming inventory patches arrive.
-- [ ] Show failure state if conduit reports failure.
-- [ ] Reuse Stage 1 local inventory patch application.
-- [ ] Highlight best-effort legal targets and ignore obviously impossible targets.
-- [ ] Reuse the existing inventory placeholder shimmer animation style for target highlight.
-- [ ] Keep touch drag out of scope; future mobile support should prefer context/menu actions.
-
-### Stage 3 Manual Validation
-
-- [ ] Drag character inventory item to vault.
-- [ ] Drag vault item to character inventory.
-- [ ] Drag character inventory item to equipped slot.
-- [ ] Drag equipped item to vault using planner fallback.
-- [ ] Drag item to unsupported target and get honest failure/no-op.
-- [ ] Cancel drag and verify cleanup.
-- [ ] Navigate away during drag and verify cleanup.
-- [ ] Long-page dragging remains usable near viewport edges.
 
 ## Stage 4 - Coverage, Polish, And Edge Cases
 
@@ -333,6 +330,6 @@ pnpm exec tsc --noEmit --baseUrl src --moduleResolution node --target ES2022 --s
 ## Suggested Big Implementation Order
 
 1. Direct click transfer slice.
-2. Transfer planner.
-3. Inventory drag/drop.
+2. Inventory drag/drop.
+3. Transfer planner.
 4. Coverage, polish, and edge cases.
