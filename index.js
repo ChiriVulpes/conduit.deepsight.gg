@@ -75,10 +75,11 @@ define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (requi
                 }
                 case 'bucket-correction': {
                     const items = getLocationItems(next, patch.location);
-                    const item = items[findItemIndex(items, patch.item)];
+                    const index = findBucketCorrectionItemIndex(items, patch.item, patch.fromBucketHash);
+                    const item = items[index];
                     if (!item)
                         return { inventory, applied: false };
-                    item.bucketHash = patch.bucketHash;
+                    items[index] = { ...item, bucketHash: patch.bucketHash };
                     return { inventory: next, applied: true };
                 }
             }
@@ -260,6 +261,7 @@ define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (requi
                     clear();
                 }
             };
+            const transferOptions = { recoveryPolicy: 'best-effort-revert' };
             const moveItemToCharacter = async (itemLike, characterId = options.getDefaultCharacterId?.()) => {
                 const item = itemInstanceFromLike(itemLike);
                 if (!item || !characterId)
@@ -274,7 +276,7 @@ define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (requi
                     affectedItems: affectedItemsForAction('move-item-to-character', location.item, options.getInventory()),
                     to: 'character',
                     characterId,
-                }, async () => await source.moveItemToCharacter(characterId, reference));
+                }, async () => await source.moveItemToCharacter(characterId, reference, transferOptions));
             };
             const equipItem = async (itemLike) => {
                 const item = itemInstanceFromLike(itemLike);
@@ -294,7 +296,7 @@ define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (requi
                     affectedItems: affectedItemsForAction('equip-item-on-character', location.item, options.getInventory(), location.characterId),
                     to: 'equipped',
                     characterId: location.characterId,
-                }, async () => await source.equipItemOnCharacter(location.characterId, reference));
+                }, async () => await source.equipItemOnCharacter(location.characterId, reference, transferOptions));
             };
             const vaultItem = async (itemLike) => {
                 const item = itemInstanceFromLike(itemLike);
@@ -309,7 +311,7 @@ define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (requi
                     item: reference,
                     affectedItems: affectedItemsForAction('vault-item', location.item, options.getInventory(), location.characterId),
                     to: 'vault',
-                }, async () => await source.vaultItem(reference));
+                }, async () => await source.vaultItem(reference, transferOptions));
             };
             return {
                 equipItem,
@@ -454,12 +456,29 @@ define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (requi
                 return index;
             return -1;
         }
+        function findBucketCorrectionItemIndex(items, reference, fromBucketHash) {
+            const sourceBucketHash = fromBucketHash ?? reference.bucketHash;
+            const index = items.findIndex(item => itemMatchesBucketCorrectionReference(item, reference, sourceBucketHash));
+            if (index !== -1)
+                return index;
+            return -1;
+        }
         function itemMatchesReference(item, reference) {
             if (reference.instanceId)
                 return item.id === reference.instanceId;
             return item.id === undefined
                 && item.itemHash === reference.itemHash
-                && item.quantity === reference.stackSize;
+                && item.quantity === reference.stackSize
+                && (reference.bucketHash === undefined || item.bucketHash === reference.bucketHash);
+        }
+        function itemMatchesBucketCorrectionReference(item, reference, fromBucketHash) {
+            if (reference.instanceId)
+                return item.id === reference.instanceId
+                    && (fromBucketHash === undefined || item.bucketHash === fromBucketHash);
+            return item.id === undefined
+                && item.itemHash === reference.itemHash
+                && item.quantity === reference.stackSize
+                && (fromBucketHash === undefined || item.bucketHash === fromBucketHash);
         }
         function itemInstanceMatches(candidate, item) {
             return item.id

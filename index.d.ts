@@ -264,9 +264,9 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         getCollections(displayName: string, displayNameCode: number): Promise<Collections>;
         getInventory(displayName: string, displayNameCode: number): Promise<Inventory | undefined>;
         getInventoryCached(displayName: string, displayNameCode: number): Promise<Inventory | undefined>;
-        vaultItem(item: ItemTransferReference): Promise<ItemTransferAction[]>;
-        moveItemToCharacter(characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]>;
-        equipItemOnCharacter(characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]>;
+        vaultItem(item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>;
+        moveItemToCharacter(characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>;
+        equipItemOnCharacter(characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>;
         getComponentNames(): Promise<AllComponentNames[]>;
         /**
          * Get the current state of conduit — defs versions, profiles, etc.
@@ -293,6 +293,10 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     }
     export type ItemTransferRecoveryPolicy = 'leave-partial-success' | 'best-effort-revert';
     export type ItemTransferRecoveryResult = 'none' | 'not-attempted' | 'succeeded' | 'failed';
+    export interface ItemTransferOptions {
+        operationId?: string;
+        recoveryPolicy?: ItemTransferRecoveryPolicy;
+    }
     export interface ItemTransferIntent {
         operationId: string;
         action: 'vault-item' | 'move-item-to-character' | 'equip-item-on-character';
@@ -305,6 +309,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         instanceId?: string;
         itemHash: number;
         stackSize?: number;
+        bucketHash?: number;
     }
     export type InventoryPatchLocation = {
         container: 'vault';
@@ -327,6 +332,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         type: 'bucket-correction';
         item: InventoryPatchItemReference;
         location: InventoryPatchLocation;
+        fromBucketHash?: number;
         bucketHash: number;
     };
     export interface InventoryPatchEvent {
@@ -337,11 +343,12 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     export interface ItemTransferFailure {
         operationId: string;
         failedStep: string;
-        reason: 'auth' | 'bungie' | 'unknown';
+        reason: ItemTransferFailureReason;
         recoveryPolicy?: ItemTransferRecoveryPolicy;
         recoveryResult: ItemTransferRecoveryResult;
         finalBestKnownState?: InventoryPatch[];
     }
+    export type ItemTransferFailureReason = 'success' | 'auth' | 'stale-location' | 'equipped-transfer-restriction' | 'bucket-full' | 'equip-restriction' | 'class-restriction' | 'exotic-restriction' | 'orbit-or-social-space-restriction' | 'transient' | 'bungie' | 'unknown';
     export interface ItemTransferComplete {
         operationId: string;
         actions: ItemTransferAction[];
@@ -506,7 +513,7 @@ declare module "conduit.deepsight.gg/Definitions" {
     export default Definitions;
 }
 declare module "conduit.deepsight.gg/Inventory" {
-    import type { InventoryPatch, ItemTransferFailure, ItemTransferIntent, ItemTransferReference } from 'conduit.deepsight.gg/ConduitMessageRegistry';
+    import type { InventoryPatch, ItemTransferFailure, ItemTransferIntent, ItemTransferOptions, ItemTransferReference } from 'conduit.deepsight.gg/ConduitMessageRegistry';
     import type InventoryModel from 'conduit.deepsight.gg/item/Inventory';
     import type { ItemInstance } from 'conduit.deepsight.gg/item/Item';
     export interface InventoryTransferEventSource {
@@ -526,9 +533,9 @@ declare module "conduit.deepsight.gg/Inventory" {
         };
     }
     export interface InventoryTransferCommandSource extends InventoryTransferEventSource {
-        vaultItem(item: ItemTransferReference): Promise<unknown>;
-        moveItemToCharacter(characterId: string, item: ItemTransferReference): Promise<unknown>;
-        equipItemOnCharacter(characterId: string, item: ItemTransferReference): Promise<unknown>;
+        vaultItem(item: ItemTransferReference, options?: ItemTransferOptions): Promise<unknown>;
+        moveItemToCharacter(characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<unknown>;
+        equipItemOnCharacter(characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<unknown>;
     }
     export interface InventoryTransferOperationState extends ItemTransferIntent {
         affectedItems: readonly ItemTransferReference[];
