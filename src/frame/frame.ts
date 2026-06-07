@@ -52,6 +52,11 @@ function serialiseCause (cause: unknown): unknown {
 		case 'number':
 		case 'boolean':
 			return cause
+		case 'bigint':
+		case 'symbol':
+			return String(cause)
+		case 'function':
+			return cause.name ? `[Function ${cause.name}]` : '[Function]'
 
 		case 'object':
 			if (cause instanceof Error)
@@ -68,11 +73,8 @@ function serialiseCause (cause: unknown): unknown {
 				return cause
 			}
 			catch {
-				return String(cause)
+				return Object.prototype.toString.call(cause)
 			}
-
-		default:
-			return String(cause)
 	}
 }
 
@@ -476,9 +478,9 @@ void (async () => {
 			resend(
 				'ready',
 				record =>
-					record.retryOnServiceReady &&
-					record.created <= readyAt &&
-					Date.now() - record.lastSent >= SERVICE_READY_RESEND_DELAY,
+					record.retryOnServiceReady
+					&& record.created <= readyAt
+					&& Date.now() - record.lastSent >= SERVICE_READY_RESEND_DELAY,
 				'Service ready recovery',
 			)
 		}, SERVICE_READY_RESEND_DELAY)

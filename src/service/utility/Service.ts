@@ -115,6 +115,11 @@ function serialiseCause (cause: unknown): unknown {
 		case 'number':
 		case 'boolean':
 			return cause
+		case 'bigint':
+		case 'symbol':
+			return String(cause)
+		case 'function':
+			return cause.name ? `[Function ${cause.name}]` : '[Function]'
 
 		case 'object':
 			if (cause instanceof Error)
@@ -131,11 +136,8 @@ function serialiseCause (cause: unknown): unknown {
 				return cause
 			}
 			catch {
-				return String(cause)
+				return Object.prototype.toString.call(cause)
 			}
-
-		default:
-			return String(cause)
 	}
 }
 

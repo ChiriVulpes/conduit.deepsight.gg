@@ -24,11 +24,11 @@ importers:
         specifier: 5.10.0
         version: 5.10.0
       chiri:
-        specifier: github:fluff4me/chiri#4404e36d0f999f3ec38bec9bb05fdcfed8ec6d07
-        version: https://codeload.github.com/fluff4me/chiri/tar.gz/4404e36d0f999f3ec38bec9bb05fdcfed8ec6d07
+        specifier: github:fluff4me/chiri#56e097a4050d29fc993f3a3eb4d54eb6d5b198d2
+        version: https://codeload.github.com/fluff4me/chiri/tar.gz/56e097a4050d29fc993f3a3eb4d54eb6d5b198d2
       deepsight.gg:
-        specifier: 1.0.1854
-        version: 1.0.1854
+        specifier: 1.0.1857
+        version: 1.0.1857
       dexie:
         specifier: 4.0.11
         version: 4.0.11
@@ -36,17 +36,17 @@ importers:
         specifier: 10.3.0
         version: 10.3.0
       kitsui:
-        specifier: github:fluff4me/kitsui#e737f7113059cbbb4cd7feb30219097be351087a
-        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/e737f7113059cbbb4cd7feb30219097be351087a
+        specifier: github:fluff4me/kitsui#b47ca19628a3994d5850ef4257f40f20bf1a23f0
+        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/b47ca19628a3994d5850ef4257f40f20bf1a23f0
       lint:
-        specifier: github:fluff4me/lint#59de9b26041d6b98921a8a158ea5c29fdc699297
-        version: https://codeload.github.com/fluff4me/lint/tar.gz/59de9b26041d6b98921a8a158ea5c29fdc699297(typescript@5.8.3)
+        specifier: github:fluff4me/lint#67c325cac44e46be0d8cad6ea5935a7ad9c6638d
+        version: https://codeload.github.com/fluff4me/lint/tar.gz/67c325cac44e46be0d8cad6ea5935a7ad9c6638d(typescript@5.8.3)
       task:
         specifier: github:chirivulpes/task#4743b1177d35a1fa751de5fed6362e5d4e36ce0e
         version: https://codeload.github.com/chirivulpes/task/tar.gz/4743b1177d35a1fa751de5fed6362e5d4e36ce0e
       weaving:
-        specifier: github:chirivulpes/weaving#a0e911b8e0a1c0ca5ae9a220154aec29025d67e7
-        version: https://codeload.github.com/chirivulpes/weaving/tar.gz/a0e911b8e0a1c0ca5ae9a220154aec29025d67e7
+        specifier: github:chirivulpes/weaving#105ed29c4bdbae5570ca486298024426575c26af
+        version: https://codeload.github.com/chirivulpes/weaving/tar.gz/105ed29c4bdbae5570ca486298024426575c26af
     devDependencies:
       '@types/node':
         specifier: 24.10.1
@@ -57,9 +57,6 @@ importers:
       tinyglobby:
         specifier: 0.2.14
         version: 0.2.14
-      ts-node:
-        specifier: 10.9.2
-        version: 10.9.2(@types/node@24.10.1)(typescript@5.8.3)
       typescript:
         specifier: 5.8.3
         version: 5.8.3
@@ -70,14 +67,10 @@ importers:
         specifier: 5.10.0
         version: 5.10.0
       deepsight.gg:
-        specifier: 1.0.1850
-        version: 1.0.1850
+        specifier: 1.0.1856
+        version: 1.0.1856
 
 packages:
-
-  '@cspotcode/source-map-support@0.8.1':
-    resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
-    engines: {node: '>=12'}
 
   '@esbuild/aix-ppc64@0.27.7':
     resolution: {integrity: sha512-EKX3Qwmhz1eMdEJokhALr0YiD0lhQNwDqkPYyPhiSwKrh7/4KRjQc04sZ8db+5DVVnZ1LmbNDI1uAMPEUBnQPg==}
@@ -293,16 +286,6 @@ packages:
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
 
-  '@jridgewell/resolve-uri@3.1.2':
-    resolution: {integrity: sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==}
-    engines: {node: '>=6.0.0'}
-
-  '@jridgewell/sourcemap-codec@1.5.5':
-    resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
-
-  '@jridgewell/trace-mapping@0.3.9':
-    resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
-
   '@jsep-plugin/assignment@1.3.0':
     resolution: {integrity: sha512-VVgV+CXrhbMI3aSusQyclHkenWSAm95WaiKrMxRFam3JSUiIaQjoMIw2sEs/OX4XifnqeQUN4DYbJjlA8EfktQ==}
     engines: {node: '>= 10.16.0'}
@@ -336,18 +319,6 @@ packages:
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: '>=9.0.0'
-
-  '@tsconfig/node10@1.0.12':
-    resolution: {integrity: sha512-UCYBaeFvM11aU2y3YPZ//O5Rhj+xKyzy7mvcIoAjASbigy8mHMryP5cK7dgjlz2hWxh1g5pLw084E0a/wlUSFQ==}
-
-  '@tsconfig/node12@1.0.11':
-    resolution: {integrity: sha512-cqefuRsh12pWyGsIoBKJA9luFu3mRxCA+ORZvA4ktLSzIuCUtWVxGIuXigEwO5/ywWFMZ2QEGKWvkZG1zDMTag==}
-
-  '@tsconfig/node14@1.0.3':
-    resolution: {integrity: sha512-ysT8mhdixWK6Hw3i1V2AeRqZ5WfXg1G43mqoYlM2nc6388Fq5jcXyr5mRsqViLx/GJYdoL0bfXD8nmF+Zn/Iow==}
-
-  '@tsconfig/node16@1.0.4':
-    resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
 
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
@@ -469,12 +440,8 @@ packages:
     peerDependencies:
       acorn: ^6.0.0 || ^7.0.0 || ^8.0.0
 
-  acorn-walk@8.3.4:
-    resolution: {integrity: sha512-ueEepnujpqee2o5aIYnvHU6C0A42MNdsIDeqy5BydrkuC5R1ZuUFnm27EeFJGoEHJQgn3uleRvmTXaJgfXbt4g==}
-    engines: {node: '>=0.4.0'}
-
-  acorn@8.15.0:
-    resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
+  acorn@8.16.0:
+    resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -498,9 +465,6 @@ packages:
 
   appdata-path@1.0.0:
     resolution: {integrity: sha512-ZbH3ezXfnT/YE3NdqduIt4lBV+H0ybvA2Qx3K76gIjQvh8gROpDFdDLpx6B1QJtW7zxisCbpTlCLhKqoR8cDBw==}
-
-  arg@4.1.3:
-    resolution: {integrity: sha512-58S9QDqG0Xx27YwPSt9fJxivjYl432YCwfDMfZ+71RAqUrZef7LrKQZ3LHLOwCS4FLNBplP533Zx895SeOCHvA==}
 
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
@@ -538,8 +502,8 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
-  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/4404e36d0f999f3ec38bec9bb05fdcfed8ec6d07:
-    resolution: {tarball: https://codeload.github.com/fluff4me/chiri/tar.gz/4404e36d0f999f3ec38bec9bb05fdcfed8ec6d07}
+  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/56e097a4050d29fc993f3a3eb4d54eb6d5b198d2:
+    resolution: {tarball: https://codeload.github.com/fluff4me/chiri/tar.gz/56e097a4050d29fc993f3a3eb4d54eb6d5b198d2}
     version: 1.0.1
     hasBin: true
 
@@ -580,9 +544,6 @@ packages:
     resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
     engines: {node: '>= 0.10'}
 
-  create-require@1.1.1:
-    resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
-
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
@@ -607,11 +568,11 @@ packages:
   deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
 
-  deepsight.gg@1.0.1850:
-    resolution: {integrity: sha512-LVc2EJ9FfOGMOWHjy6qO20uN6QIyzwnm6wAw10toe7LM8Lud02srAIFxM800d61zHGRLq2Zfg8wSGrkqK7i+ug==}
+  deepsight.gg@1.0.1856:
+    resolution: {integrity: sha512-aOJpsowBXfGi9osMw4Z0t/xopGv0nxmSv1aZmCSmXxSF07rB+ODhSvAS2axBzkms7VeuVT26kgZZsSheyQ4KuA==}
 
-  deepsight.gg@1.0.1854:
-    resolution: {integrity: sha512-TbWtxMsty6zEdWmB+x8BSlvoyCNag1+McswNz5kIt21cTfmAscXsuL40jGhUshc3rzm3MUYZwlUOco5yvau1QA==}
+  deepsight.gg@1.0.1857:
+    resolution: {integrity: sha512-v5Ac6z4vcCig0gLetO0YILKR/DcEeH8VzSEe8Tskrdna2y5MsB9AKCUxEpYW2H42FWzdjNtCo3hKCNSDUg+TWw==}
 
   del-cli@7.0.0:
     resolution: {integrity: sha512-fRl4pWJYu9WFQH8jXdQUYvcD0IMtij9WEc7qmB7xOyJEweNJNuE7iKmqNeoOT1DbBUjtRjxlw8Y63qKBI/NQ1g==}
@@ -627,10 +588,6 @@ packages:
 
   dexie@4.0.11:
     resolution: {integrity: sha512-SOKO002EqlvBYYKQSew3iymBoN2EQ4BDw/3yprjh7kAfFzjBYkaMNa/pZvcA7HSWlcKSQb9XhPe3wKyQ0x4A8A==}
-
-  diff@4.0.4:
-    resolution: {integrity: sha512-X07nttJQkwkfKfvTPG/KSnE2OMdcUCao6+eXF3wmnIQRn2aPAHH3VxDbDOdegkd6JbPsXqShpvEOHfAT+nCNwQ==}
-    engines: {node: '>=0.3.1'}
 
   dotenv@16.5.0:
     resolution: {integrity: sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg==}
@@ -847,8 +804,8 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
-  js-yaml@4.1.1:
-    resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
+  js-yaml@4.2.0:
+    resolution: {integrity: sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw==}
     hasBin: true
 
   jsep@1.4.0:
@@ -877,16 +834,16 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/e737f7113059cbbb4cd7feb30219097be351087a:
-    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/e737f7113059cbbb4cd7feb30219097be351087a}
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/b47ca19628a3994d5850ef4257f40f20bf1a23f0:
+    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/b47ca19628a3994d5850ef4257f40f20bf1a23f0}
     version: 0.0.1
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
-  lint@https://codeload.github.com/fluff4me/lint/tar.gz/59de9b26041d6b98921a8a158ea5c29fdc699297:
-    resolution: {tarball: https://codeload.github.com/fluff4me/lint/tar.gz/59de9b26041d6b98921a8a158ea5c29fdc699297}
+  lint@https://codeload.github.com/fluff4me/lint/tar.gz/67c325cac44e46be0d8cad6ea5935a7ad9c6638d:
+    resolution: {tarball: https://codeload.github.com/fluff4me/lint/tar.gz/67c325cac44e46be0d8cad6ea5935a7ad9c6638d}
     version: 0.0.0
     hasBin: true
 
@@ -896,9 +853,6 @@ packages:
 
   lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
-
-  make-error@1.3.6:
-    resolution: {integrity: sha512-s8UhlNe7vPKomQhC1qFelMokr/Sc3AgNbso3n74mVPA5LTZwkB9NlXf4XPamLxJE8h0gh73rM94xvwRT2CVInw==}
 
   meow@14.1.0:
     resolution: {integrity: sha512-EDYo6VlmtnumlcBCbh1gLJ//9jvM/ndXHfVXIFrZVr6fGcwTUyCTFNTLCKuY3ffbK8L/+3Mzqnd58RojiZqHVw==}
@@ -1138,20 +1092,6 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
-  ts-node@10.9.2:
-    resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
-    hasBin: true
-    peerDependencies:
-      '@swc/core': '>=1.2.50'
-      '@swc/wasm': '>=1.2.50'
-      '@types/node': '*'
-      typescript: '>=2.7'
-    peerDependenciesMeta:
-      '@swc/core':
-        optional: true
-      '@swc/wasm':
-        optional: true
-
   tsconfig-paths@4.2.0:
     resolution: {integrity: sha512-NoZ4roiN7LnbKn9QqE1amc9DJfzvZXxF4xDavcOWt1BPkdx+m+0gJuPM+S0vCe7zTJMYUP0R8pO2XMr+Y8oLIg==}
     engines: {node: '>=6'}
@@ -1198,9 +1138,6 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  v8-compile-cache-lib@3.0.1:
-    resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
-
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
@@ -1208,8 +1145,8 @@ packages:
   wbuf@1.7.3:
     resolution: {integrity: sha512-O84QOnr0icsbFGLS0O3bI5FswxzRr8/gHwWkDlQFskhSPryQXvrTMxjxGP4+iWYoauLoBvfDpkrOauZ+0iZpDA==}
 
-  weaving@https://codeload.github.com/chirivulpes/weaving/tar.gz/a0e911b8e0a1c0ca5ae9a220154aec29025d67e7:
-    resolution: {tarball: https://codeload.github.com/chirivulpes/weaving/tar.gz/a0e911b8e0a1c0ca5ae9a220154aec29025d67e7}
+  weaving@https://codeload.github.com/chirivulpes/weaving/tar.gz/105ed29c4bdbae5570ca486298024426575c26af:
+    resolution: {tarball: https://codeload.github.com/chirivulpes/weaving/tar.gz/105ed29c4bdbae5570ca486298024426575c26af}
     version: 3.0.0
     hasBin: true
 
@@ -1250,19 +1187,11 @@ packages:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
     engines: {node: '>=12'}
 
-  yn@3.1.1:
-    resolution: {integrity: sha512-Ux4ygGWsu2c7isFWe8Yu1YluJmqVhxqK2cLXNQA5AcC3QfbGNpM7fu0Y8b/z16pXLnFxZYvWhd3fhBY9DLmC6Q==}
-    engines: {node: '>=6'}
-
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
 snapshots:
-
-  '@cspotcode/source-map-support@0.8.1':
-    dependencies:
-      '@jridgewell/trace-mapping': 0.3.9
 
   '@esbuild/aix-ppc64@0.27.7':
     optional: true
@@ -1373,7 +1302,7 @@ snapshots:
       globals: 14.0.0
       ignore: 5.3.2
       import-fresh: 3.3.1
-      js-yaml: 4.1.1
+      js-yaml: 4.2.0
       minimatch: 3.1.5
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
@@ -1403,15 +1332,6 @@ snapshots:
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
-
-  '@jridgewell/resolve-uri@3.1.2': {}
-
-  '@jridgewell/sourcemap-codec@1.5.5': {}
-
-  '@jridgewell/trace-mapping@0.3.9':
-    dependencies:
-      '@jridgewell/resolve-uri': 3.1.2
-      '@jridgewell/sourcemap-codec': 1.5.5
 
   '@jsep-plugin/assignment@1.3.0(jsep@1.4.0)':
     dependencies:
@@ -1444,14 +1364,6 @@ snapshots:
       espree: 10.4.0
       estraverse: 5.3.0
       picomatch: 4.0.4
-
-  '@tsconfig/node10@1.0.12': {}
-
-  '@tsconfig/node12@1.0.11': {}
-
-  '@tsconfig/node14@1.0.3': {}
-
-  '@tsconfig/node16@1.0.4': {}
 
   '@types/estree@1.0.9': {}
 
@@ -1615,15 +1527,11 @@ snapshots:
       '@typescript-eslint/types': 8.48.1
       eslint-visitor-keys: 4.2.1
 
-  acorn-jsx@5.3.2(acorn@8.15.0):
+  acorn-jsx@5.3.2(acorn@8.16.0):
     dependencies:
-      acorn: 8.15.0
+      acorn: 8.16.0
 
-  acorn-walk@8.3.4:
-    dependencies:
-      acorn: 8.15.0
-
-  acorn@8.15.0: {}
+  acorn@8.16.0: {}
 
   ajv@6.15.0:
     dependencies:
@@ -1646,8 +1554,6 @@ snapshots:
       picomatch: 2.3.2
 
   appdata-path@1.0.0: {}
-
-  arg@4.1.3: {}
 
   argparse@2.0.1: {}
 
@@ -1679,7 +1585,7 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
-  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/4404e36d0f999f3ec38bec9bb05fdcfed8ec6d07:
+  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/56e097a4050d29fc993f3a3eb4d54eb6d5b198d2:
     dependencies:
       chokidar: 3.6.0
       del-cli: 7.0.0
@@ -1738,8 +1644,6 @@ snapshots:
       object-assign: 4.1.1
       vary: 1.1.2
 
-  create-require@1.1.1: {}
-
   cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
@@ -1756,11 +1660,11 @@ snapshots:
 
   deep-is@0.1.4: {}
 
-  deepsight.gg@1.0.1850:
+  deepsight.gg@1.0.1856:
     dependencies:
       bungie-api-ts: 5.10.0
 
-  deepsight.gg@1.0.1854:
+  deepsight.gg@1.0.1857:
     dependencies:
       bungie-api-ts: 5.10.0
 
@@ -1783,8 +1687,6 @@ snapshots:
   detect-node@2.1.0: {}
 
   dexie@4.0.11: {}
-
-  diff@4.0.4: {}
 
   dotenv@16.5.0: {}
 
@@ -1875,8 +1777,8 @@ snapshots:
 
   espree@10.4.0:
     dependencies:
-      acorn: 8.15.0
-      acorn-jsx: 5.3.2(acorn@8.15.0)
+      acorn: 8.16.0
+      acorn-jsx: 5.3.2(acorn@8.16.0)
       eslint-visitor-keys: 4.2.1
 
   esquery@1.7.0:
@@ -2023,7 +1925,7 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  js-yaml@4.1.1:
+  js-yaml@4.2.0:
     dependencies:
       argparse: 2.0.1
 
@@ -2047,14 +1949,14 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/e737f7113059cbbb4cd7feb30219097be351087a: {}
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/b47ca19628a3994d5850ef4257f40f20bf1a23f0: {}
 
   levn@0.4.1:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  lint@https://codeload.github.com/fluff4me/lint/tar.gz/59de9b26041d6b98921a8a158ea5c29fdc699297(typescript@5.8.3):
+  lint@https://codeload.github.com/fluff4me/lint/tar.gz/67c325cac44e46be0d8cad6ea5935a7ad9c6638d(typescript@5.8.3):
     dependencies:
       '@eslint/js': 9.39.1
       '@stylistic/eslint-plugin': 5.6.1(eslint@9.39.1)
@@ -2073,8 +1975,6 @@ snapshots:
       p-locate: 5.0.0
 
   lodash.merge@4.6.2: {}
-
-  make-error@1.3.6: {}
 
   meow@14.1.0: {}
 
@@ -2297,24 +2197,6 @@ snapshots:
     dependencies:
       typescript: 5.8.3
 
-  ts-node@10.9.2(@types/node@24.10.1)(typescript@5.8.3):
-    dependencies:
-      '@cspotcode/source-map-support': 0.8.1
-      '@tsconfig/node10': 1.0.12
-      '@tsconfig/node12': 1.0.11
-      '@tsconfig/node14': 1.0.3
-      '@tsconfig/node16': 1.0.4
-      '@types/node': 24.10.1
-      acorn: 8.15.0
-      acorn-walk: 8.3.4
-      arg: 4.1.3
-      create-require: 1.1.1
-      diff: 4.0.4
-      make-error: 1.3.6
-      typescript: 5.8.3
-      v8-compile-cache-lib: 3.0.1
-      yn: 3.1.1
-
   tsconfig-paths@4.2.0:
     dependencies:
       json5: 2.2.3
@@ -2359,15 +2241,13 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  v8-compile-cache-lib@3.0.1: {}
-
   vary@1.1.2: {}
 
   wbuf@1.7.3:
     dependencies:
       minimalistic-assert: 1.0.1
 
-  weaving@https://codeload.github.com/chirivulpes/weaving/tar.gz/a0e911b8e0a1c0ca5ae9a220154aec29025d67e7:
+  weaving@https://codeload.github.com/chirivulpes/weaving/tar.gz/105ed29c4bdbae5570ca486298024426575c26af:
     dependencies:
       chokidar: 3.6.0
       yargs: 17.7.2
@@ -2399,7 +2279,5 @@ snapshots:
       string-width: 4.2.3
       y18n: 5.0.8
       yargs-parser: 21.1.1
-
-  yn@3.1.1: {}
 
   yocto-queue@0.1.0: {}
