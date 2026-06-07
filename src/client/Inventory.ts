@@ -1,4 +1,4 @@
-import type { InventoryPatch, InventoryPatchItemReference, InventoryPatchLocation, ItemTransferFailure, ItemTransferIntent, ItemTransferReference } from 'conduit.deepsight.gg/ConduitMessageRegistry'
+import type { InventoryPatch, InventoryPatchItemReference, InventoryPatchLocation, ItemTransferFailure, ItemTransferIntent, ItemTransferOptions, ItemTransferReference } from 'conduit.deepsight.gg/ConduitMessageRegistry'
 import type InventoryModel from 'conduit.deepsight.gg/item/Inventory'
 import type { ItemInstance } from 'conduit.deepsight.gg/item/Item'
 import { InventoryBucketHashes } from 'deepsight.gg/Enums'
@@ -13,9 +13,9 @@ export interface InventoryTransferEventSource {
 }
 
 export interface InventoryTransferCommandSource extends InventoryTransferEventSource {
-	vaultItem (item: ItemTransferReference): Promise<unknown>
-	moveItemToCharacter (characterId: string, item: ItemTransferReference): Promise<unknown>
-	equipItemOnCharacter (characterId: string, item: ItemTransferReference): Promise<unknown>
+	vaultItem (item: ItemTransferReference, options?: ItemTransferOptions): Promise<unknown>
+	moveItemToCharacter (characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<unknown>
+	equipItemOnCharacter (characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<unknown>
 }
 
 export interface InventoryTransferOperationState extends ItemTransferIntent {
@@ -320,6 +320,7 @@ namespace Inventory {
 				clear()
 			}
 		}
+		const transferOptions: ItemTransferOptions = { recoveryPolicy: 'best-effort-revert' }
 
 		const moveItemToCharacter = async (itemLike: InventoryTransferItemLike, characterId = options.getDefaultCharacterId?.()) => {
 			const item = itemInstanceFromLike(itemLike)
@@ -337,7 +338,7 @@ namespace Inventory {
 				affectedItems: affectedItemsForAction('move-item-to-character', location.item, options.getInventory()),
 				to: 'character',
 				characterId,
-			}, async () => await source.moveItemToCharacter(characterId, reference))
+			}, async () => await source.moveItemToCharacter(characterId, reference, transferOptions))
 		}
 
 		const equipItem = async (itemLike: InventoryTransferItemLike) => {
@@ -361,7 +362,7 @@ namespace Inventory {
 				affectedItems: affectedItemsForAction('equip-item-on-character', location.item, options.getInventory(), location.characterId),
 				to: 'equipped',
 				characterId: location.characterId,
-			}, async () => await source.equipItemOnCharacter(location.characterId, reference))
+			}, async () => await source.equipItemOnCharacter(location.characterId, reference, transferOptions))
 		}
 
 		const vaultItem = async (itemLike: InventoryTransferItemLike) => {
@@ -379,7 +380,7 @@ namespace Inventory {
 				item: reference,
 				affectedItems: affectedItemsForAction('vault-item', location.item, options.getInventory(), location.characterId),
 				to: 'vault',
-			}, async () => await source.vaultItem(reference))
+			}, async () => await source.vaultItem(reference, transferOptions))
 		}
 
 		return {

@@ -15,9 +15,9 @@ export interface ConduitFunctionRegistry {
 	getCollections (displayName: string, displayNameCode: number): Promise<Collections>
 	getInventory (displayName: string, displayNameCode: number): Promise<Inventory | undefined>
 	getInventoryCached (displayName: string, displayNameCode: number): Promise<Inventory | undefined>
-	vaultItem (item: ItemTransferReference): Promise<ItemTransferAction[]>
-	moveItemToCharacter (characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]>
-	equipItemOnCharacter (characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]>
+	vaultItem (item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>
+	moveItemToCharacter (characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>
+	equipItemOnCharacter (characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>
 	getComponentNames (): Promise<AllComponentNames[]>
 	/** 
 	 * Get the current state of conduit — defs versions, profiles, etc. 
@@ -79,6 +79,11 @@ export type ItemTransferRecoveryResult =
 	| 'succeeded'
 	| 'failed'
 
+export interface ItemTransferOptions {
+	operationId?: string
+	recoveryPolicy?: ItemTransferRecoveryPolicy
+}
+
 export interface ItemTransferIntent {
 	operationId: string
 	action: 'vault-item' | 'move-item-to-character' | 'equip-item-on-character'
@@ -125,11 +130,25 @@ export interface InventoryPatchEvent {
 export interface ItemTransferFailure {
 	operationId: string
 	failedStep: string
-	reason: 'auth' | 'bungie' | 'unknown'
+	reason: ItemTransferFailureReason
 	recoveryPolicy?: ItemTransferRecoveryPolicy
 	recoveryResult: ItemTransferRecoveryResult
 	finalBestKnownState?: InventoryPatch[]
 }
+
+export type ItemTransferFailureReason =
+	| 'success'
+	| 'auth'
+	| 'stale-location'
+	| 'equipped-transfer-restriction'
+	| 'bucket-full'
+	| 'equip-restriction'
+	| 'class-restriction'
+	| 'exotic-restriction'
+	| 'orbit-or-social-space-restriction'
+	| 'transient'
+	| 'bungie'
+	| 'unknown'
 
 export interface ItemTransferComplete {
 	operationId: string

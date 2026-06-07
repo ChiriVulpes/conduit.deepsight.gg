@@ -99,17 +99,17 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 			return await Inventory.for(profile).getCached(inventory => broadcastInventoryUpdated(event, profile, inventory))
 		},
 
-		async vaultItem (event, item) {
+		async vaultItem (event, item, options) {
 			await Auth.assertOriginAccess(event.origin)
-			return ItemTransfer.vaultItem(event.origin, item)
+			return ItemTransfer.vaultItem(event.origin, item, options)
 		},
-		async moveItemToCharacter (event, characterId, item) {
+		async moveItemToCharacter (event, characterId, item, options) {
 			await Auth.assertOriginAccess(event.origin)
-			return ItemTransfer.moveItemToCharacter(event.origin, characterId, item)
+			return ItemTransfer.moveItemToCharacter(event.origin, characterId, item, options)
 		},
-		async equipItemOnCharacter (event, characterId, item) {
+		async equipItemOnCharacter (event, characterId, item, options) {
 			await Auth.assertOriginAccess(event.origin)
-			return ItemTransfer.equipItemOnCharacter(event.origin, characterId, item)
+			return ItemTransfer.equipItemOnCharacter(event.origin, characterId, item, options)
 		},
 
 		async getComponentNames () {

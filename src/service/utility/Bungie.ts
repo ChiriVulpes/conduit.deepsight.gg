@@ -56,54 +56,54 @@ namespace Bungie {
 	}
 
 	export async function get<T> (url: string, body?: Record<string, Jsonable>, options?: RequestInit) {
-		return await queue(async () => {
-			if (!url.startsWith('/')) url = `/${url}`
-			if (body) url = `${url}?${mergeSearchParams(url, body)}`
-			Log.info('GET', url)
-			return self.fetch(`${origin}${url}`, {
-				...options,
-				headers: { ...await Auth.getHeaders(), ...options?.headers },
-			})
-				.then(handleBungieResponse) as Promise<T>
-		})
+		return await queue(() => request<T>('GET', url, body, async () => await Auth.getHeaders(), options))
 	}
 
 	export async function getForUser<T> (url: string, body?: Record<string, Jsonable>) {
-		return await queue(async () => {
-			if (!url.startsWith('/')) url = `/${url}`
-			if (body) url = `${url}?${mergeSearchParams(url, body)}`
-			Log.info('GET:AUTHED', url)
-			return self.fetch(`${origin}${url}`, {
-				headers: { ...await Auth.getAuthedHeaders() },
-			})
-				.then(handleBungieResponse) as Promise<T>
-		})
+		return await queue(() => request<T>('GET:AUTHED', url, body, async () => await Auth.getAuthedHeaders()))
 	}
 
 	export async function post<T> (url: string, body: Record<string, Jsonable>) {
-		return await queue(async () => {
-			if (!url.startsWith('/')) url = `/${url}`
-			Log.info('POST', url)
-			return self.fetch(`${origin}${url}`, {
-				method: 'POST',
-				headers: { ...await Auth.getHeaders() },
-				body: JSON.stringify(body),
-			})
-				.then(handleBungieResponse) as Promise<T>
-		})
+		return await queue(() => request<T>('POST', url, undefined, async () => await Auth.getHeaders(), {
+			method: 'POST',
+			body: JSON.stringify(body),
+		}))
 	}
 
 	export async function postForUser<T> (url: string, body: Record<string, Jsonable>) {
-		return await queue(async () => {
-			if (!url.startsWith('/')) url = `/${url}`
-			Log.info('POST:AUTHED', url)
-			return self.fetch(`${origin}${url}`, {
+		return await queue(() => request<T>('POST:AUTHED', url, undefined, async () => await Auth.getAuthedHeaders(), {
+			method: 'POST',
+			body: JSON.stringify(body),
+		}))
+	}
+
+	export namespace action {
+
+		export async function postForUser<T> (url: string, body: Record<string, Jsonable>) {
+			return await request<T>('POST:AUTHED:ACTION', url, undefined, async () => await Auth.getAuthedHeaders(), {
 				method: 'POST',
-				headers: { ...await Auth.getAuthedHeaders() },
 				body: JSON.stringify(body),
 			})
-				.then(handleBungieResponse) as Promise<T>
+		}
+
+	}
+
+	async function request<T> (
+		label: string,
+		url: string,
+		body: Record<string, Jsonable> | undefined,
+		headers: () => Promise<object | undefined>,
+		options?: RequestInit
+	) {
+		if (!url.startsWith('/')) url = `/${url}`
+		if (body) url = `${url}?${mergeSearchParams(url, body)}`
+		Log.info(label, url)
+		const resolvedHeaders = await headers()
+		return self.fetch(`${origin}${url}`, {
+			...options,
+			headers: { ...resolvedHeaders, ...options?.headers as Record<string, string> } as HeadersInit,
 		})
+			.then(handleBungieResponse) as Promise<T>
 	}
 
 	async function handleBungieResponse<T> (response: Response) {

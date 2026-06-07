@@ -3,15 +3,21 @@ import type {
 	InventoryPatchItemReference,
 	InventoryPatchLocation,
 	ItemTransferAction,
+	ItemTransferFailureReason,
 	ItemTransferIntent,
+	ItemTransferOptions,
+	ItemTransferRecoveryResult,
 	ItemTransferReference,
 	RelatedItem,
 } from '@shared/ConduitMessageRegistry'
+import type InventoryModel from '@shared/item/Inventory'
+import type { ItemInstance } from '@shared/item/Item'
 import type { Profile } from '@shared/Profile'
-import { BucketScope, type DestinyItemTransferRequest, type DestinyPostmasterTransferRequest } from 'bungie-api-ts/destiny2'
+import { BucketScope, TierType, type DestinyInventoryBucketDefinition, type DestinyInventoryItemDefinition, type DestinyItemTransferRequest, type DestinyPostmasterTransferRequest } from 'bungie-api-ts/destiny2'
 import { InventoryBucketHashes } from 'deepsight.gg/Enums'
 import Auth from 'model/Auth'
 import Definitions from 'model/Definitions'
+import Inventory from 'model/Inventory'
 import type {
 	ProfileOverride,
 	ProfileOverrideMoveWhere,
@@ -497,7 +503,7 @@ function operationId () {
 
 export async function transferItem (profile: Profile, body: DestinyItemTransferRequest, context: ProfilePatchApplyContext = {}) {
 	await Broadcast.operation(body.transferToVault ? 'Transferring item to vault' : 'Transferring item to character', relatedTransferBody(body), async () => {
-		await Bungie.postForUser('/Destiny2/Actions/Items/TransferItem/', body as never)
+		await Bungie.action.postForUser('/Destiny2/Actions/Items/TransferItem/', body as never)
 		const itemInventoryBucket = await getItemInventoryBucket(body.itemReferenceHash)
 		if (itemInventoryBucket?.isAccountScopedTransferBucket)
 			await ProfileInventoryBucketCorrectionPatch.apply(profile, {
@@ -548,7 +554,15 @@ function broadcastIntent (origin: string, data: ItemTransferIntent) {
 	})
 }
 
-function broadcastFailure (origin: string, operationId: string, failedStep: string, err: unknown) {
+function broadcastFailure (
+	origin: string,
+	operationId: string,
+	failedStep: string,
+	err: unknown,
+	options: ItemTransferOptions = {},
+	recoveryResult: ItemTransferRecoveryResult = 'not-attempted',
+	finalBestKnownState?: InventoryPatch[]
+) {
 	return service.broadcast.itemTransferFailure(clientOrigin => {
 		if (clientOrigin !== origin)
 			return SKIP_CLIENT
@@ -557,7 +571,9 @@ function broadcastFailure (origin: string, operationId: string, failedStep: stri
 			operationId,
 			failedStep,
 			reason: interpretFailureReason(err),
-			recoveryResult: 'not-attempted',
+			recoveryPolicy: options.recoveryPolicy,
+			recoveryResult,
+			finalBestKnownState,
 		}
 	})
 }
@@ -574,11 +590,30 @@ function broadcastComplete (origin: string, operationId: string, actions: ItemTr
 	})
 }
 
-function interpretFailureReason (err: unknown) {
+function interpretFailureReason (err: unknown): ItemTransferFailureReason {
+	if (err instanceof TransferPlannerError)
+		return err.reason
+
 	if (err instanceof Error) {
 		const message = err.message.toLowerCase()
 		if (message.includes('auth') || message.includes('token'))
 			return 'auth'
+		if (message.includes('stale') || message.includes('not found') || message.includes('location'))
+			return 'stale-location'
+		if (message.includes('equipped') && message.includes('transfer'))
+			return 'equipped-transfer-restriction'
+		if (message.includes('full') || message.includes('space') || message.includes('bucket'))
+			return 'bucket-full'
+		if (message.includes('class'))
+			return 'class-restriction'
+		if (message.includes('exotic') || message.includes('unique'))
+			return 'exotic-restriction'
+		if (message.includes('equip'))
+			return 'equip-restriction'
+		if (message.includes('orbit') || message.includes('social'))
+			return 'orbit-or-social-space-restriction'
+		if (message.includes('network') || message.includes('fetch') || message.includes('throttle') || message.includes('timeout'))
+			return 'transient'
 		if (message.includes('bungie') || message.includes('destiny'))
 			return 'bungie'
 	}
@@ -586,14 +621,21 @@ function interpretFailureReason (err: unknown) {
 	return 'unknown'
 }
 
-async function runTransferOperation (origin: string, operationId: string, failedStep: string, action: () => Promise<ItemTransferAction[]>) {
+async function runTransferOperation (
+	origin: string,
+	operationId: string,
+	failedStep: string,
+	options: ItemTransferOptions,
+	action: () => Promise<ItemTransferAction[]>
+) {
 	try {
 		const actions = await action()
 		await broadcastComplete(origin, operationId, actions)
 		return actions
 	}
 	catch (err) {
-		await broadcastFailure(origin, operationId, failedStep, err)
+		if (!(typeof err === 'object' && err && 'failureBroadcasted' in err))
+			await broadcastFailure(origin, operationId, failedStep, err, options)
 		throw err
 	}
 }
@@ -607,7 +649,7 @@ export async function pullFromPostmaster (profile: Profile, body: DestinyPostmas
 	const bucketHash = itemDef.inventory.bucketTypeHash
 
 	await Broadcast.operation('Pulling item from postmaster', relatedTransferBody(body), async () => {
-		await Bungie.postForUser('/Destiny2/Actions/Items/PullFromPostmaster/', body as never)
+		await Bungie.action.postForUser('/Destiny2/Actions/Items/PullFromPostmaster/', body as never)
 		await PostmasterBucketCorrectionPatch.apply(profile, {
 			item: itemReferenceFromTransferBody(body),
 			characterId: body.characterId,
@@ -622,13 +664,8 @@ async function equipItem (profile: Profile, characterId: string, item: ItemTrans
 		throw new Error('Unable to equip item: Instance required')
 	}
 
-	if (item.characterId !== characterId) {
-		Broadcast.warning('user', 'Unable to equip item: Planner support required')
-		throw new Error('Unable to equip item: Planner support required')
-	}
-
 	await Broadcast.operation('Equipping item', [relatedItem(item), ...relatedCharacter(characterId)], async () => {
-		await Bungie.postForUser('/Destiny2/Actions/Items/EquipItem/', {
+		await Bungie.action.postForUser('/Destiny2/Actions/Items/EquipItem/', {
 			membershipType: profile.type,
 			itemId: item.instanceId,
 			characterId,
@@ -642,146 +679,722 @@ async function equipItem (profile: Profile, characterId: string, item: ItemTrans
 	})
 }
 
+class TransferPlannerError extends Error {
+
+	constructor (message: string, readonly reason: ItemTransferFailureReason = 'unknown') {
+		super(message)
+	}
+
+}
+
+interface PlannerState {
+	profile: Profile
+	inventory: InventoryModel
+	itemDefs: Record<number, DestinyInventoryItemDefinition>
+	bucketDefs: Record<number, DestinyInventoryBucketDefinition>
+	context: Required<Pick<ProfilePatchApplyContext, 'operationId' | 'origin'>>
+	successful: ExecutedPlannerStep[]
+	patches: InventoryPatch[]
+	reservedItems: Set<string>
+}
+
+interface LocatedPlannerItem {
+	item: ItemInstance
+	location: InventoryPatchLocation
+}
+
+interface PlannerStep {
+	label: string
+	execute (state: PlannerState): Promise<InventoryPatch[]>
+	revert? (state: PlannerState): Promise<InventoryPatch[]>
+}
+
+interface ExecutedPlannerStep {
+	label: string
+	revert?: PlannerStep['revert']
+}
+
+type PlannerNode =
+	| { type: 'step', step: PlannerStep }
+	| { type: 'series', nodes: PlannerNode[] }
+	| { type: 'parallel', nodes: PlannerNode[] }
+
+const EMPTY_PLAN: PlannerNode = { type: 'series', nodes: [] }
+
+function step (step: PlannerStep): PlannerNode {
+	return { type: 'step', step }
+}
+
+function series (...nodes: (PlannerNode | undefined)[]): PlannerNode {
+	return { type: 'series', nodes: nodes.filter((node): node is PlannerNode => !!node && !isEmptyPlan(node)) }
+}
+
+function parallel (...nodes: (PlannerNode | undefined)[]): PlannerNode {
+	const filtered = nodes.filter(node => node && !isEmptyPlan(node)) as PlannerNode[]
+	return filtered.length <= 1 ? filtered[0] ?? EMPTY_PLAN : { type: 'parallel', nodes: filtered }
+}
+
+function isEmptyPlan (node: PlannerNode): boolean {
+	return node.type === 'series' && !node.nodes.length
+}
+
+async function createPlannerState (profile: Profile, operationId: string, origin: string): Promise<PlannerState> {
+	const [inventory, itemDefs, bucketDefs] = await Promise.all([
+		Inventory.for(profile).get(),
+		Definitions.en.DestinyInventoryItemDefinition.get(),
+		Definitions.en.DestinyInventoryBucketDefinition.get(),
+	])
+	if (!inventory)
+		throw new TransferPlannerError('Unable to transfer item: Inventory unavailable', 'stale-location')
+
+	return {
+		profile,
+		inventory,
+		itemDefs,
+		bucketDefs,
+		context: { operationId, origin },
+		successful: [],
+		patches: [],
+		reservedItems: new Set(),
+	}
+}
+
+async function executePlan (state: PlannerState, node: PlannerNode): Promise<void> {
+	switch (node.type) {
+		case 'series':
+			for (const child of node.nodes)
+				await executePlan(state, child)
+			return
+
+		case 'parallel': {
+			const results = await Promise.allSettled(node.nodes.map(child => executePlan(state, child)))
+			const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
+			if (failure)
+				throw failure.reason
+
+			return
+		}
+
+		case 'step': {
+			const patches = await node.step.execute(state)
+			state.patches.push(...patches)
+			state.successful.push({ label: node.step.label, revert: node.step.revert })
+			return
+		}
+	}
+}
+
+async function recoverExecutedSteps (state: PlannerState): Promise<ItemTransferRecoveryResult> {
+	let attempted = false
+	for (const executed of [...state.successful].reverse()) {
+		if (!executed.revert)
+			return attempted ? 'failed' : 'not-attempted'
+
+		attempted = true
+		try {
+			const patches = await executed.revert(state)
+			state.patches.push(...patches)
+		}
+		catch {
+			return 'failed'
+		}
+	}
+
+	return attempted ? 'succeeded' : 'none'
+}
+
+function plannerStepErrorLabel (err: unknown, fallback: string) {
+	return err instanceof TransferPlannerError ? err.message : fallback
+}
+
+function compileVaultRoute (state: PlannerState, item: ItemTransferReference): PlannerNode {
+	const source = locatePlannerItem(state, item)
+	if (source?.location.container === 'vault')
+		return EMPTY_PLAN
+
+	const prepared = prepareMovableCharacterInventorySource(state, item, source)
+	if (!prepared.characterId)
+		throw new TransferPlannerError('Unable to transfer item: Character required', 'stale-location')
+
+	return series(
+		prepared.plan,
+		ensureVaultSpace(state),
+		transferToVaultStep(referenceFromPlannerItem(prepared.item, prepared.characterId), prepared.characterId)
+	)
+}
+
+function compileCharacterRoute (state: PlannerState, item: ItemTransferReference, targetCharacterId: string): PlannerNode {
+	const source = locatePlannerItem(state, item)
+	if (source?.location.container === 'characterInventory' && source.location.characterId === targetCharacterId)
+		return EMPTY_PLAN
+
+	if (source?.location.container === 'vault')
+		return series(
+			ensureCharacterBucketSpace(state, targetCharacterId, source.item.bucketHash, [item]),
+			transferFromVaultStep(referenceFromPlannerItem(source.item), targetCharacterId)
+		)
+
+	const prepared = prepareMovableCharacterInventorySource(state, item, source)
+	if (!prepared.characterId)
+		throw new TransferPlannerError('Unable to transfer item: Character required', 'stale-location')
+
+	return series(
+		prepared.plan,
+		ensureVaultSpace(state),
+		transferToVaultStep(referenceFromPlannerItem(prepared.item, prepared.characterId), prepared.characterId),
+		ensureCharacterBucketSpace(state, targetCharacterId, prepared.item.bucketHash, [item]),
+		transferFromVaultStep(referenceFromPlannerItem(prepared.item), targetCharacterId)
+	)
+}
+
+function compileEquipRoute (state: PlannerState, item: ItemTransferReference, targetCharacterId: string): PlannerNode {
+	const source = locatePlannerItem(state, item)
+	if (source?.location.container === 'characterEquipment' && source.location.characterId === targetCharacterId)
+		return EMPTY_PLAN
+
+	if (source?.location.container === 'vault')
+		return series(
+			parallel(
+				ensureCharacterBucketSpace(state, targetCharacterId, source.item.bucketHash, [item]),
+				ensureExoticConflictCleared(state, targetCharacterId, source.item, [item])
+			),
+			transferFromVaultStep(referenceFromPlannerItem(source.item), targetCharacterId),
+			equipOnCharacterStep(referenceFromPlannerItem(source.item, targetCharacterId), targetCharacterId)
+		)
+
+	const prepared = prepareMovableCharacterInventorySource(state, item, source)
+	if (!prepared.characterId)
+		throw new TransferPlannerError('Unable to transfer item: Character required', 'stale-location')
+
+	const preparedReference = referenceFromPlannerItem(prepared.item, prepared.characterId)
+	if (prepared.characterId === targetCharacterId)
+		return series(
+			prepared.plan,
+			ensureExoticConflictCleared(state, targetCharacterId, prepared.item, [item]),
+			equipOnCharacterStep(preparedReference, targetCharacterId)
+		)
+
+	return series(
+		prepared.plan,
+		ensureVaultSpace(state),
+		transferToVaultStep(preparedReference, prepared.characterId),
+		parallel(
+			ensureCharacterBucketSpace(state, targetCharacterId, prepared.item.bucketHash, [item]),
+			ensureExoticConflictCleared(state, targetCharacterId, prepared.item, [item])
+		),
+		transferFromVaultStep(referenceFromPlannerItem(prepared.item), targetCharacterId),
+		equipOnCharacterStep(referenceFromPlannerItem(prepared.item, targetCharacterId), targetCharacterId)
+	)
+}
+
+function prepareMovableCharacterInventorySource (state: PlannerState, reference: ItemTransferReference, source: LocatedPlannerItem | undefined) {
+	if (reference.isLostItem) {
+		if (!reference.characterId)
+			throw new TransferPlannerError('Unable to transfer item: Character required', 'stale-location')
+
+		const item = source?.item ?? syntheticPlannerItem(state, reference)
+		return {
+			item,
+			characterId: reference.characterId,
+			plan: series(
+				ensureCharacterBucketSpace(state, reference.characterId, item.bucketHash, [reference]),
+				pullPostmasterStep(reference, reference.characterId, item.bucketHash)
+			),
+		}
+	}
+
+	if (!source)
+		throw new TransferPlannerError('Unable to transfer item: Source item not found', 'stale-location')
+
+	if (source.location.container === 'characterInventory')
+		return { item: source.item, characterId: source.location.characterId, plan: EMPTY_PLAN }
+
+	if (source.location.container === 'characterEquipment')
+		return {
+			item: source.item,
+			characterId: source.location.characterId,
+			plan: releaseEquippedSourceStep(state, source.location.characterId, source.item, [reference]),
+		}
+
+	throw new TransferPlannerError('Unable to transfer item: Character required', 'stale-location')
+}
+
+function ensureCharacterBucketSpace (state: PlannerState, characterId: string, bucketHash: number, excluded: ItemTransferReference[] = []): PlannerNode {
+	if (countCharacterBucketItems(state, characterId, bucketHash) < bucketCapacity(state, bucketHash))
+		return EMPTY_PLAN
+
+	const candidate = state.inventory.characters[characterId]?.items
+		.find(item => item.bucketHash === bucketHash && !isReservedOrExcluded(state, item, excluded))
+	if (!candidate)
+		throw new TransferPlannerError('Unable to transfer item: Bucket full', 'bucket-full')
+
+	state.reservedItems.add(itemKey(referenceFromPlannerItem(candidate, characterId)))
+	return series(
+		ensureVaultSpace(state),
+		transferToVaultStep(referenceFromPlannerItem(candidate, characterId), characterId)
+	)
+}
+
+function ensureVaultSpace (state: PlannerState): PlannerNode {
+	if (countVaultItems(state) < bucketCapacity(state, InventoryBucketHashes.General))
+		return EMPTY_PLAN
+
+	throw new TransferPlannerError('Unable to transfer item: Vault full', 'bucket-full')
+}
+
+function ensureExoticConflictCleared (state: PlannerState, characterId: string, incoming: ItemInstance, excluded: ItemTransferReference[] = []): PlannerNode {
+	if (!isExotic(state, incoming))
+		return EMPTY_PLAN
+
+	const incomingLabel = uniqueEquipLabel(state, incoming)
+	if (!incomingLabel)
+		return EMPTY_PLAN
+
+	const conflict = state.inventory.characters[characterId]?.equippedItems
+		.find(item => item.bucketHash !== incoming.bucketHash && uniqueEquipLabel(state, item) === incomingLabel)
+	if (!conflict)
+		return EMPTY_PLAN
+
+	return equipFallbackForBucket(state, characterId, conflict.bucketHash, [...excluded, referenceFromPlannerItem(incoming)])
+}
+
+function releaseEquippedSourceStep (state: PlannerState, characterId: string, source: ItemInstance, excluded: ItemTransferReference[] = []): PlannerNode {
+	return equipFallbackForBucket(state, characterId, source.bucketHash, [...excluded, referenceFromPlannerItem(source, characterId)])
+}
+
+function equipFallbackForBucket (state: PlannerState, characterId: string, bucketHash: number, excluded: ItemTransferReference[]): PlannerNode {
+	const candidate = fallbackCandidates(state, characterId, bucketHash, excluded)[0]
+	if (!candidate)
+		throw new TransferPlannerError('Unable to equip fallback item: No legal fallback', 'equip-restriction')
+
+	state.reservedItems.add(itemKey(referenceFromPlannerItem(candidate.item, 'characterId' in candidate.location ? candidate.location.characterId : undefined)))
+	switch (candidate.location.container) {
+		case 'characterInventory':
+			if (candidate.location.characterId === characterId)
+				return equipOnCharacterStep(referenceFromPlannerItem(candidate.item, characterId), characterId)
+
+			return series(
+				ensureVaultSpace(state),
+				transferToVaultStep(referenceFromPlannerItem(candidate.item, candidate.location.characterId), candidate.location.characterId),
+				ensureCharacterBucketSpace(state, characterId, bucketHash, excluded),
+				transferFromVaultStep(referenceFromPlannerItem(candidate.item), characterId),
+				equipOnCharacterStep(referenceFromPlannerItem(candidate.item, characterId), characterId)
+			)
+
+		case 'vault':
+			return series(
+				ensureCharacterBucketSpace(state, characterId, bucketHash, excluded),
+				transferFromVaultStep(referenceFromPlannerItem(candidate.item), characterId),
+				equipOnCharacterStep(referenceFromPlannerItem(candidate.item, characterId), characterId)
+			)
+
+		case 'characterEquipment':
+			return series(
+				releaseEquippedSourceStep(state, candidate.location.characterId, candidate.item, excluded),
+				ensureVaultSpace(state),
+				transferToVaultStep(referenceFromPlannerItem(candidate.item, candidate.location.characterId), candidate.location.characterId),
+				ensureCharacterBucketSpace(state, characterId, bucketHash, excluded),
+				transferFromVaultStep(referenceFromPlannerItem(candidate.item), characterId),
+				equipOnCharacterStep(referenceFromPlannerItem(candidate.item, characterId), characterId)
+			)
+
+		default:
+			throw new TransferPlannerError('Unable to equip fallback item: Unsupported fallback source', 'equip-restriction')
+	}
+}
+
+function fallbackCandidates (state: PlannerState, characterId: string, bucketHash: number, excluded: ItemTransferReference[]): LocatedPlannerItem[] {
+	const legal = (located: LocatedPlannerItem) => located.item.bucketHash === bucketHash
+		&& !!located.item.id
+		&& !isReservedOrExcluded(state, located.item, excluded)
+		&& isCharacterLegalForItem(state, characterId, located.item)
+
+	const preferLegendary = (a: LocatedPlannerItem, b: LocatedPlannerItem) => Number(isExotic(state, a.item)) - Number(isExotic(state, b.item))
+	const character = state.inventory.characters[characterId]
+	const sameCharacter = character?.items
+		.map(item => ({ item, location: { container: 'characterInventory', characterId } satisfies InventoryPatchLocation }))
+		.filter(legal)
+		.sort(preferLegendary) ?? []
+	const vault = state.inventory.profileItems
+		.map(item => ({ item, location: { container: 'vault' } satisfies InventoryPatchLocation }))
+		.filter(legal)
+		.sort(preferLegendary)
+	const otherCharacters = Object.values(state.inventory.characters)
+		.filter(character => character.id !== characterId)
+	const otherInventory = otherCharacters
+		.flatMap(character => character.items.map(item => ({ item, location: { container: 'characterInventory', characterId: character.id } satisfies InventoryPatchLocation })))
+		.filter(legal)
+		.sort(preferLegendary)
+	const otherEquipment = otherCharacters
+		.flatMap(character => character.equippedItems.map(item => ({ item, location: { container: 'characterEquipment', characterId: character.id } satisfies InventoryPatchLocation })))
+		.filter(legal)
+		.sort(preferLegendary)
+
+	return [
+		...sameCharacter,
+		...vault,
+		...otherInventory,
+		...otherEquipment,
+	]
+}
+
+function transferToVaultStep (item: ItemTransferReference, characterId: string): PlannerNode {
+	return step({
+		label: 'transfer-to-vault',
+		async execute (state) {
+			const body = transferBody(state.profile, item, characterId, true)
+			await transferItem(state.profile, body, state.context)
+			const patches = await transferPatchesForBody(body)
+			applyPlannerPatches(state, patches)
+			return patches
+		},
+		async revert (state) {
+			const body = transferBody(state.profile, item, characterId, false)
+			await transferItem(state.profile, body, state.context)
+			const patches = await transferPatchesForBody(body)
+			applyPlannerPatches(state, patches)
+			return patches
+		},
+	})
+}
+
+function transferFromVaultStep (item: ItemTransferReference, characterId: string): PlannerNode {
+	return step({
+		label: 'transfer-from-vault',
+		async execute (state) {
+			const body = transferBody(state.profile, item, characterId, false)
+			await transferItem(state.profile, body, state.context)
+			const patches = await transferPatchesForBody(body)
+			applyPlannerPatches(state, patches)
+			return patches
+		},
+		async revert (state) {
+			const body = transferBody(state.profile, item, characterId, true)
+			await transferItem(state.profile, body, state.context)
+			const patches = await transferPatchesForBody(body)
+			applyPlannerPatches(state, patches)
+			return patches
+		},
+	})
+}
+
+function pullPostmasterStep (item: ItemTransferReference, characterId: string, bucketHash: number): PlannerNode {
+	return step({
+		label: 'pull-from-postmaster',
+		async execute (state) {
+			await pullFromPostmaster(state.profile, {
+				membershipType: state.profile.type,
+				itemId: item.instanceId ?? '0',
+				itemReferenceHash: item.itemHash,
+				stackSize: item.stackSize ?? 1,
+				characterId,
+			}, state.context)
+			const patches: InventoryPatch[] = [{
+				type: 'bucket-correction',
+				item: itemReferenceFromItem(item),
+				location: { container: 'characterInventory', characterId },
+				bucketHash,
+			}]
+			applyPlannerPatches(state, patches)
+			return patches
+		},
+	})
+}
+
+function equipOnCharacterStep (item: ItemTransferReference, characterId: string): PlannerNode {
+	return step({
+		label: 'equip-item',
+		async execute (state) {
+			await equipItem(state.profile, characterId, item, state.context)
+			const patches: InventoryPatch[] = [{
+				type: 'move',
+				item: itemReferenceFromItem(item),
+				from: { container: 'characterInventory', characterId },
+				to: { container: 'characterEquipment', characterId },
+			}]
+			applyPlannerPatches(state, patches)
+			return patches
+		},
+		async revert (state) {
+			const displaced = state.inventory.characters[characterId]?.items
+				.find(candidate => candidate.bucketHash === item.bucketHash && !itemMatchesReference(candidate, item))
+			if (!displaced?.id)
+				throw new TransferPlannerError('Unable to recover equip step: Displaced item unknown', 'stale-location')
+
+			const revertItem = referenceFromPlannerItem(displaced, characterId)
+			await equipItem(state.profile, characterId, revertItem, state.context)
+			const patches: InventoryPatch[] = [{
+				type: 'move',
+				item: itemReferenceFromItem(revertItem),
+				from: { container: 'characterInventory', characterId },
+				to: { container: 'characterEquipment', characterId },
+			}]
+			applyPlannerPatches(state, patches)
+			return patches
+		},
+	})
+}
+
+function transferBody (profile: Profile, item: ItemTransferReference, characterId: string, transferToVault: boolean): DestinyItemTransferRequest {
+	return {
+		membershipType: profile.type,
+		itemId: item.instanceId ?? '0',
+		itemReferenceHash: item.itemHash,
+		stackSize: item.stackSize ?? 1,
+		characterId,
+		transferToVault,
+	}
+}
+
+async function transferPatchesForBody (body: DestinyItemTransferRequest): Promise<InventoryPatch[]> {
+	const itemInventoryBucket = await getItemInventoryBucket(body.itemReferenceHash)
+	if (itemInventoryBucket?.isAccountScopedTransferBucket)
+		return [{
+			type: 'bucket-correction',
+			item: itemReferenceFromTransferBody(body),
+			location: { container: 'vault' },
+			fromBucketHash: body.transferToVault ? itemInventoryBucket.bucketHash : InventoryBucketHashes.General,
+			bucketHash: body.transferToVault ? InventoryBucketHashes.General : itemInventoryBucket.bucketHash,
+		}]
+
+	return movementInventoryPatches({
+		item: itemReferenceFromTransferBody(body),
+		from: body.transferToVault ? { container: 'characterInventory', characterId: body.characterId } : { container: 'vault' },
+		to: body.transferToVault ? { container: 'vault' } : { container: 'characterInventory', characterId: body.characterId },
+		destinationBucketHash: body.transferToVault ? undefined : await getItemInventoryBucketHash(body.itemReferenceHash),
+	})
+}
+
+function applyPlannerPatches (state: PlannerState, patches: InventoryPatch[]) {
+	for (const patch of patches) {
+		switch (patch.type) {
+			case 'move': {
+				const source = plannerLocationItems(state, patch.from)
+				const destination = plannerLocationItems(state, patch.to)
+				const index = source.findIndex(item => itemMatchesReference(item, patch.item))
+				if (index === -1)
+					continue
+
+				const [item] = source.splice(index, 1)
+				const bucketHash = patch.to.container === 'vault'
+					? InventoryBucketHashes.General
+					: patch.to.container === 'postmaster'
+						? state.itemDefs[item.itemHash]?.inventory?.bucketTypeHash ?? item.bucketHash
+						: patch.to.container === 'characterEquipment'
+							? item.bucketHash
+							: patch.item.bucketHash ?? state.itemDefs[item.itemHash]?.inventory?.bucketTypeHash ?? item.bucketHash
+
+				if (patch.to.container === 'characterEquipment') {
+					const displacedIndex = destination.findIndex(candidate => candidate.bucketHash === item.bucketHash && !itemMatchesReference(candidate, patch.item))
+					if (displacedIndex !== -1) {
+						const [displaced] = destination.splice(displacedIndex, 1)
+						plannerLocationItems(state, { container: 'characterInventory', characterId: patch.to.characterId }).push(displaced)
+					}
+				}
+
+				destination.push({ ...item, bucketHash: bucketHash as never })
+				break
+			}
+
+			case 'bucket-correction': {
+				const items = plannerLocationItems(state, patch.location)
+				const item = items.find(item => itemMatchesReference(item, patch.item))
+				if (item)
+					item.bucketHash = patch.bucketHash as never
+				else if (patch.location.container === 'characterInventory')
+					items.push(syntheticPlannerItem(state, { ...patch.item, characterId: patch.location.characterId, bucketHash: patch.bucketHash }))
+				break
+			}
+		}
+	}
+}
+
+function locatePlannerItem (state: PlannerState, reference: ItemTransferReference): LocatedPlannerItem | undefined {
+	if (reference.isLostItem && reference.characterId) {
+		const characterItems = state.inventory.characters[reference.characterId]?.items ?? []
+		const item = characterItems.find(item => itemMatchesReference(item, reference))
+		return {
+			item: item ?? syntheticPlannerItem(state, reference),
+			location: { container: 'postmaster', characterId: reference.characterId },
+		}
+	}
+
+	for (const character of Object.values(state.inventory.characters)) {
+		const inventoryItem = character.items.find(item => itemMatchesReference(item, reference))
+		if (inventoryItem)
+			return { item: inventoryItem, location: { container: 'characterInventory', characterId: character.id } }
+
+		const equippedItem = character.equippedItems.find(item => itemMatchesReference(item, reference))
+		if (equippedItem)
+			return { item: equippedItem, location: { container: 'characterEquipment', characterId: character.id } }
+	}
+
+	const vaultItem = state.inventory.profileItems.find(item => itemMatchesReference(item, reference))
+	if (vaultItem)
+		return { item: vaultItem, location: { container: 'vault' } }
+}
+
+function plannerLocationItems (state: PlannerState, location: InventoryPatchLocation): ItemInstance[] {
+	switch (location.container) {
+		case 'vault':
+			return state.inventory.profileItems
+		case 'characterInventory':
+		case 'postmaster':
+			return state.inventory.characters[location.characterId]?.items ?? []
+		case 'characterEquipment':
+			return state.inventory.characters[location.characterId]?.equippedItems ?? []
+	}
+}
+
+function countCharacterBucketItems (state: PlannerState, characterId: string, bucketHash: number) {
+	return state.inventory.characters[characterId]?.items.filter(item => item.bucketHash === bucketHash).length ?? Infinity
+}
+
+function countVaultItems (state: PlannerState) {
+	return state.inventory.profileItems.filter(item => item.bucketHash === InventoryBucketHashes.General).length
+}
+
+function bucketCapacity (state: PlannerState, bucketHash: number) {
+	return state.bucketDefs[bucketHash]?.itemCount ?? Infinity
+}
+
+function syntheticPlannerItem (state: PlannerState, reference: ItemTransferReference | InventoryPatchItemReference): ItemInstance {
+	const bucketHash = reference.bucketHash ?? state.itemDefs[reference.itemHash]?.inventory?.bucketTypeHash ?? InventoryBucketHashes.General
+	return {
+		is: 'item-instance',
+		id: reference.instanceId,
+		itemHash: reference.itemHash,
+		bucketHash: bucketHash as never,
+		quantity: reference.stackSize,
+		state: 0,
+	}
+}
+
+function referenceFromPlannerItem (item: ItemInstance, characterId?: string): ItemTransferReference {
+	return {
+		instanceId: item.id,
+		itemHash: item.itemHash,
+		characterId,
+		stackSize: item.quantity,
+		bucketHash: item.bucketHash,
+	}
+}
+
+function itemMatchesReference (item: ItemInstance, reference: ItemTransferReference | InventoryPatchItemReference): boolean {
+	return (!!reference.instanceId && item.id === reference.instanceId)
+		|| (!reference.instanceId
+			&& item.itemHash === reference.itemHash
+			&& (reference.stackSize === undefined || item.quantity === reference.stackSize)
+			&& (reference.bucketHash === undefined || item.bucketHash === reference.bucketHash))
+}
+
+function itemKey (item: ItemTransferReference | InventoryPatchItemReference) {
+	return item.instanceId ?? `${item.itemHash}:${item.stackSize ?? 1}:${item.bucketHash ?? ''}`
+}
+
+function isReservedOrExcluded (state: PlannerState, item: ItemInstance, excluded: ItemTransferReference[]) {
+	const reference = referenceFromPlannerItem(item)
+	return state.reservedItems.has(itemKey(reference)) || excluded.some(excluded => itemMatchesReference(item, excluded))
+}
+
+function isCharacterLegalForItem (state: PlannerState, characterId: string, item: ItemInstance) {
+	const itemDef = state.itemDefs[item.itemHash]
+	const itemClass = itemDef?.classType
+	const characterClass = state.inventory.characters[characterId]?.metadata.classType
+	return itemClass === undefined || itemClass === 3 || itemClass === characterClass
+}
+
+function isExotic (state: PlannerState, item: ItemInstance) {
+	return state.itemDefs[item.itemHash]?.inventory?.tierType === TierType.Exotic
+}
+
+function uniqueEquipLabel (state: PlannerState, item: ItemInstance) {
+	return state.itemDefs[item.itemHash]?.equippingBlock?.uniqueLabel
+}
+
+async function executePlannedTransfer (
+	origin: string,
+	operationId: string,
+	options: ItemTransferOptions,
+	compile: (state: PlannerState) => PlannerNode,
+	actions: ItemTransferAction[]
+): Promise<ItemTransferAction[]> {
+	const auth = await Auth.getValid()
+	const profile = await Profiles.getCurrentProfile(auth)
+	if (!profile) {
+		Broadcast.warning('user', 'Unable to transfer item: Not authenticated')
+		return []
+	}
+
+	const state = await createPlannerState(profile, operationId, origin)
+	try {
+		await executePlan(state, compile(state))
+		return actions
+	}
+	catch (err) {
+		const recoveryResult = options.recoveryPolicy === 'best-effort-revert'
+			? await recoverExecutedSteps(state)
+			: 'not-attempted'
+		await broadcastFailure(origin, operationId, plannerStepErrorLabel(err, 'transfer-planner'), err, options, recoveryResult, state.patches)
+		if (typeof err === 'object' && err)
+			Object.assign(err, { failureBroadcasted: true })
+		throw err
+	}
+}
+
 namespace ItemTransfer {
 
-	export async function vaultItem (origin: string, item: ItemTransferReference): Promise<ItemTransferAction[]> {
-		const id = operationId()
+	export async function vaultItem (origin: string, item: ItemTransferReference, options: ItemTransferOptions = {}): Promise<ItemTransferAction[]> {
+		const id = options.operationId ?? operationId()
 		await broadcastIntent(origin, {
 			operationId: id,
 			action: 'vault-item',
 			item,
 			to: 'vault',
+			recoveryPolicy: options.recoveryPolicy,
 		})
 
-		return await Broadcast.operation('Vaulting item', [relatedItem(item), ...relatedCharacter(item.characterId)], async () => await runTransferOperation(origin, id, 'vault-item', async () => {
-			const auth = await Auth.getValid()
-			const profile = await Profiles.getCurrentProfile(auth)
-			if (!profile) {
-				Broadcast.warning('user', 'Unable to transfer item: Not authenticated')
-				return []
-			}
-
-			const instanceId = item.instanceId ?? '0'
-			if (!item.characterId) {
-				Broadcast.warning('user', 'Unable to transfer item: Character required')
-				return []
-			}
-
-			const context = { operationId: id, origin }
-			if (item.isLostItem)
-				await pullFromPostmaster(profile, {
-					membershipType: profile.type,
-					itemId: instanceId,
-					itemReferenceHash: item.itemHash,
-					stackSize: item.stackSize ?? 1,
-					characterId: item.characterId,
-				}, context)
-
-			await transferItem(profile, {
-				membershipType: profile.type,
-				itemId: instanceId,
-				itemReferenceHash: item.itemHash,
-				stackSize: item.stackSize ?? 1,
-				characterId: item.characterId,
-				transferToVault: true,
-			}, context)
-
-			return [
+		return await Broadcast.operation('Vaulting item', [relatedItem(item), ...relatedCharacter(item.characterId)], async () => await runTransferOperation(origin, id, 'vault-item', options, async () =>
+			await executePlannedTransfer(origin, id, options, state => compileVaultRoute(state, item), [
 				{ item, to: 'vault' },
-			]
-		}))
+			])
+		))
 	}
 
-	export async function moveItemToCharacter (origin: string, characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]> {
-		const id = operationId()
+	export async function moveItemToCharacter (origin: string, characterId: string, item: ItemTransferReference, options: ItemTransferOptions = {}): Promise<ItemTransferAction[]> {
+		const id = options.operationId ?? operationId()
 		await broadcastIntent(origin, {
 			operationId: id,
 			action: 'move-item-to-character',
 			item,
 			to: 'character',
 			characterId,
+			recoveryPolicy: options.recoveryPolicy,
 		})
 
-		return await Broadcast.operation('Moving item to character', [relatedItem(item), ...relatedCharacter(characterId)], async () => await runTransferOperation(origin, id, 'move-item-to-character', async () => {
-			const auth = await Auth.getValid()
-			const profile = await Profiles.getCurrentProfile(auth)
-			if (!profile) {
-				Broadcast.warning('user', 'Unable to transfer item: Not authenticated')
-				return []
-			}
-
-			const instanceId = item.instanceId ?? '0'
-			const context = { operationId: id, origin }
-
-			let needsVaultTransfer = true
-			if (item.isLostItem) {
-				if (!item.characterId) {
-					Broadcast.warning('user', 'Unable to transfer item: Character required')
-					return []
-				}
-
-				needsVaultTransfer = false
-				await pullFromPostmaster(profile, {
-					membershipType: profile.type,
-					itemId: instanceId,
-					itemReferenceHash: item.itemHash,
-					stackSize: item.stackSize ?? 1,
-					characterId: item.characterId,
-				}, context)
-			}
-
-			if (item.characterId && item.characterId !== characterId) {
-				needsVaultTransfer = true
-				await transferItem(profile, {
-					membershipType: profile.type,
-					itemId: instanceId,
-					itemReferenceHash: item.itemHash,
-					stackSize: item.stackSize ?? 1,
-					characterId: item.characterId,
-					transferToVault: true,
-				}, context)
-			}
-
-			if (needsVaultTransfer)
-				await transferItem(profile, {
-					membershipType: profile.type,
-					itemId: instanceId,
-					itemReferenceHash: item.itemHash,
-					stackSize: item.stackSize ?? 1,
-					characterId,
-					transferToVault: false,
-				}, context)
-
-			return [
+		return await Broadcast.operation('Moving item to character', [relatedItem(item), ...relatedCharacter(characterId)], async () => await runTransferOperation(origin, id, 'move-item-to-character', options, async () =>
+			await executePlannedTransfer(origin, id, options, state => compileCharacterRoute(state, item, characterId), [
 				{ item, to: 'character', newCharacterId: characterId },
-			]
-		}))
+			])
+		))
 	}
 
-	export async function equipItemOnCharacter (origin: string, characterId: string, item: ItemTransferReference): Promise<ItemTransferAction[]> {
-		const id = operationId()
+	export async function equipItemOnCharacter (origin: string, characterId: string, item: ItemTransferReference, options: ItemTransferOptions = {}): Promise<ItemTransferAction[]> {
+		const id = options.operationId ?? operationId()
 		await broadcastIntent(origin, {
 			operationId: id,
 			action: 'equip-item-on-character',
 			item,
 			to: 'equipped',
 			characterId,
+			recoveryPolicy: options.recoveryPolicy,
 		})
 
-		return await runTransferOperation(origin, id, 'equip-item-on-character', async () => {
-			const auth = await Auth.getValid()
-			const profile = await Profiles.getCurrentProfile(auth)
-			if (!profile) {
-				Broadcast.warning('user', 'Unable to transfer item: Not authenticated')
-				return []
-			}
-
-			await equipItem(profile, characterId, item, { operationId: id, origin })
-
-			return [
+		return await runTransferOperation(origin, id, 'equip-item-on-character', options, async () =>
+			await executePlannedTransfer(origin, id, options, state => compileEquipRoute(state, item, characterId), [
 				{ item, to: 'equipped', newCharacterId: characterId },
-			]
-		})
+			])
+		)
 	}
 
 }
