@@ -8,7 +8,7 @@ import type {
 	RelatedItem,
 } from '@shared/ConduitMessageRegistry'
 import type { Profile } from '@shared/Profile'
-import type { DestinyItemTransferRequest, DestinyPostmasterTransferRequest } from 'bungie-api-ts/destiny2'
+import { BucketScope, type DestinyItemTransferRequest, type DestinyPostmasterTransferRequest } from 'bungie-api-ts/destiny2'
 import { InventoryBucketHashes } from 'deepsight.gg/Enums'
 import Auth from 'model/Auth'
 import Definitions from 'model/Definitions'
@@ -38,6 +38,12 @@ interface ItemMovementProfilePatchParams {
 interface PostmasterBucketCorrectionProfilePatchParams {
 	item: InventoryPatchItemReference
 	characterId: string
+	bucketHash: number
+}
+
+interface ProfileInventoryBucketCorrectionProfilePatchParams {
+	item: InventoryPatchItemReference
+	fromBucketHash: number
 	bucketHash: number
 }
 
@@ -98,6 +104,37 @@ const PostmasterBucketCorrectionPatch = new ProfilePatch<PostmasterBucketCorrect
 		type: 'bucket-correction',
 		item: params.item,
 		location: { container: 'characterInventory', characterId: params.characterId },
+		bucketHash: params.bucketHash,
+	}, context),
+})
+
+const ProfileInventoryBucketCorrectionPatch = new ProfilePatch<ProfileInventoryBucketCorrectionProfilePatchParams>({
+	id: 'profile-inventory-bucket-correction',
+	fromParams: (params, time) => bucketHashWhereOverride({
+		item: params.item,
+		location: { container: 'vault' },
+		fromBucketHash: params.fromBucketHash,
+		bucketHash: params.bucketHash,
+	}, time),
+	toParams: record => {
+		const override = singleOverride(record, 'profile-inventory-bucket-correction')
+		const correction = override && bucketHashWhereFromOverride(override)
+		if (correction?.location.container !== 'vault')
+			return undefined
+		if (typeof correction.fromBucketHash !== 'number')
+			return undefined
+
+		return {
+			item: correction.item,
+			fromBucketHash: correction.fromBucketHash,
+			bucketHash: correction.bucketHash,
+		}
+	},
+	onApply: (profile, params, _record, context) => broadcastInventoryPatch(profile, {
+		type: 'bucket-correction',
+		item: params.item,
+		location: { container: 'vault' },
+		fromBucketHash: params.fromBucketHash,
 		bucketHash: params.bucketHash,
 	}, context),
 })
@@ -225,6 +262,7 @@ function itemMatcher (item: InventoryPatchItemReference): ProfileOverrideWhere {
 			{ path: ['itemInstanceId'], value: undefined },
 			{ path: ['itemHash'], value: item.itemHash },
 			{ path: ['quantity'], value: item.stackSize },
+			...item.bucketHash === undefined ? [] : [{ path: ['bucketHash'], value: item.bucketHash }],
 		],
 	})
 
@@ -245,6 +283,7 @@ function itemFromMatcher (where: ProfileOverrideWhere[]): InventoryPatchItemRefe
 
 	const itemHash = valueForWherePath(byStack.and, ['itemHash'])
 	const stackSize = valueForWherePath(byStack.and, ['quantity'])
+	const bucketHash = valueForWherePath(byStack.and, ['bucketHash'])
 	if (typeof itemHash !== 'number')
 		return undefined
 
@@ -252,6 +291,7 @@ function itemFromMatcher (where: ProfileOverrideWhere[]): InventoryPatchItemRefe
 		instanceId: typeof byInstance?.value === 'string' ? byInstance.value : undefined,
 		itemHash,
 		stackSize: typeof stackSize === 'number' ? stackSize : undefined,
+		bucketHash: typeof bucketHash === 'number' ? bucketHash : undefined,
 	}
 }
 
@@ -290,6 +330,7 @@ function movementFromOverride (override: ProfileOverride, from: InventoryPatchLo
 interface BucketHashWhereParams {
 	item: InventoryPatchItemReference
 	location: InventoryPatchLocation
+	fromBucketHash?: number
 	bucketHash: number
 }
 
@@ -297,7 +338,7 @@ function bucketHashWhereOverride (params: BucketHashWhereParams, time = Date.now
 	return {
 		type: 'set-where',
 		arrayPath: locationItemsPath(params.location),
-		where: [itemMatcher(params.item)],
+		where: [itemMatcher(params.fromBucketHash === undefined ? params.item : { ...params.item, bucketHash: params.fromBucketHash })],
 		modifyPath: ['bucketHash'],
 		value: params.bucketHash,
 		time,
@@ -315,10 +356,12 @@ function bucketHashWhereFromOverride (override: ProfileOverride): BucketHashWher
 	const item = itemFromMatcher(override.where)
 	if (!item)
 		return undefined
+	const { bucketHash: fromBucketHash, ...reference } = item
 
 	return {
-		item,
+		item: reference,
 		location,
+		fromBucketHash,
 		bucketHash: override.value,
 	}
 }
@@ -408,6 +451,7 @@ function itemReferencesEqual (a: InventoryPatchItemReference, b: InventoryPatchI
 	return a.instanceId === b.instanceId
 		&& a.itemHash === b.itemHash
 		&& a.stackSize === b.stackSize
+		&& a.bucketHash === b.bucketHash
 }
 
 function itemReferenceFromTransferBody (body: DestinyItemTransferRequest | DestinyPostmasterTransferRequest) {
@@ -423,6 +467,7 @@ function itemReferenceFromItem (item: ItemTransferReference): InventoryPatchItem
 		instanceId: item.instanceId,
 		itemHash: item.itemHash,
 		stackSize: item.stackSize,
+		bucketHash: item.bucketHash,
 	}
 }
 
@@ -453,7 +498,14 @@ function operationId () {
 export async function transferItem (profile: Profile, body: DestinyItemTransferRequest, context: ProfilePatchApplyContext = {}) {
 	await Broadcast.operation(body.transferToVault ? 'Transferring item to vault' : 'Transferring item to character', relatedTransferBody(body), async () => {
 		await Bungie.postForUser('/Destiny2/Actions/Items/TransferItem/', body as never)
-		if (body.transferToVault)
+		const itemInventoryBucket = await getItemInventoryBucket(body.itemReferenceHash)
+		if (itemInventoryBucket?.isAccountScopedTransferBucket)
+			await ProfileInventoryBucketCorrectionPatch.apply(profile, {
+				item: itemReferenceFromTransferBody(body),
+				fromBucketHash: body.transferToVault ? itemInventoryBucket.bucketHash : InventoryBucketHashes.General,
+				bucketHash: body.transferToVault ? InventoryBucketHashes.General : itemInventoryBucket.bucketHash,
+			}, context)
+		else if (body.transferToVault)
 			await CharacterInventoryToVaultPatch.apply(profile, {
 				item: itemReferenceFromTransferBody(body),
 				from: { container: 'characterInventory', characterId: body.characterId },
@@ -470,8 +522,21 @@ export async function transferItem (profile: Profile, body: DestinyItemTransferR
 }
 
 async function getItemInventoryBucketHash (itemHash: number) {
-	return await Definitions.en.DestinyInventoryItemDefinition.get()
-		.then(DestinyInventoryItemDefinition => DestinyInventoryItemDefinition[itemHash]?.inventory?.bucketTypeHash)
+	return await getItemInventoryBucket(itemHash).then(bucket => bucket?.bucketHash)
+}
+
+async function getItemInventoryBucket (itemHash: number) {
+	const [DestinyInventoryItemDefinition, DestinyInventoryBucketDefinition] = await Promise.all([
+		Definitions.en.DestinyInventoryItemDefinition.get(),
+		Definitions.en.DestinyInventoryBucketDefinition.get(),
+	])
+	const bucketHash = DestinyInventoryItemDefinition[itemHash]?.inventory?.bucketTypeHash
+	const bucket = bucketHash === undefined ? undefined : DestinyInventoryBucketDefinition[bucketHash]
+
+	return bucketHash === undefined || !bucket ? undefined : {
+		bucketHash,
+		isAccountScopedTransferBucket: bucket.hasTransferDestination && bucket.scope === BucketScope.Account,
+	}
 }
 
 function broadcastIntent (origin: string, data: ItemTransferIntent) {

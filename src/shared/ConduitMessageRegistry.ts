@@ -92,6 +92,7 @@ export interface InventoryPatchItemReference {
 	instanceId?: string
 	itemHash: number
 	stackSize?: number
+	bucketHash?: number
 }
 
 export type InventoryPatchLocation =
@@ -111,6 +112,7 @@ export type InventoryPatch =
 		type: 'bucket-correction'
 		item: InventoryPatchItemReference
 		location: InventoryPatchLocation
+		fromBucketHash?: number
 		bucketHash: number
 	}
 

@@ -118,11 +118,12 @@ namespace Inventory {
 
 			case 'bucket-correction': {
 				const items = getLocationItems(next, patch.location)
-				const item = items[findItemIndex(items, patch.item)]
+				const index = findBucketCorrectionItemIndex(items, patch.item, patch.fromBucketHash)
+				const item = items[index]
 				if (!item)
 					return { inventory, applied: false }
 
-				item.bucketHash = patch.bucketHash as never
+				items[index] = { ...item, bucketHash: patch.bucketHash as never }
 				return { inventory: next, applied: true }
 			}
 		}
@@ -551,6 +552,15 @@ namespace Inventory {
 		return -1
 	}
 
+	function findBucketCorrectionItemIndex (items: readonly ItemInstance[], reference: InventoryPatchItemReference, fromBucketHash?: number) {
+		const sourceBucketHash = fromBucketHash ?? reference.bucketHash
+		const index = items.findIndex(item => itemMatchesBucketCorrectionReference(item, reference, sourceBucketHash))
+		if (index !== -1)
+			return index
+
+		return -1
+	}
+
 	function itemMatchesReference (item: ItemInstance, reference: InventoryPatchItemReference) {
 		if (reference.instanceId)
 			return item.id === reference.instanceId
@@ -558,6 +568,18 @@ namespace Inventory {
 		return item.id === undefined
 			&& item.itemHash === reference.itemHash
 			&& item.quantity === reference.stackSize
+			&& (reference.bucketHash === undefined || item.bucketHash === reference.bucketHash)
+	}
+
+	function itemMatchesBucketCorrectionReference (item: ItemInstance, reference: InventoryPatchItemReference, fromBucketHash?: number) {
+		if (reference.instanceId)
+			return item.id === reference.instanceId
+				&& (fromBucketHash === undefined || item.bucketHash === fromBucketHash)
+
+		return item.id === undefined
+			&& item.itemHash === reference.itemHash
+			&& item.quantity === reference.stackSize
+			&& (fromBucketHash === undefined || item.bucketHash === fromBucketHash)
 	}
 
 	function itemInstanceMatches (candidate: ItemInstance, item: ItemInstance) {

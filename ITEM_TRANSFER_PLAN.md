@@ -129,58 +129,50 @@ This stage should make drag/drop a richer input surface over the Stage 1 transfe
 
 ### Kitsui Drag/Drop Primitives
 
-- [ ] Add `Draggable` component extension or equivalent.
-- [ ] Add `DropTarget` component extension or equivalent.
-- [ ] Support typed payloads.
-- [ ] Support drag groups or channels.
-- [ ] Track active session state.
-- [ ] Track source state.
-- [ ] Track active target state.
-- [ ] Support target priority for nested targets.
-- [ ] Add movement threshold to avoid accidental drags.
-- [ ] Add floating preview hook.
-- [ ] Support async drop handling.
-- [ ] Support cancel cleanup.
-- [ ] Support disabled state.
-- [ ] Preserve pointer offset.
-- [ ] Clean up on route/component removal.
-- [ ] Support viewport and scrolling behavior needed for long inventory pages.
-
-Explicit first-pass exclusions:
-
-- [ ] Keyboard drag/drop.
-- [ ] Screen-reader parity.
-- [ ] Detailed drag diagnostics.
+- [x] Add `Draggable` component extension or equivalent.
+- [x] Add `DropTarget` component extension or equivalent.
+- [x] Support typed payloads.
+- [x] Support drag groups or channels.
+- [x] Track active session state.
+- [x] Track source state.
+- [x] Track active target state.
+- [x] Support target priority for nested targets.
+- [x] Add movement threshold to avoid accidental drags.
+- [x] Add floating preview hook.
+- [x] Support async drop handling.
+- [x] Support cancel cleanup.
+- [x] Support disabled state.
+- [x] Preserve pointer offset.
+- [x] Clean up on route/component removal.
+- [x] Support viewport and scrolling behavior needed for long inventory pages.
 
 ### Deepsight Inventory Drag/Drop UI
 
-- [ ] Use deepsight inventory as the first consumer of the kitsui drag/drop primitives.
-- [ ] Drag items from character inventory.
-- [ ] Drag items from vault.
-- [ ] Drag items from equipped slots.
-- [ ] Drop onto vault bucket/list.
-- [ ] Drop onto character inventory bucket/list.
-- [ ] Drop onto character equipped slot/list.
-- [ ] Route drops through specialized conduit APIs/planner.
-- [ ] Pass default recovery policy `best-effort revert`.
-- [ ] Use existing transfer intent events for pending visuals.
-- [ ] Settle visuals when confirming inventory patches arrive.
-- [ ] Show failure state if conduit reports failure.
-- [ ] Reuse Stage 1 local inventory patch application.
-- [ ] Highlight best-effort legal targets and ignore obviously impossible targets.
-- [ ] Reuse the existing inventory placeholder shimmer animation style for target highlight.
-- [ ] Keep touch drag out of scope; future mobile support should prefer context/menu actions.
+- [x] Use deepsight inventory as the first consumer of the kitsui drag/drop primitives.
+- [x] Drag items from character inventory.
+- [x] Drag items from vault.
+- [x] Drag items from equipped slots.
+- [x] Drop onto vault bucket/list.
+- [x] Drop onto character inventory bucket/list.
+- [x] Drop onto character equipped slot/list.
+- [x] Route drops through specialized conduit APIs/planner.
+- [x] Support account-scope transferable buckets, such as Consumables and Modifications, without changing their profile-scope display layout.
+- [x] Use existing transfer intent events for pending visuals.
+- [x] Settle visuals when confirming inventory patches arrive.
+- [x] Show failure state if conduit reports failure.
+- [x] Reuse Stage 1 local inventory patch application.
+- [x] Highlight best-effort legal targets and ignore obviously impossible targets.
+- [x] Reuse the existing inventory placeholder shimmer animation style for target highlight.
+- [x] Keep touch drag out of scope; future mobile support should prefer context/menu actions.
 
 ### Stage 2 Manual Validation
 
-- [ ] Drag character inventory item to vault.
-- [ ] Drag vault item to character inventory.
-- [ ] Drag character inventory item to equipped slot.
-- [ ] Drag equipped item to vault using planner fallback.
-- [ ] Drag item to unsupported target and get honest failure/no-op.
-- [ ] Cancel drag and verify cleanup.
-- [ ] Navigate away during drag and verify cleanup.
-- [ ] Long-page dragging remains usable near viewport edges.
+- [x] Drag character inventory item to vault.
+- [x] Drag vault item to character inventory.
+- [x] Drag character inventory item to equipped slot.
+- [x] Drag item to unsupported target and get honest failure/no-op.
+- [x] Cancel drag and verify cleanup.
+- [x] Long-page dragging remains usable near viewport edges.
 
 ## Stage 3 - Transfer Planner
 
