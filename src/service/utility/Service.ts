@@ -81,6 +81,64 @@ interface AwaitingOrigin {
 	resolve (origin: string | undefined): void
 }
 
+interface SerializedError {
+	__conduitError: true
+	name?: string
+	message: string
+	stack?: string
+	cause?: unknown
+}
+
+function serialiseError (err: unknown): SerializedError {
+	if (err instanceof Error)
+		return {
+			__conduitError: true,
+			name: err.name,
+			message: err.message,
+			stack: err.stack,
+			cause: serialiseCause(err.cause),
+		}
+
+	return {
+		__conduitError: true,
+		message: 'Promise rejected',
+		cause: serialiseCause(err),
+	}
+}
+
+function serialiseCause (cause: unknown): unknown {
+	if (cause === undefined || cause === null)
+		return cause
+
+	switch (typeof cause) {
+		case 'string':
+		case 'number':
+		case 'boolean':
+			return cause
+
+		case 'object':
+			if (cause instanceof Error)
+				return {
+					__conduitError: true,
+					name: cause.name,
+					message: cause.message,
+					stack: cause.stack,
+					cause: serialiseCause(cause.cause),
+				} satisfies SerializedError
+
+			try {
+				structuredClone(cause)
+				return cause
+			}
+			catch {
+				return String(cause)
+			}
+
+		default:
+			return String(cause)
+	}
+}
+
 const cachedOrigins = new Map<string, CachedOrigin>()
 const awaitingOrigins: Map<string, AwaitingOrigin> = new Map()
 async function getOrigin (client: WindowClient): Promise<string | undefined> {
@@ -160,15 +218,27 @@ function Service<FUNCTIONS extends Messages, BROADCASTS extends Messages> (defin
 			const params: any[] = data === undefined ? [] : !Array.isArray(data) ? [data] : data
 			const result = await Promise.resolve(definition.onCall[type](event, ...params as never))
 
-			event.source?.postMessage({ id, type: `resolve:${type}`, origin, data: result, frame })
+			if (!postResponse(event, { id, type: `resolve:${type}`, origin, data: result, frame }))
+				throw new Error(`Unable to post response for '${type}'`)
 		}
 		catch (err) {
-			event.source?.postMessage({ id, type: `reject:${type}`, origin, data: err, frame })
+			postResponse(event, { id, type: `reject:${type}`, origin, data: serialiseError(err), frame })
 		}
 	}
 	service.setRegistered()
 	definition.onRegistered?.(realService)
 	return realService
+}
+
+function postResponse (event: ExtendableMessageEvent, message: { id: string, type: string, origin: string, data?: unknown, frame?: true }): boolean {
+	try {
+		event.source?.postMessage(message)
+		return true
+	}
+	catch (err) {
+		Log.warn('Service response postMessage failed', message.type, `id=${message.id}`, err)
+		return false
+	}
 }
 
 export default Service

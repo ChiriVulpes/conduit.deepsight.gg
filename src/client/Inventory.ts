@@ -103,14 +103,16 @@ namespace Inventory {
 						return { inventory, applied: false }
 
 					const [item] = alternateSource.splice(alternateIndex, 1)
-					applyEquipmentDisplacement(next, patch, item)
-					destination.push(item)
+					const movedItem = itemForMoveDestination(next, patch, item)
+					applyEquipmentDisplacement(next, patch, movedItem)
+					destination.push(movedItem)
 					return { inventory: next, applied: true }
 				}
 
 				const [item] = source.splice(index, 1)
-				applyEquipmentDisplacement(next, patch, item)
-				destination.push(item)
+				const movedItem = itemForMoveDestination(next, patch, item)
+				applyEquipmentDisplacement(next, patch, movedItem)
+				destination.push(movedItem)
 				return { inventory: next, applied: true }
 			}
 
@@ -504,6 +506,22 @@ namespace Inventory {
 		return inventory.profileItems !== destination && findItemIndex(inventory.profileItems, reference) !== -1
 			? inventory.profileItems
 			: undefined
+	}
+
+	function itemForMoveDestination (inventory: InventoryModel, patch: Extract<InventoryPatch, { type: 'move' }>, item: ItemInstance): ItemInstance {
+		const bucketHash = bucketHashForMoveDestination(inventory, patch, item)
+		return bucketHash === item.bucketHash ? item : { ...item, bucketHash }
+	}
+
+	function bucketHashForMoveDestination (inventory: InventoryModel, patch: Extract<InventoryPatch, { type: 'move' }>, item: ItemInstance): InventoryBucketHashes {
+		switch (patch.to.container) {
+			case 'vault':
+				return InventoryBucketHashes.General
+			case 'characterInventory':
+			case 'characterEquipment':
+			case 'postmaster':
+				return inventory.items[item.itemHash]?.bucketHash ?? item.bucketHash
+		}
 	}
 
 	function applyEquipmentDisplacement (inventory: InventoryModel, patch: Extract<InventoryPatch, { type: 'move' }>, item: ItemInstance) {

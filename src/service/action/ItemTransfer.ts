@@ -9,6 +9,7 @@ import type {
 } from '@shared/ConduitMessageRegistry'
 import type { Profile } from '@shared/Profile'
 import type { DestinyItemTransferRequest, DestinyPostmasterTransferRequest } from 'bungie-api-ts/destiny2'
+import { InventoryBucketHashes } from 'deepsight.gg/Enums'
 import Auth from 'model/Auth'
 import Definitions from 'model/Definitions'
 import type {
@@ -31,6 +32,7 @@ interface ItemMovementProfilePatchParams {
 	item: InventoryPatchItemReference
 	from: InventoryPatchLocation
 	to: InventoryPatchLocation
+	destinationBucketHash?: number
 }
 
 interface PostmasterBucketCorrectionProfilePatchParams {
@@ -47,30 +49,50 @@ interface EquipItemOnCharacterProfilePatchParams {
 
 const CharacterInventoryToVaultPatch = new ProfilePatch<ItemMovementProfilePatchParams>({
 	id: 'character-inventory-to-vault',
-	fromParams: moveWhereOverride,
+	fromParams: (params, time) => [
+		moveWhereOverride(params, time),
+		bucketHashWhereOverride({
+			item: params.item,
+			location: params.to,
+			bucketHash: InventoryBucketHashes.General,
+		}, time),
+	],
 	toParams: record => movementFromRecord(record, 'character-inventory-to-vault',
 		override => ({ container: 'characterInventory', characterId: override.type === 'move-where' ? override.fromArrayPath[2] : '' }),
 		() => ({ container: 'vault' })
 	),
-	onApply: (profile, params, _record, context) => broadcastInventoryPatch(profile, { type: 'move', ...params }, context),
+	onApply: (profile, params, _record, context) => broadcastInventoryPatches(profile, movementInventoryPatches(params), context),
 })
 
 const VaultToCharacterInventoryPatch = new ProfilePatch<ItemMovementProfilePatchParams>({
 	id: 'vault-to-character-inventory',
-	fromParams: moveWhereOverride,
+	fromParams: (params, time) => [
+		moveWhereOverride(params, time),
+		...params.destinationBucketHash === undefined ? [] : [
+			bucketHashWhereOverride({
+				item: params.item,
+				location: params.to,
+				bucketHash: params.destinationBucketHash,
+			}, time),
+		],
+	],
 	toParams: record => movementFromRecord(record, 'vault-to-character-inventory',
 		() => ({ container: 'vault' }),
 		override => ({ container: 'characterInventory', characterId: override.type === 'move-where' ? override.toArrayPath[2] : '' })
 	),
-	onApply: (profile, params, _record, context) => broadcastInventoryPatch(profile, { type: 'move', ...params }, context),
+	onApply: (profile, params, _record, context) => broadcastInventoryPatches(profile, movementInventoryPatches(params), context),
 })
 
 const PostmasterBucketCorrectionPatch = new ProfilePatch<PostmasterBucketCorrectionProfilePatchParams>({
 	id: 'postmaster-bucket-correction',
-	fromParams: bucketCorrectionOverride,
+	fromParams: (params, time) => bucketHashWhereOverride({
+		item: params.item,
+		location: { container: 'characterInventory', characterId: params.characterId },
+		bucketHash: params.bucketHash,
+	}, time),
 	toParams: record => {
 		const override = singleOverride(record, 'postmaster-bucket-correction')
-		return override && bucketCorrectionFromOverride(override)
+		return override && postmasterBucketCorrectionFromOverride(override)
 	},
 	onApply: (profile, params, _record, context) => broadcastInventoryPatch(profile, {
 		type: 'bucket-correction',
@@ -105,15 +127,37 @@ function movementFromRecord (
 	from: (override: ProfileOverrideMoveWhere) => InventoryPatchLocation,
 	to: (override: ProfileOverrideMoveWhere) => InventoryPatchLocation
 ): ItemMovementProfilePatchParams | undefined {
-	const override = singleOverride(record, id)
-	if (override?.type !== 'move-where')
+	if (record.id !== id)
 		return undefined
 
-	return movementFromOverride(
-		override,
-		from(override),
-		to(override)
-	)
+	let movement: ItemMovementProfilePatchParams | undefined
+	const bucketCorrections: BucketHashWhereParams[] = []
+	for (const override of record.overrides) {
+		if (override.type === 'move-where') {
+			movement ??= movementFromOverride(
+				override,
+				from(override),
+				to(override)
+			)
+			continue
+		}
+
+		const bucketCorrection = bucketHashWhereFromOverride(override)
+		if (bucketCorrection)
+			bucketCorrections.push(bucketCorrection)
+	}
+
+	if (!movement)
+		return undefined
+
+	const destinationBucketHash = bucketCorrections
+		.find(correction => locationsEqual(correction.location, movement.to) && itemReferencesEqual(correction.item, movement.item))
+		?.bucketHash
+
+	return {
+		...movement,
+		destinationBucketHash,
+	}
 }
 
 function equipItemOnCharacterOverrides (params: EquipItemOnCharacterProfilePatchParams, time = Date.now()): ProfileOverrideMoveWhere[] {
@@ -243,10 +287,16 @@ function movementFromOverride (override: ProfileOverride, from: InventoryPatchLo
 	return { item, from, to }
 }
 
-function bucketCorrectionOverride (params: PostmasterBucketCorrectionProfilePatchParams, time = Date.now()): ProfileOverrideSetWhere {
+interface BucketHashWhereParams {
+	item: InventoryPatchItemReference
+	location: InventoryPatchLocation
+	bucketHash: number
+}
+
+function bucketHashWhereOverride (params: BucketHashWhereParams, time = Date.now()): ProfileOverrideSetWhere {
 	return {
 		type: 'set-where',
-		arrayPath: locationItemsPath({ container: 'characterInventory', characterId: params.characterId }),
+		arrayPath: locationItemsPath(params.location),
 		where: [itemMatcher(params.item)],
 		modifyPath: ['bucketHash'],
 		value: params.bucketHash,
@@ -254,12 +304,12 @@ function bucketCorrectionOverride (params: PostmasterBucketCorrectionProfilePatc
 	}
 }
 
-function bucketCorrectionFromOverride (override: ProfileOverride): PostmasterBucketCorrectionProfilePatchParams | undefined {
+function bucketHashWhereFromOverride (override: ProfileOverride): BucketHashWhereParams | undefined {
 	if (override.type !== 'set-where' || !arrayEquals(override.modifyPath, ['bucketHash']) || typeof override.value !== 'number')
 		return undefined
 
 	const location = locationFromItemsPath(override.arrayPath)
-	if (location?.container !== 'characterInventory')
+	if (!location)
 		return undefined
 
 	const item = itemFromMatcher(override.where)
@@ -268,8 +318,20 @@ function bucketCorrectionFromOverride (override: ProfileOverride): PostmasterBuc
 
 	return {
 		item,
-		characterId: location.characterId,
+		location,
 		bucketHash: override.value,
+	}
+}
+
+function postmasterBucketCorrectionFromOverride (override: ProfileOverride): PostmasterBucketCorrectionProfilePatchParams | undefined {
+	const correction = bucketHashWhereFromOverride(override)
+	if (correction?.location.container !== 'characterInventory')
+		return undefined
+
+	return {
+		item: correction.item,
+		characterId: correction.location.characterId,
+		bucketHash: correction.bucketHash,
 	}
 }
 
@@ -291,6 +353,18 @@ function broadcastInventoryPatches (profile: Profile, patches: InventoryPatch[],
 			patches,
 		}
 	})
+}
+
+function movementInventoryPatches (params: ItemMovementProfilePatchParams): InventoryPatch[] {
+	return [
+		{ type: 'move', item: params.item, from: params.from, to: params.to },
+		...params.destinationBucketHash === undefined ? [] : [{
+			type: 'bucket-correction' as const,
+			item: params.item,
+			location: params.to,
+			bucketHash: params.destinationBucketHash,
+		}],
+	]
 }
 
 function locationItemsPath (location: InventoryPatchLocation): string[] {
@@ -323,6 +397,17 @@ function pathKey (path: readonly string[]) {
 
 function arrayEquals (a: readonly unknown[], b: readonly unknown[]) {
 	return a.length === b.length && a.every((value, i) => value === b[i])
+}
+
+function locationsEqual (a: InventoryPatchLocation, b: InventoryPatchLocation): boolean {
+	return a.container === b.container
+		&& ('characterId' in a ? a.characterId : undefined) === ('characterId' in b ? b.characterId : undefined)
+}
+
+function itemReferencesEqual (a: InventoryPatchItemReference, b: InventoryPatchItemReference): boolean {
+	return a.instanceId === b.instanceId
+		&& a.itemHash === b.itemHash
+		&& a.stackSize === b.stackSize
 }
 
 function itemReferenceFromTransferBody (body: DestinyItemTransferRequest | DestinyPostmasterTransferRequest) {
@@ -379,8 +464,14 @@ export async function transferItem (profile: Profile, body: DestinyItemTransferR
 				item: itemReferenceFromTransferBody(body),
 				from: { container: 'vault' },
 				to: { container: 'characterInventory', characterId: body.characterId },
+				destinationBucketHash: await getItemInventoryBucketHash(body.itemReferenceHash),
 			}, context)
 	})
+}
+
+async function getItemInventoryBucketHash (itemHash: number) {
+	return await Definitions.en.DestinyInventoryItemDefinition.get()
+		.then(DestinyInventoryItemDefinition => DestinyInventoryItemDefinition[itemHash]?.inventory?.bucketTypeHash)
 }
 
 function broadcastIntent (origin: string, data: ItemTransferIntent) {

@@ -6,6 +6,8 @@ const ifVerbose = <T> (value: T) => VERBOSE_LOGGING.value ? [value] as const : [
 const printIfVerbose = () => VERBOSE_LOGGING.value ? ' %o' : ''
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const log = (...args: any[]) => console[VERBOSE_LOGGING.value ? 'info' : 'debug'](...args)
+const REQUEST_TIMEOUT = 1000 * 60 * 2
+const SERVICE_READY_RESEND_DELAY = 1000 * 5
 
 const maxVal = parseInt('z'.repeat(11), 36)
 const colourFromId = (id: string) => `color: oklch(70% 80% ${((parseInt(id || '0', 36) / maxVal) * 360) % 360}deg);`
@@ -16,6 +18,83 @@ if (!parentWindow)
 
 let origin: string | undefined
 
+interface SerializedError {
+	__conduitError: true
+	name?: string
+	message: string
+	stack?: string
+	cause?: unknown
+}
+
+function serialiseError (err: unknown): SerializedError {
+	if (err instanceof Error)
+		return {
+			__conduitError: true,
+			name: err.name,
+			message: err.message,
+			stack: err.stack,
+			cause: serialiseCause(err.cause),
+		}
+
+	return {
+		__conduitError: true,
+		message: 'Promise rejected',
+		cause: serialiseCause(err),
+	}
+}
+
+function serialiseCause (cause: unknown): unknown {
+	if (cause === undefined || cause === null)
+		return cause
+
+	switch (typeof cause) {
+		case 'string':
+		case 'number':
+		case 'boolean':
+			return cause
+
+		case 'object':
+			if (cause instanceof Error)
+				return {
+					__conduitError: true,
+					name: cause.name,
+					message: cause.message,
+					stack: cause.stack,
+					cause: serialiseCause(cause.cause),
+				} satisfies SerializedError
+
+			try {
+				structuredClone(cause)
+				return cause
+			}
+			catch {
+				return String(cause)
+			}
+
+		default:
+			return String(cause)
+	}
+}
+
+function toError (data: unknown): Error {
+	if (data instanceof Error)
+		return data
+
+	if (data && typeof data === 'object' && '__conduitError' in data) {
+		const serialized = data as SerializedError
+		const err = new Error(serialized.message, { cause: serialized.cause })
+		err.name = serialized.name ?? err.name
+		err.stack = serialized.stack
+		return err
+	}
+
+	return new Error('Promise message rejected', { cause: data })
+}
+
+function timeoutError (label: string, timeout: number): Error {
+	return new Error(`${label} timed out after ${timeout}ms`)
+}
+
 void (async () => {
 	interface Message<T = any> {
 		id: string
@@ -25,9 +104,18 @@ void (async () => {
 		frame?: true
 	}
 
-	const unresolvedCalls = new Map<string, Message>()
+	interface CallRecord {
+		message: Message
+		created: number
+		lastSent: number
+		retryOnServiceReady: boolean
+		timeout?: ReturnType<typeof setTimeout>
+	}
+
+	const unresolvedCalls = new Map<string, CallRecord>()
 	const completedCalls: string[] = []
 	const frameInstanceId = Math.random().toString(36).slice(2, 7)
+	let serviceReadyResendTimeout: ReturnType<typeof setTimeout> | undefined
 
 	const registration = await navigator.serviceWorker.register('./index.js', {
 		scope: '/__conduit_worker__/',
@@ -109,6 +197,9 @@ void (async () => {
 		}
 
 		if (id === 'global' && type === 'ready') {
+			if (sourceService)
+				adoptService(sourceService)
+			scheduleServiceReadyRecovery()
 			return
 		}
 
@@ -123,7 +214,7 @@ void (async () => {
 			return
 		}
 
-		unresolvedCalls.delete(id)
+		completeCall(id)
 
 		// forward messages from the service worker to the parent window
 		if (id !== 'global' || (type !== 'startOperation' && type !== 'endOperation' && type !== 'warning'))
@@ -174,7 +265,7 @@ void (async () => {
 					reply({ type: `resolve:${message.type}`, id: message.id, data: result })
 				},
 				err => {
-					reply({ type: `reject:${message.type}`, id: message.id, data: err })
+					reply({ type: `reject:${message.type}`, id: message.id, data: serialiseError(err) })
 				},
 			)
 
@@ -199,8 +290,7 @@ void (async () => {
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return
 			...(Array.isArray(message.data) ? message.data : [message.data]).map(arg => typeof arg === 'object' && !VERBOSE_LOGGING.value ? '[Object]' : arg),
 		)
-		unresolvedCalls.set(message.id, message)
-		service?.postMessage(message)
+		trackCall(message)
 	})
 
 	const functions: { [KEY in keyof Frame.Functions]: (...params: [event: MessageEvent<any>, ...Parameters<Frame.Functions[KEY]>]) => ReturnType<Frame.Functions[KEY]> } = {
@@ -246,17 +336,43 @@ void (async () => {
 		const index = messageListeners.findIndex(listener => listener.id === id)
 		if (index !== -1) messageListeners.splice(index, 1)
 	}
+	function removeListeners (id: string): void {
+		for (let i = 0; i < messageListeners.length; i++) {
+			if (messageListeners[i].id !== id)
+				continue
+
+			messageListeners.splice(i, 1)
+			i--
+		}
+	}
 	function addPromiseListener<T> (type: string): { id: string, promise: Promise<T> } {
 		const id = Math.random().toString(36).slice(2)
+		let timeout: ReturnType<typeof setTimeout> | undefined
+		let settled = false
+		function settle (callback: (value: any) => void, value: any) {
+			if (settled)
+				return
+
+			settled = true
+			if (timeout)
+				clearTimeout(timeout)
+			callback(value)
+		}
 		return {
 			id,
 			promise: new Promise<T>((resolve, reject) => {
+				timeout = setTimeout(() => {
+					settled = true
+					removeListeners(id)
+					completeCall(id)
+					reject(timeoutError(`Conduit frame request '${type}' (${id})`, REQUEST_TIMEOUT))
+				}, REQUEST_TIMEOUT)
 				addListener(id, `resolve:${type}`, data => {
-					resolve(data as T)
+					settle(resolve, data as T)
 					removeListener(id)
 				}, true)
 				addListener(id, `reject:${type}`, data => {
-					reject(data instanceof Error ? data : new Error('Promise message rejected', { cause: data }))
+					settle(reject, toError(data))
 					removeListener(id)
 				}, true)
 			}),
@@ -274,9 +390,98 @@ void (async () => {
 		)
 
 		const message: Message<Record<string, any>> = { type, id, data: params, origin: self.origin, frame: true }
-		unresolvedCalls.set(id, message)
-		service?.postMessage(message)
+		trackCall(message)
 		return promise
+	}
+
+	const retryOnReadyTypes = new Set<string>([
+		'setOrigin',
+		'getProfiles',
+		'getProfile',
+		'getCollections',
+		'getInventory',
+		'getInventoryCached',
+		'getComponentNames',
+		'getState',
+		'checkUpdate',
+	])
+
+	function canRetryOnServiceReady (type: string): boolean {
+		return type.startsWith('_get') || retryOnReadyTypes.has(type)
+	}
+
+	function trackCall (message: Message) {
+		const record: CallRecord = {
+			message,
+			created: Date.now(),
+			lastSent: 0,
+			retryOnServiceReady: canRetryOnServiceReady(message.type),
+		}
+
+		if (!message.frame) {
+			record.timeout = setTimeout(() => {
+				completeCall(message.id)
+				const err = timeoutError(`Conduit service request '${message.type}' (${message.id})`, REQUEST_TIMEOUT)
+				log(
+					`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %c${message.id.padEnd(11, ' ')} %cHost %c\u2B9C Service %c/ %creject:${message.type}`,
+					PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, colourFromId(message.id), HOST_FORMAT, SERVICE_FORMAT, PUNCT_FORMAT, ERROR_FORMAT,
+					err,
+				)
+				parentWindow.postMessage({ id: message.id, type: `reject:${message.type}`, data: serialiseError(err) }, '*')
+			}, REQUEST_TIMEOUT)
+		}
+
+		unresolvedCalls.set(message.id, record)
+		postToService(record)
+	}
+
+	function completeCall (id: string) {
+		const record = unresolvedCalls.get(id)
+		if (record?.timeout)
+			clearTimeout(record.timeout)
+
+		unresolvedCalls.delete(id)
+	}
+
+	function postToService (record: CallRecord) {
+		record.lastSent = Date.now()
+		try {
+			service?.postMessage(record.message)
+		}
+		catch (err) {
+			log(
+				`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/ %c${record.message.id.padEnd(11, ' ')} %cFrame %c/ %cService postMessage failed`,
+				ERROR_FORMAT, MAIN_FORMAT, PUNCT_FORMAT, colourFromId(record.message.id), FRAME_FORMAT, PUNCT_FORMAT, ERROR_FORMAT,
+				err,
+			)
+		}
+	}
+
+	function scheduleServiceReadyRecovery () {
+		if (!unresolvedCalls.size)
+			return
+
+		const readyAt = Date.now()
+		log(
+			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/`,
+			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT,
+			`Frame ${frameInstanceId}. Service ready with ${unresolvedCalls.size} unresolved messages`,
+		)
+
+		if (serviceReadyResendTimeout)
+			clearTimeout(serviceReadyResendTimeout)
+
+		serviceReadyResendTimeout = setTimeout(() => {
+			serviceReadyResendTimeout = undefined
+			resend(
+				'ready',
+				record =>
+					record.retryOnServiceReady &&
+					record.created <= readyAt &&
+					Date.now() - record.lastSent >= SERVICE_READY_RESEND_DELAY,
+				'Service ready recovery',
+			)
+		}, SERVICE_READY_RESEND_DELAY)
 	}
 
 	navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -330,11 +535,18 @@ void (async () => {
 		return nextService
 	}
 
-	function setService (nextService: ServiceWorker | null | undefined, reason = 'unknown') {
+	function adoptService (nextService: ServiceWorker | null | undefined) {
 		if (!nextService || service === nextService)
-			return
+			return false
 
 		service = nextService
+		return true
+	}
+
+	function setService (nextService: ServiceWorker | null | undefined, reason = 'unknown') {
+		if (!adoptService(nextService))
+			return
+
 		if (!serviceUpdateResendPending)
 			return
 
@@ -342,17 +554,20 @@ void (async () => {
 		resend(reason)
 	}
 
-	function resend (reason = 'unknown') {
-		if (!unresolvedCalls.size)
+	function resend (reason = 'unknown', predicate?: (record: CallRecord) => boolean, label = 'Service updated') {
+		const records = Array.from(unresolvedCalls.values())
+			.filter(record => !predicate || predicate(record))
+
+		if (!records.length)
 			return
 
 		log(
 			`%c${new Date().toTimeString().slice(0, 8)} %cconduit.deepsight.gg %c/`,
 			PUNCT_FORMAT, MAIN_FORMAT, PUNCT_FORMAT,
-			`Frame ${frameInstanceId}. Service updated (${reason}). Resending ${unresolvedCalls.size} unresolved messages`,
+			`Frame ${frameInstanceId}. ${label} (${reason}). Resending ${records.length} unresolved messages`,
 		)
-		for (const [, data] of unresolvedCalls)
-			service?.postMessage(data)
+		for (const record of records)
+			postToService(record)
 	}
 
 	async function retryStartupTask (label: string, task: () => Promise<void>) {

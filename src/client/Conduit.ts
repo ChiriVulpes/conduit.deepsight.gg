@@ -7,6 +7,9 @@ export { default as Inventory } from 'conduit.deepsight.gg/Inventory'
 if (!('serviceWorker' in navigator))
 	throw new Error('Service Worker is not supported in this browser')
 
+const REQUEST_TIMEOUT = 1000 * 60 * 2
+const STARTUP_TIMEOUT = 1000 * 30
+
 interface ConduitOptions {
 	service?: string
 	authOptions?:
@@ -27,7 +30,53 @@ interface ConduitImplementation {
 interface Conduit extends ConduitFunctionRegistry, ConduitImplementation {
 }
 
-const loaded = new Promise<unknown>(resolve => window.addEventListener('DOMContentLoaded', resolve, { once: true }))
+const loaded = document.readyState === 'loading'
+	? new Promise<unknown>(resolve => window.addEventListener('DOMContentLoaded', resolve, { once: true }))
+	: Promise.resolve()
+
+interface SerializedError {
+	__conduitError: true
+	name?: string
+	message: string
+	stack?: string
+	cause?: unknown
+}
+
+function toError (data: unknown): Error {
+	if (data instanceof Error)
+		return data
+
+	if (data && typeof data === 'object' && '__conduitError' in data) {
+		const serialized = data as SerializedError
+		const err = new Error(serialized.message, { cause: serialized.cause })
+		err.name = serialized.name ?? err.name
+		err.stack = serialized.stack
+		return err
+	}
+
+	return new Error('Promise message rejected', { cause: data })
+}
+
+function timeoutError (label: string, timeout: number): Error {
+	return new Error(`${label} timed out after ${timeout}ms`)
+}
+
+function withTimeout<T> (promise: Promise<T>, label: string, timeout = REQUEST_TIMEOUT): Promise<T> {
+	return new Promise<T>((resolve, reject) => {
+		const timeoutId = setTimeout(() => reject(timeoutError(label, timeout)), timeout)
+		promise.then(
+			value => {
+				clearTimeout(timeoutId)
+				resolve(value)
+			},
+			err => {
+				clearTimeout(timeoutId)
+				reject(err instanceof Error ? err : new Error('Promise rejected', { cause: err }))
+			},
+		)
+	})
+}
+
 async function Conduit (options: ConduitOptions): Promise<Conduit> {
 	await loaded
 
@@ -62,17 +111,42 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		const index = messageListeners.findIndex(listener => listener.id === id)
 		if (index !== -1) messageListeners.splice(index, 1)
 	}
+	function removeListeners (id: string): void {
+		for (let i = 0; i < messageListeners.length; i++) {
+			if (messageListeners[i].id !== id)
+				continue
+
+			messageListeners.splice(i, 1)
+			i--
+		}
+	}
 	function addPromiseListener<T> (type: string): { id: string, promise: Promise<T> } {
 		const id = Math.random().toString(36).slice(2, 13)
+		let timeout: ReturnType<typeof setTimeout> | undefined
+		let settled = false
+		function settle (callback: (value: any) => void, value: any) {
+			if (settled)
+				return
+
+			settled = true
+			if (timeout)
+				clearTimeout(timeout)
+			callback(value)
+		}
 		return {
 			id,
 			promise: new Promise<T>((resolve, reject) => {
+				timeout = setTimeout(() => {
+					settled = true
+					removeListeners(id)
+					reject(timeoutError(`Conduit request '${type}' (${id})`, REQUEST_TIMEOUT))
+				}, REQUEST_TIMEOUT)
 				addListener(id, `resolve:${type}`, data => {
-					resolve(data as T)
+					settle(resolve, data as T)
 					removeListener(id)
 				}, true)
 				addListener(id, `reject:${type}`, data => {
-					reject(data instanceof Error ? data : new Error('Promise message rejected', { cause: data }))
+					settle(reject, toError(data))
 					removeListener(id)
 				}, true)
 			}),
@@ -80,13 +154,16 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 	}
 
 	function callPromiseFunction<T> (type: string, ...params: any[]): Promise<T> {
+		if (!iframe.contentWindow)
+			return Promise.reject(new Error(`Conduit iframe is unavailable for '${type}'`))
+
 		const { id, promise } = addPromiseListener<T>(type)
 		iframe.contentWindow?.postMessage({ type, id, data: params }, serviceOrigin)
 		return promise
 	}
 
 	let setActive: (() => void) | undefined
-	const activePromise = new Promise<void>(resolve => setActive = resolve)
+	const activePromise = withTimeout(new Promise<void>(resolve => setActive = resolve), 'Conduit iframe active signal', STARTUP_TIMEOUT)
 
 	window.addEventListener('message', event => {
 		if (event.source !== iframe.contentWindow)
@@ -128,7 +205,7 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		console.log('Unhandled message:', data)
 	})
 
-	await new Promise<unknown>(resolve => iframe.addEventListener('load', resolve, { once: true }))
+	await withTimeout(new Promise<unknown>(resolve => iframe.addEventListener('load', resolve, { once: true })), 'Conduit iframe load', STARTUP_TIMEOUT)
 	await activePromise
 
 	const implementation: ConduitImplementation = {
