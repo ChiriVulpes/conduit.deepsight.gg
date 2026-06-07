@@ -54,5 +54,9 @@ High-risk files for auth and permissions include:
 When editing public service methods, check the `event.origin` path and preserve the relevant Level 0, Level 1, or Level 2 boundary at the service entrypoint. Do not rely on UI flow or client-side TypeScript types as the permission boundary.
 
 ## Validation
-Use `pnpm exec task validate` to validate changes.
+Run these validation commands in parallel:
+- `pnpm exec lint`
+- `pnpm exec task typecheck`
+
+`pnpm exec task validate` remains a serial wrapper around lint and typecheck when parallel execution is not practical.
 Do not run build-style or watch-style tasks unless the user explicitly approves them.

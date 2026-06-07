@@ -24,11 +24,11 @@ importers:
         specifier: 5.10.0
         version: 5.10.0
       chiri:
-        specifier: github:fluff4me/chiri#6f49a9bcaa77e450cc599a61f44e83079bd303f3
-        version: https://codeload.github.com/fluff4me/chiri/tar.gz/6f49a9bcaa77e450cc599a61f44e83079bd303f3
+        specifier: github:fluff4me/chiri#4404e36d0f999f3ec38bec9bb05fdcfed8ec6d07
+        version: https://codeload.github.com/fluff4me/chiri/tar.gz/4404e36d0f999f3ec38bec9bb05fdcfed8ec6d07
       deepsight.gg:
-        specifier: 1.0.1850
-        version: 1.0.1850
+        specifier: 1.0.1854
+        version: 1.0.1854
       dexie:
         specifier: 4.0.11
         version: 4.0.11
@@ -36,17 +36,17 @@ importers:
         specifier: 10.3.0
         version: 10.3.0
       kitsui:
-        specifier: github:fluff4me/kitsui#6338022e7c010b32bdf6ee47b4b1ae73af9ff05f
-        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/6338022e7c010b32bdf6ee47b4b1ae73af9ff05f
+        specifier: github:fluff4me/kitsui#e737f7113059cbbb4cd7feb30219097be351087a
+        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/e737f7113059cbbb4cd7feb30219097be351087a
       lint:
-        specifier: github:fluff4me/lint#18e68efcac4346991489629ee2e668931924ae69
-        version: https://codeload.github.com/fluff4me/lint/tar.gz/18e68efcac4346991489629ee2e668931924ae69(typescript@5.8.3)
+        specifier: github:fluff4me/lint#59de9b26041d6b98921a8a158ea5c29fdc699297
+        version: https://codeload.github.com/fluff4me/lint/tar.gz/59de9b26041d6b98921a8a158ea5c29fdc699297(typescript@5.8.3)
       task:
         specifier: github:chirivulpes/task#4743b1177d35a1fa751de5fed6362e5d4e36ce0e
         version: https://codeload.github.com/chirivulpes/task/tar.gz/4743b1177d35a1fa751de5fed6362e5d4e36ce0e
       weaving:
-        specifier: github:chirivulpes/weaving#fc532b3e2025f424747e382caf66ad1661932c9a
-        version: https://codeload.github.com/chirivulpes/weaving/tar.gz/fc532b3e2025f424747e382caf66ad1661932c9a
+        specifier: github:chirivulpes/weaving#a0e911b8e0a1c0ca5ae9a220154aec29025d67e7
+        version: https://codeload.github.com/chirivulpes/weaving/tar.gz/a0e911b8e0a1c0ca5ae9a220154aec29025d67e7
     devDependencies:
       '@types/node':
         specifier: 24.10.1
@@ -70,8 +70,8 @@ importers:
         specifier: 5.10.0
         version: 5.10.0
       deepsight.gg:
-        specifier: 1.0.1848
-        version: 1.0.1848
+        specifier: 1.0.1850
+        version: 1.0.1850
 
 packages:
 
@@ -538,8 +538,8 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
-  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/6f49a9bcaa77e450cc599a61f44e83079bd303f3:
-    resolution: {tarball: https://codeload.github.com/fluff4me/chiri/tar.gz/6f49a9bcaa77e450cc599a61f44e83079bd303f3}
+  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/4404e36d0f999f3ec38bec9bb05fdcfed8ec6d07:
+    resolution: {tarball: https://codeload.github.com/fluff4me/chiri/tar.gz/4404e36d0f999f3ec38bec9bb05fdcfed8ec6d07}
     version: 1.0.1
     hasBin: true
 
@@ -607,11 +607,11 @@ packages:
   deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
 
-  deepsight.gg@1.0.1848:
-    resolution: {integrity: sha512-CB2tP5tianAV5M2Xq6504U+1GM+TvMY8wySztHD5S1jRjS/z2igIX2Rh/KTO5HKPpWnDjjHUHfgy9xSoPBZmnA==}
-
   deepsight.gg@1.0.1850:
     resolution: {integrity: sha512-LVc2EJ9FfOGMOWHjy6qO20uN6QIyzwnm6wAw10toe7LM8Lud02srAIFxM800d61zHGRLq2Zfg8wSGrkqK7i+ug==}
+
+  deepsight.gg@1.0.1854:
+    resolution: {integrity: sha512-TbWtxMsty6zEdWmB+x8BSlvoyCNag1+McswNz5kIt21cTfmAscXsuL40jGhUshc3rzm3MUYZwlUOco5yvau1QA==}
 
   del-cli@7.0.0:
     resolution: {integrity: sha512-fRl4pWJYu9WFQH8jXdQUYvcD0IMtij9WEc7qmB7xOyJEweNJNuE7iKmqNeoOT1DbBUjtRjxlw8Y63qKBI/NQ1g==}
@@ -877,17 +877,18 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/6338022e7c010b32bdf6ee47b4b1ae73af9ff05f:
-    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/6338022e7c010b32bdf6ee47b4b1ae73af9ff05f}
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/e737f7113059cbbb4cd7feb30219097be351087a:
+    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/e737f7113059cbbb4cd7feb30219097be351087a}
     version: 0.0.1
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
-  lint@https://codeload.github.com/fluff4me/lint/tar.gz/18e68efcac4346991489629ee2e668931924ae69:
-    resolution: {tarball: https://codeload.github.com/fluff4me/lint/tar.gz/18e68efcac4346991489629ee2e668931924ae69}
+  lint@https://codeload.github.com/fluff4me/lint/tar.gz/59de9b26041d6b98921a8a158ea5c29fdc699297:
+    resolution: {tarball: https://codeload.github.com/fluff4me/lint/tar.gz/59de9b26041d6b98921a8a158ea5c29fdc699297}
     version: 0.0.0
+    hasBin: true
 
   locate-path@6.0.0:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
@@ -1123,6 +1124,10 @@ packages:
     resolution: {integrity: sha512-pn99VhoACYR8nFHhxqix+uvsbXineAasWm5ojXoN8xEwK5Kd3/TrhNn1wByuD52UxWRLy8pu+kRMniEi6Eq9Zg==}
     engines: {node: '>=12.0.0'}
 
+  tinyglobby@0.2.17:
+    resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
+    engines: {node: '>=12.0.0'}
+
   to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
@@ -1203,8 +1208,8 @@ packages:
   wbuf@1.7.3:
     resolution: {integrity: sha512-O84QOnr0icsbFGLS0O3bI5FswxzRr8/gHwWkDlQFskhSPryQXvrTMxjxGP4+iWYoauLoBvfDpkrOauZ+0iZpDA==}
 
-  weaving@https://codeload.github.com/chirivulpes/weaving/tar.gz/fc532b3e2025f424747e382caf66ad1661932c9a:
-    resolution: {tarball: https://codeload.github.com/chirivulpes/weaving/tar.gz/fc532b3e2025f424747e382caf66ad1661932c9a}
+  weaving@https://codeload.github.com/chirivulpes/weaving/tar.gz/a0e911b8e0a1c0ca5ae9a220154aec29025d67e7:
+    resolution: {tarball: https://codeload.github.com/chirivulpes/weaving/tar.gz/a0e911b8e0a1c0ca5ae9a220154aec29025d67e7}
     version: 3.0.0
     hasBin: true
 
@@ -1572,7 +1577,7 @@ snapshots:
       debug: 4.4.3
       minimatch: 9.0.9
       semver: 7.8.1
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
       ts-api-utils: 2.5.0(typescript@5.8.3)
       typescript: 5.8.3
     transitivePeerDependencies:
@@ -1674,7 +1679,7 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
-  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/6f49a9bcaa77e450cc599a61f44e83079bd303f3:
+  chiri@https://codeload.github.com/fluff4me/chiri/tar.gz/4404e36d0f999f3ec38bec9bb05fdcfed8ec6d07:
     dependencies:
       chokidar: 3.6.0
       del-cli: 7.0.0
@@ -1751,11 +1756,11 @@ snapshots:
 
   deep-is@0.1.4: {}
 
-  deepsight.gg@1.0.1848:
+  deepsight.gg@1.0.1850:
     dependencies:
       bungie-api-ts: 5.10.0
 
-  deepsight.gg@1.0.1850:
+  deepsight.gg@1.0.1854:
     dependencies:
       bungie-api-ts: 5.10.0
 
@@ -2042,14 +2047,14 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/6338022e7c010b32bdf6ee47b4b1ae73af9ff05f: {}
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/e737f7113059cbbb4cd7feb30219097be351087a: {}
 
   levn@0.4.1:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  lint@https://codeload.github.com/fluff4me/lint/tar.gz/18e68efcac4346991489629ee2e668931924ae69(typescript@5.8.3):
+  lint@https://codeload.github.com/fluff4me/lint/tar.gz/59de9b26041d6b98921a8a158ea5c29fdc699297(typescript@5.8.3):
     dependencies:
       '@eslint/js': 9.39.1
       '@stylistic/eslint-plugin': 5.6.1(eslint@9.39.1)
@@ -2279,6 +2284,11 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
 
+  tinyglobby@0.2.17:
+    dependencies:
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
+
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
@@ -2357,7 +2367,7 @@ snapshots:
     dependencies:
       minimalistic-assert: 1.0.1
 
-  weaving@https://codeload.github.com/chirivulpes/weaving/tar.gz/fc532b3e2025f424747e382caf66ad1661932c9a:
+  weaving@https://codeload.github.com/chirivulpes/weaving/tar.gz/a0e911b8e0a1c0ca5ae9a220154aec29025d67e7:
     dependencies:
       chokidar: 3.6.0
       yargs: 17.7.2
