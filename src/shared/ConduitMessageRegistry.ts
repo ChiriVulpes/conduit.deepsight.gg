@@ -13,8 +13,11 @@ export interface ConduitFunctionRegistry {
 	bumpProfile (displayName: string, displayNameCode: number): Promise<void>
 	getCollections (): Promise<Collections>
 	getCollections (displayName: string, displayNameCode: number): Promise<Collections>
+	getCollectionsVersioned (displayName?: string, displayNameCode?: number, cacheVersion?: string): Promise<ConduitVersionedResponse<Collections>>
 	getInventory (displayName: string, displayNameCode: number): Promise<Inventory | undefined>
 	getInventoryCached (displayName: string, displayNameCode: number): Promise<Inventory | undefined>
+	getInventoryVersioned (displayName: string, displayNameCode: number, cacheVersion?: string): Promise<ConduitVersionedResponse<Inventory | undefined>>
+	getInventoryCachedVersioned (displayName: string, displayNameCode: number, cacheVersion?: string): Promise<ConduitVersionedResponse<Inventory | undefined>>
 	vaultItem (item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>
 	moveItemToCharacter (characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>
 	equipItemOnCharacter (characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>
@@ -227,3 +230,13 @@ export interface ConduitBroadcastRegistry {
 	endOperation: string
 	_updateSettings: void
 }
+
+export type ConduitVersionedResponse<T> =
+	| {
+		version: string
+		value: T
+	}
+	| {
+		version: string
+		unchanged: true
+	}

@@ -10,8 +10,20 @@ interface Model<T> {
 	id: string
 	get (): Promise<T>
 	getCached (onUpdate?: (value: T) => unknown): Promise<T>
+	getVersioned (cacheVersion?: string): Promise<ModelVersionedResponse<T>>
+	getCachedVersioned (cacheVersion?: string, onUpdate?: (value: T) => unknown): Promise<ModelVersionedResponse<T>>
 	use (hard?: true): Promise<{ version: string, value: T, updated: boolean }>
 }
+
+export type ModelVersionedResponse<T> =
+	| {
+		version: string
+		value: T
+	}
+	| {
+		version: string
+		unchanged: true
+	}
 
 interface ModelDefinition<T> {
 	cacheDirtyTime: number
@@ -47,6 +59,39 @@ function Model<T> (id: string, def: ModelDefinition<T>): Model<T> {
 
 			await def.tweak?.(cached)
 			return cached
+		},
+		async getVersioned (cacheVersion) {
+			return versionedResponse(await this.use(), cacheVersion)
+		},
+		async getCachedVersioned (cacheVersion, onUpdate) {
+			let version: ModelVersion | undefined
+			let cached: T | undefined
+			await db.transaction('r', db.versions, db.data, async db => {
+				version = await db.versions.get(id)
+				cached = await db.data.get(id).then(data => data?.data as T | undefined)
+			})
+
+			if (cached === undefined || !version)
+				return await this.getVersioned(cacheVersion)
+
+			void this.use()
+				.then(async ({ value, updated }) => {
+					await def.tweak?.(value)
+					if (updated)
+						await onUpdate?.(value)
+				})
+				.catch(console.error)
+
+			await def.tweak?.(cached)
+			return cacheVersion === version.version
+				? {
+					version: version.version,
+					unchanged: true,
+				}
+				: {
+					version: version.version,
+					value: cached,
+				}
 		},
 		async use (hard?: true) {
 			if (hard && currentIsSoft) {
@@ -120,6 +165,19 @@ function Model<T> (id: string, def: ModelDefinition<T>): Model<T> {
 		promise = undefined
 		currentUpdateId = undefined
 		return { version: newVersion.version, value: result, updated: true }
+	}
+
+	async function versionedResponse (result: { version: string, value: T }, cacheVersion?: string): Promise<ModelVersionedResponse<T>> {
+		await def.tweak?.(result.value)
+		return cacheVersion === result.version
+			? {
+				version: result.version,
+				unchanged: true,
+			}
+			: {
+				version: result.version,
+				value: result.value,
+			}
 	}
 }
 

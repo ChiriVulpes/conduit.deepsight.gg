@@ -1,5 +1,8 @@
 import type Frame from '@frame/FrameFunctions'
-import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from 'conduit.deepsight.gg/ConduitMessageRegistry'
+import type { ConduitBroadcastRegistry, ConduitFunctionRegistry, ConduitVersionedResponse } from 'conduit.deepsight.gg/ConduitMessageRegistry'
+import InventoryCacheUtility from 'conduit.deepsight.gg/Inventory'
+import type Collections from 'conduit.deepsight.gg/item/Collections'
+import type InventoryData from 'conduit.deepsight.gg/item/Inventory'
 import Definitions from 'Definitions'
 
 export { default as Inventory } from 'conduit.deepsight.gg/Inventory'
@@ -28,6 +31,11 @@ interface ConduitImplementation {
 }
 
 interface Conduit extends ConduitFunctionRegistry, ConduitImplementation {
+}
+
+interface ClientCacheEntry<T> {
+	version: string
+	value: T
 }
 
 const loaded = document.readyState === 'loading'
@@ -162,6 +170,41 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		return promise
 	}
 
+	const responseCache = new Map<string, ClientCacheEntry<unknown>>()
+
+	const collectionCacheKey = (displayName?: string, displayNameCode?: number) =>
+		displayName && displayNameCode ? `collections:${displayName}:${displayNameCode}` : 'collections:current'
+
+	const inventoryCacheKey = (displayName: string, displayNameCode: number) =>
+		`inventory:${displayName}:${displayNameCode}`
+
+	function cacheValue<T> (key: string, version: string, value: T) {
+		responseCache.set(key, {
+			version,
+			value,
+		})
+		return value
+	}
+
+	async function callCachedResponse<T> (key: string, type: keyof ConduitFunctionRegistry, ...params: unknown[]): Promise<T> {
+		const cached = responseCache.get(key) as ClientCacheEntry<T> | undefined
+		const response = await callPromiseFunction<ConduitVersionedResponse<T>>(type, ...params, cached?.version)
+		if ('unchanged' in response) {
+			if (!cached)
+				throw new Error(`Conduit cache '${key}' was not available for unchanged response`)
+
+			return cached.value
+		}
+
+		return cacheValue(key, response.version, response.value)
+	}
+
+	function clearProfileResponseCaches () {
+		for (const key of responseCache.keys())
+			if (key.startsWith('inventory:') || key.startsWith('collections:'))
+				responseCache.delete(key)
+	}
+
 	let setActive: (() => void) | undefined
 	const activePromise = withTimeout(new Promise<void>(resolve => setActive = resolve), 'Conduit iframe active signal', STARTUP_TIMEOUT)
 
@@ -269,6 +312,53 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 		},
 	}
 
+	const cachedFunctions = {
+		async getCollections (displayName?: string, displayNameCode?: number): Promise<Collections> {
+			return await callCachedResponse(
+				collectionCacheKey(displayName, displayNameCode),
+				'getCollectionsVersioned',
+				displayName,
+				displayNameCode,
+			)
+		},
+		async getInventory (displayName: string, displayNameCode: number): Promise<InventoryData | undefined> {
+			return await callCachedResponse(
+				inventoryCacheKey(displayName, displayNameCode),
+				'getInventoryVersioned',
+				displayName,
+				displayNameCode,
+			)
+		},
+		async getInventoryCached (displayName: string, displayNameCode: number): Promise<InventoryData | undefined> {
+			return await callCachedResponse(
+				inventoryCacheKey(displayName, displayNameCode),
+				'getInventoryCachedVersioned',
+				displayName,
+				displayNameCode,
+			)
+		},
+	}
+
+	addListener('global', 'profilesUpdated', clearProfileResponseCaches)
+	addListener('global', 'inventoryUpdated', ({ profile, inventory }: ConduitBroadcastRegistry['inventoryUpdated']) => {
+		const key = inventoryCacheKey(profile.name, profile.code ?? 0)
+		responseCache.set(key, {
+			version: responseCache.get(key)?.version ?? `broadcast:${Date.now().toString(36)}`,
+			value: inventory,
+		})
+	})
+	addListener('global', 'inventoryPatch', ({ profile, patches }: ConduitBroadcastRegistry['inventoryPatch']) => {
+		const key = inventoryCacheKey(profile.name, profile.code ?? 0)
+		const cached = responseCache.get(key) as ClientCacheEntry<InventoryData | undefined> | undefined
+		if (!cached?.value)
+			return
+
+		responseCache.set(key, {
+			version: cached.version,
+			value: InventoryCacheUtility.applyPatches(cached.value, patches),
+		})
+	})
+
 	const frame = new Proxy({}, {
 		get (target, fname: keyof Frame.Functions) {
 			if (fname as any === 'then')
@@ -285,6 +375,9 @@ async function Conduit (options: ConduitOptions): Promise<Conduit> {
 
 			if (fname in target)
 				return target[fname as keyof typeof target]
+
+			if (fname in cachedFunctions)
+				return cachedFunctions[fname as keyof typeof cachedFunctions]
 
 			return (...params: unknown[]) => callPromiseFunction(fname, ...params)
 		},

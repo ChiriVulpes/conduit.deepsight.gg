@@ -84,6 +84,12 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 				?? await Profiles.getCurrentProfile(undefined)
 			return await Collections.for(profile).get()
 		},
+		async getCollectionsVersioned (event, displayName, displayNameCode, cacheVersion) {
+			const profile = _
+				?? (!displayName || !displayNameCode ? undefined : await this.getProfile(event, displayName, displayNameCode))
+				?? await Profiles.getCurrentProfile(undefined)
+			return await Collections.for(profile).getVersioned(cacheVersion)
+		},
 
 		async getInventory (event, displayName, displayNameCode) {
 			const profile = await this.getProfile(event, displayName, displayNameCode)
@@ -91,12 +97,26 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 			// Broadcast.warning('conduit', 'Item has watermark but no moment', [inventory?.profileItems[0]!])
 			return inventory
 		},
+		async getInventoryVersioned (event, displayName, displayNameCode, cacheVersion) {
+			const profile = await this.getProfile(event, displayName, displayNameCode)
+			return await Inventory.for(profile).getVersioned(cacheVersion)
+		},
 		async getInventoryCached (event, displayName, displayNameCode) {
 			const profile = await this.getProfile(event, displayName, displayNameCode)
 			if (!profile)
 				return undefined
 
 			return await Inventory.for(profile).getCached(inventory => broadcastInventoryUpdated(event, profile, inventory))
+		},
+		async getInventoryCachedVersioned (event, displayName, displayNameCode, cacheVersion) {
+			const profile = await this.getProfile(event, displayName, displayNameCode)
+			if (!profile)
+				return {
+					version: 'none',
+					value: undefined,
+				}
+
+			return await Inventory.for(profile).getCachedVersioned(cacheVersion, inventory => broadcastInventoryUpdated(event, profile, inventory))
 		},
 
 		async vaultItem (event, item, options) {

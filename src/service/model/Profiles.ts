@@ -18,6 +18,7 @@ import Store from 'utility/Store'
 namespace Profiles {
 
 	const version = '10'
+	const pendingProfileUpdates = new Map<string, Promise<unknown>>()
 
 	export async function get () {
 		let updated = false
@@ -34,9 +35,8 @@ namespace Profiles {
 	export async function searchDestinyPlayerByBungieName (displayName: string, displayNameCode: number) {
 		const profile = await db.profiles.get({ name: displayName, code: displayNameCode })
 		if (profile) {
-			await Broadcast.operation('Updating player profiles', () =>
-				updateProfile(profile, true)
-			)
+			await touchProfileAccess(profile)
+			scheduleProfileUpdate(profile)
 			return profile
 		}
 
@@ -94,6 +94,17 @@ namespace Profiles {
 	async function touchProfileAccess (profile: Profile) {
 		profile.lastAccess = new Date().toISOString()
 		await db.profiles.put(profile)
+	}
+
+	function scheduleProfileUpdate (profile: Profile) {
+		if (pendingProfileUpdates.has(profile.id))
+			return
+
+		const updatePromise = new Promise<void>(resolve => setTimeout(resolve))
+			.then(() => Broadcast.operation('Updating player profiles', () => updateProfile(profile)))
+			.catch(console.error)
+			.finally(() => pendingProfileUpdates.delete(profile.id))
+		pendingProfileUpdates.set(profile.id, updatePromise)
 	}
 
 	async function updateAuthProfile (auth: Auth, profile?: Profile) {
