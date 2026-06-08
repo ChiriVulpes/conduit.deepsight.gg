@@ -1,41 +1,6 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-define("conduit.deepsight.gg/Definitions", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function Definitions(conduit) {
-        return new Proxy({}, {
-            get(target, languageName) {
-                return target[languageName] ??= new Proxy({}, {
-                    get(target, componentName) {
-                        return target[componentName] ??= {
-                            async all(filter) {
-                                return await conduit._getDefinitionsComponent(languageName, componentName, !filter ? undefined : { ...filter, evalExpression: filter?.evalExpression?.toString() });
-                            },
-                            async page(pageSize, page, filter) {
-                                return await conduit._getDefinitionsComponentPage(languageName, componentName, pageSize, page, !filter ? undefined : { ...filter, evalExpression: filter?.evalExpression?.toString() });
-                            },
-                            async get(hash) {
-                                return hash === undefined ? undefined : await conduit._getDefinition(languageName, componentName, hash);
-                            },
-                            async links(hash) {
-                                return hash === undefined ? undefined : await conduit._getDefinitionLinks(languageName, componentName, hash);
-                            },
-                            async getWithLinks(hash) {
-                                return hash === undefined ? undefined : await conduit._getDefinitionWithLinks(languageName, componentName, hash);
-                            },
-                            async getReferencing(hash, pageSize, page) {
-                                return hash === undefined ? undefined : await conduit._getDefinitionsReferencingPage(languageName, componentName, hash, pageSize, page);
-                            },
-                        };
-                    },
-                });
-            },
-        });
-    }
-    exports.default = Definitions;
-});
 define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -488,12 +453,48 @@ define("conduit.deepsight.gg/Inventory", ["require", "exports"], function (requi
     })(Inventory || (Inventory = {}));
     exports.default = Inventory;
 });
-define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Definitions", "conduit.deepsight.gg/Inventory"], function (require, exports, Definitions_1, Inventory_1) {
+define("conduit.deepsight.gg/Definitions", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function Definitions(conduit) {
+        return new Proxy({}, {
+            get(target, languageName) {
+                return target[languageName] ??= new Proxy({}, {
+                    get(target, componentName) {
+                        return target[componentName] ??= {
+                            async all(filter) {
+                                return await conduit._getDefinitionsComponent(languageName, componentName, !filter ? undefined : { ...filter, evalExpression: filter?.evalExpression?.toString() });
+                            },
+                            async page(pageSize, page, filter) {
+                                return await conduit._getDefinitionsComponentPage(languageName, componentName, pageSize, page, !filter ? undefined : { ...filter, evalExpression: filter?.evalExpression?.toString() });
+                            },
+                            async get(hash) {
+                                return hash === undefined ? undefined : await conduit._getDefinition(languageName, componentName, hash);
+                            },
+                            async links(hash) {
+                                return hash === undefined ? undefined : await conduit._getDefinitionLinks(languageName, componentName, hash);
+                            },
+                            async getWithLinks(hash) {
+                                return hash === undefined ? undefined : await conduit._getDefinitionWithLinks(languageName, componentName, hash);
+                            },
+                            async getReferencing(hash, pageSize, page) {
+                                return hash === undefined ? undefined : await conduit._getDefinitionsReferencingPage(languageName, componentName, hash, pageSize, page);
+                            },
+                        };
+                    },
+                });
+            },
+        });
+    }
+    exports.default = Definitions;
+});
+define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Inventory", "conduit.deepsight.gg/Definitions", "conduit.deepsight.gg/Inventory"], function (require, exports, Inventory_1, Definitions_1, Inventory_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Inventory = void 0;
+    Inventory_1 = __importDefault(Inventory_1);
     Definitions_1 = __importDefault(Definitions_1);
-    Object.defineProperty(exports, "Inventory", { enumerable: true, get: function () { return __importDefault(Inventory_1).default; } });
+    Object.defineProperty(exports, "Inventory", { enumerable: true, get: function () { return __importDefault(Inventory_2).default; } });
     if (!('serviceWorker' in navigator))
         throw new Error('Service Worker is not supported in this browser');
     const REQUEST_TIMEOUT = 1000 * 60 * 2;
@@ -600,6 +601,31 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
             iframe.contentWindow?.postMessage({ type, id, data: params }, serviceOrigin);
             return promise;
         }
+        const responseCache = new Map();
+        const collectionCacheKey = (displayName, displayNameCode) => displayName && displayNameCode ? `collections:${displayName}:${displayNameCode}` : 'collections:current';
+        const inventoryCacheKey = (displayName, displayNameCode) => `inventory:${displayName}:${displayNameCode}`;
+        function cacheValue(key, version, value) {
+            responseCache.set(key, {
+                version,
+                value,
+            });
+            return value;
+        }
+        async function callCachedResponse(key, type, ...params) {
+            const cached = responseCache.get(key);
+            const response = await callPromiseFunction(type, ...params, cached?.version);
+            if ('unchanged' in response) {
+                if (!cached)
+                    throw new Error(`Conduit cache '${key}' was not available for unchanged response`);
+                return cached.value;
+            }
+            return cacheValue(key, response.version, response.value);
+        }
+        function clearProfileResponseCaches() {
+            for (const key of responseCache.keys())
+                if (key.startsWith('inventory:') || key.startsWith('collections:'))
+                    responseCache.delete(key);
+        }
         let setActive;
         const activePromise = withTimeout(new Promise(resolve => setActive = resolve), 'Conduit iframe active signal', STARTUP_TIMEOUT);
         window.addEventListener('message', event => {
@@ -691,6 +717,35 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
                 return !await frame.needsAuth();
             },
         };
+        const cachedFunctions = {
+            async getCollections(displayName, displayNameCode) {
+                return await callCachedResponse(collectionCacheKey(displayName, displayNameCode), 'getCollectionsVersioned', displayName, displayNameCode);
+            },
+            async getInventory(displayName, displayNameCode) {
+                return await callCachedResponse(inventoryCacheKey(displayName, displayNameCode), 'getInventoryVersioned', displayName, displayNameCode);
+            },
+            async getInventoryCached(displayName, displayNameCode) {
+                return await callCachedResponse(inventoryCacheKey(displayName, displayNameCode), 'getInventoryCachedVersioned', displayName, displayNameCode);
+            },
+        };
+        addListener('global', 'profilesUpdated', clearProfileResponseCaches);
+        addListener('global', 'inventoryUpdated', ({ profile, inventory }) => {
+            const key = inventoryCacheKey(profile.name, profile.code ?? 0);
+            responseCache.set(key, {
+                version: responseCache.get(key)?.version ?? `broadcast:${Date.now().toString(36)}`,
+                value: inventory,
+            });
+        });
+        addListener('global', 'inventoryPatch', ({ profile, patches }) => {
+            const key = inventoryCacheKey(profile.name, profile.code ?? 0);
+            const cached = responseCache.get(key);
+            if (!cached?.value)
+                return;
+            responseCache.set(key, {
+                version: cached.version,
+                value: Inventory_1.default.applyPatches(cached.value, patches),
+            });
+        });
         const frame = new Proxy({}, {
             get(target, fname) {
                 if (fname === 'then')
@@ -704,6 +759,8 @@ define("conduit.deepsight.gg", ["require", "exports", "conduit.deepsight.gg/Defi
                     return undefined;
                 if (fname in target)
                     return target[fname];
+                if (fname in cachedFunctions)
+                    return cachedFunctions[fname];
                 return (...params) => callPromiseFunction(fname, ...params);
             },
         });
