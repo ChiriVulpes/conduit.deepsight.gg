@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-import { DestinyComponentType, type DestinyProfileResponse } from 'bungie-api-ts/destiny2'
+import type { DestinyProfileResponse } from 'bungie-api-ts/destiny2'
+import { DESTINY_PROFILE_CONDUIT_COMPONENTS } from 'model/DestinyProfileComponents'
+import { getCachedFullProfile } from 'model/DestinyProfileFull'
 import { ProfiledModel } from 'model/ProfiledModel'
 import Broadcast from 'utility/Broadcast'
 import Bungie from 'utility/Bungie'
@@ -126,39 +128,23 @@ export interface DestinyProfile extends
 export default ProfiledModel<DestinyProfile | undefined>('destiny2/profile', {
 	cacheDirtyTime: 1000 * 30, // 30 second cache time
 	async fetch (profile) {
-		const profileResponse = profile && await Broadcast.operation('Fetching Destiny profile', () =>
-			Bungie.getForUser<DestinyProfile>(`/Destiny2/${profile.type}/Profile/${profile.id}/`, {
-				components: [
-					DestinyComponentType.Profiles,
+		let profileResponse: DestinyProfile | undefined
+		if (profile) {
+			try {
+				profileResponse = await Broadcast.operation('Fetching Destiny profile', () =>
+					Bungie.getForUser<DestinyProfile>(`/Destiny2/${profile.type}/Profile/${profile.id}/`, {
+						components: DESTINY_PROFILE_CONDUIT_COMPONENTS,
+					})
+				)
+			}
+			catch (err) {
+				profileResponse = await getCachedFullProfile(profile)
+				if (!profileResponse)
+					throw err
 
-					// Characters
-					DestinyComponentType.Characters,
-					DestinyComponentType.ProfileProgression,
-					DestinyComponentType.CharacterLoadouts,
-
-					// Items
-					DestinyComponentType.CharacterInventories,
-					DestinyComponentType.CharacterEquipment,
-					DestinyComponentType.ProfileInventories,
-					DestinyComponentType.ItemInstances,
-					DestinyComponentType.ItemPlugObjectives,
-					DestinyComponentType.ItemStats,
-					DestinyComponentType.Records,
-					DestinyComponentType.ItemSockets,
-					DestinyComponentType.ItemReusablePlugs,
-					DestinyComponentType.ItemPlugStates,
-					DestinyComponentType.ItemPerks,
-					DestinyComponentType.CharacterProgressions,
-
-					// Collections
-					DestinyComponentType.Collectibles,
-					DestinyComponentType.CharacterActivities, // displaying whether items are currently obtainable
-
-					// Misc
-					DestinyComponentType.StringVariables,
-				],
-			})
-		)
+				console.warn(`Using full cached Destiny profile for ${profile.type}/${profile.id} after constrained profile fetch failed`, err)
+			}
+		}
 		return {
 			version: profileResponse?.responseMintedTimestamp ?? 'n/a',
 			value: profileResponse,

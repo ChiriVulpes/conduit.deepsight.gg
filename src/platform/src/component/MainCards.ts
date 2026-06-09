@@ -8,7 +8,9 @@ import Loading from 'component/core/Loading'
 import Lore from 'component/core/Lore'
 import Paragraph from 'component/core/Paragraph'
 import TextInput from 'component/core/TextInput'
+import type { OfflineCacheProgress, OfflineCacheStage, OfflineCacheSummary } from 'ConduitMessageRegistry'
 import { Component, State } from 'kitsui'
+import type { Quilt } from 'lang'
 import Relic from 'Relic'
 import Time from 'utility/Time'
 
@@ -178,9 +180,157 @@ export default Component(component => {
 				},
 			))
 			.appendTo(card)
+
+		Details()
+			.summaryText.set(quilt => quilt['main/advanced-card/offline-cache/title']())
+			.append(Loading().appendTo(card).set(
+				async (signal, setProgress) => {
+					setProgress(null, quilt => quilt['main/advanced-card/offline-cache/loading']())
+					const conduit = await Relic.connected
+					const cacheState = await conduit._getOfflineCacheState()
+
+					return { conduit, cacheState }
+				},
+				(slot, { conduit, cacheState }) => {
+					const running = State(!!cacheState.run?.running)
+					const progress = State<OfflineCacheProgress | undefined>(cacheState.progress)
+					const summary = State<OfflineCacheSummary | undefined>(cacheState.summary)
+					const error = State<Error | undefined>(undefined)
+					const cleared = State(false)
+
+					const unsubscribeProgress = conduit.on.offlineCacheProgress(update => {
+						running.asMutable?.setValue(true)
+						progress.asMutable?.setValue(update)
+						error.asMutable?.setValue(undefined)
+						cleared.asMutable?.setValue(false)
+					})
+					const unsubscribeComplete = conduit.on.offlineCacheComplete(update => {
+						summary.asMutable?.setValue(update)
+						running.asMutable?.setValue(false)
+						error.asMutable?.setValue(undefined)
+						cleared.asMutable?.setValue(false)
+					})
+					slot.onRemoveManual(() => {
+						unsubscribeProgress()
+						unsubscribeComplete()
+					})
+
+					Lore()
+						.text.bind(State.Map(slot, [running, summary, error, cleared], (running, summary, error, cleared) => quilt => {
+							if (running)
+								return quilt['main/advanced-card/offline-cache/status/running']()
+							if (summary)
+								return quilt['main/advanced-card/offline-cache/status/complete'](
+									summary.counts.failures,
+								)
+							if (error)
+								return quilt['main/advanced-card/offline-cache/status/error'](error.message)
+							if (cleared)
+								return quilt['main/advanced-card/offline-cache/status/cleared']()
+
+							return quilt['main/advanced-card/offline-cache/status/idle']()
+						}))
+						.appendTo(slot)
+
+					Component()
+						.style('loading-progress')
+						.style.bind(progress.map(slot, progress => !progress?.total), 'loading-progress--unknown')
+						.style.bindVariable('progress', progress.map(slot, progress => !progress?.total ? 0 : progress.current / progress.total))
+						.appendTo(slot)
+
+					Paragraph()
+						.style('loading-message')
+						.text.bind(State.Map(slot, [running, progress, summary], (running, progress, summary) => {
+							if (summary && !running)
+								return undefined
+
+							return quilt => !progress || (!running && progress.stage === 'complete')
+								? quilt['main/advanced-card/offline-cache/progress/idle']()
+								: quilt['main/advanced-card/offline-cache/progress/detail'](
+									offlineCacheStageText(quilt, progress.stage),
+									progress.current,
+									progress.total,
+									progress.detail,
+								)
+						}))
+						.appendTo(slot)
+
+					Lore()
+						.text.bind(progress.map(slot, progress => quilt => !progress
+							? quilt['main/advanced-card/offline-cache/counts/empty']()
+							: quilt['main/advanced-card/offline-cache/counts/progress'](
+								progress.counts.definitionsCached,
+								progress.counts.activityHistoryActivities,
+								progress.counts.pgcrsDiscovered,
+								progress.counts.pgcrsDownloaded + progress.counts.pgcrsCached,
+								progress.counts.pgcrsUnavailable,
+								progress.counts.failures,
+							)))
+						.appendTo(slot)
+
+					const actions = ActionRow().appendTo(slot)
+					Button()
+						.bindDisabled(running, 'offline cache is running')
+						.text.set(quilt => quilt['main/advanced-card/offline-cache/action/clear']())
+						.event.subscribe('click', async () => {
+							error.asMutable?.setValue(undefined)
+							try {
+								await conduit._clearOfflineCache()
+								progress.asMutable?.setValue(undefined)
+								summary.asMutable?.setValue(undefined)
+								cleared.asMutable?.setValue(true)
+							}
+							catch (err) {
+								error.asMutable?.setValue(err instanceof Error ? err : new Error(String(err)))
+							}
+						})
+						.appendTo(actions)
+
+					Button()
+						.bindDisabled(running, 'offline cache is running')
+						.text.set(quilt => quilt['main/advanced-card/offline-cache/action/create']())
+						.event.subscribe('click', async () => {
+							running.asMutable?.setValue(true)
+							progress.asMutable?.setValue(undefined)
+							summary.asMutable?.setValue(undefined)
+							error.asMutable?.setValue(undefined)
+							cleared.asMutable?.setValue(false)
+							try {
+								await conduit._cacheOfflineData()
+							}
+							catch (err) {
+								error.asMutable?.setValue(err instanceof Error ? err : new Error(String(err)))
+								running.asMutable?.setValue(false)
+							}
+						})
+						.appendTo(actions)
+				},
+			))
+			.appendTo(card)
 	})
 	//#endregion
 	////////////////////////////////////
 
 	return component
 })
+
+function offlineCacheStageText (quilt: Quilt, stage: OfflineCacheStage) {
+	switch (stage) {
+		case 'versions':
+			return quilt['main/advanced-card/offline-cache/stage/versions']()
+		case 'definitions':
+			return quilt['main/advanced-card/offline-cache/stage/definitions']()
+		case 'profiles':
+			return quilt['main/advanced-card/offline-cache/stage/profiles']()
+		case 'inventory':
+			return quilt['main/advanced-card/offline-cache/stage/inventory']()
+		case 'collections':
+			return quilt['main/advanced-card/offline-cache/stage/collections']()
+		case 'activity-history':
+			return quilt['main/advanced-card/offline-cache/stage/activity-history']()
+		case 'pgcr':
+			return quilt['main/advanced-card/offline-cache/stage/pgcr']()
+		case 'complete':
+			return quilt['main/advanced-card/offline-cache/stage/complete']()
+	}
+}

@@ -31,6 +31,9 @@ export interface ConduitFunctionRegistry {
 	getState (): Promise<ConduitState>
 	/** Perform a hard defs update check, ignoring how recently they were cached */
 	checkUpdate (): Promise<ConduitState>
+	_getOfflineCacheState (): Promise<OfflineCacheState>
+	_cacheOfflineData (): Promise<OfflineCacheRun>
+	_clearOfflineCache (): Promise<void>
 
 	////////////////////////////////////
 	//#region Private
@@ -217,6 +220,68 @@ export interface InventoryUpdated {
 	inventory: Inventory
 }
 
+export type OfflineCacheStage =
+	| 'versions'
+	| 'definitions'
+	| 'profiles'
+	| 'inventory'
+	| 'collections'
+	| 'activity-history'
+	| 'pgcr'
+	| 'complete'
+
+export interface OfflineCacheCounts {
+	profiles: number
+	definitionsTotal: number
+	definitionsCached: number
+	inventoriesCached: number
+	collectionsCached: number
+	activityHistoryPages: number
+	activityHistoryActivities: number
+	pgcrsDiscovered: number
+	pgcrsCached: number
+	pgcrsDownloaded: number
+	pgcrsUnavailable: number
+	failures: number
+}
+
+export interface OfflineCacheProgress {
+	runId: string
+	stage: OfflineCacheStage
+	label: string
+	current: number
+	total?: number
+	detail?: string
+	counts: OfflineCacheCounts
+}
+
+export interface OfflineCacheFailure {
+	stage: OfflineCacheStage
+	key: string
+	message: string
+}
+
+export interface OfflineCacheSummary {
+	runId: string
+	startedAt: string
+	finishedAt: string
+	counts: OfflineCacheCounts
+	failures: OfflineCacheFailure[]
+}
+
+export interface OfflineCacheRun {
+	runId: string
+	startedAt: string
+	running: boolean
+	alreadyRunning?: true
+}
+
+export interface OfflineCacheState {
+	run?: OfflineCacheRun
+	progress?: OfflineCacheProgress
+	summary?: OfflineCacheSummary
+}
+
 export interface ConduitBroadcastRegistry {
 	ready: void
 	profilesUpdated: Profile[]
@@ -229,6 +294,8 @@ export interface ConduitBroadcastRegistry {
 	startOperation: ConduitOperation
 	endOperation: string
 	_updateSettings: void
+	offlineCacheProgress: OfflineCacheProgress
+	offlineCacheComplete: OfflineCacheSummary
 }
 
 export type ConduitVersionedResponse<T> =

@@ -38,3 +38,36 @@ client-secret/label: OAuth Client Secret
 title: Other settings
 loading: Getting settings state...
 verbose-logging/label: Verbose Logging
+
+### offline-cache
+title: Offline cache
+loading: Checking cache state...
+
+#### action
+create: Cache all
+clear: Clear
+
+#### status
+idle: Ready to cache profile data, definitions, inventory, collections, activity history, and PGCRs for offline use.
+running: Creating offline cache. You can refresh this page; reruns resume from cached data.
+complete: Offline cache ready with {0} failures.
+error: Offline cache failed: {0}
+cleared: Offline cache cleared.
+
+#### progress
+idle: No offline cache run is active.
+detail: {0} ({1}{2? / {2}}){3? - {3}}
+
+#### counts
+empty: No cache counts yet.
+progress: Definitions {0}; activities {1}; PGCRs ready {3} / {2}; unavailable {4}; failures {5}.
+
+#### stage
+versions: Versions
+definitions: Definitions
+profiles: Profiles
+inventory: Inventory
+collections: Collections
+activity-history: Activity history
+pgcr: PGCRs
+complete: Complete

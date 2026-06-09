@@ -31,8 +31,6 @@ interface ModelDefinition<T> {
 	tweak?(value: T): unknown
 }
 
-const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
-
 function Model<T> (id: string, def: ModelDefinition<T>): Model<T> {
 	let promise: Promise<{ version: string, value: T, updated: boolean }> | undefined
 	let currentUpdateId: string | undefined
@@ -103,19 +101,35 @@ function Model<T> (id: string, def: ModelDefinition<T>): Model<T> {
 			let updateId: string | undefined
 			return promise ??= (async () => {
 				currentUpdateId = updateId = `${Date.now().toString(36)}-${(+(performance.now() % 1).toFixed(2) * 100).toString(36)}-${Math.random().toString(36).slice(2)}`
-				let delayCount = 0
-				while (true) {
-					try {
-						return await tryUpdate(updateId, hard)
-					}
-					catch (err) {
-						console.error(err)
-						await sleep(Math.min(1000 * 2 ** delayCount++, 1000 * 60 * 5))
-					}
+				try {
+					return await tryUpdate(updateId, hard)
+				}
+				catch (err) {
+					promise = undefined
+					currentUpdateId = undefined
+					currentIsSoft = false
+					throw err
 				}
 			})()
 		},
 	} satisfies Model<T>)
+
+	async function getCachedValue () {
+		let version: ModelVersion | undefined
+		let result: T | undefined
+		await db.transaction('r', db.versions, db.data, async db => {
+			version = await db.versions.get(id)
+			result = await db.data.get(id).then(data => data?.data as T | undefined)
+		})
+
+		if (result === undefined || !version)
+			return undefined
+
+		return {
+			version: version.version,
+			value: result,
+		}
+	}
 
 	async function tryUpdate (updateId?: string, hard = false) {
 		if (currentUpdateId !== updateId && promise)
@@ -146,7 +160,22 @@ function Model<T> (id: string, def: ModelDefinition<T>): Model<T> {
 		// technically `currentIsSoft` should already be `false`, but let's make it explicit:
 		currentIsSoft = false
 
-		const newVersion = await def.fetch()
+		let newVersion: ModelValue<T>
+		try {
+			newVersion = await def.fetch()
+		}
+		catch (err) {
+			const cached = await getCachedValue()
+			if (cached) {
+				console.warn(`Using stale cache for ${id} after update failed`, err)
+				promise = undefined
+				currentUpdateId = undefined
+				return { ...cached, updated: false }
+			}
+
+			throw err
+		}
+
 		if (version?.version === newVersion.version)
 			result = await db.data.get(id).then(data => data?.data as T | undefined)
 

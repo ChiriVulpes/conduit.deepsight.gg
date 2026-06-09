@@ -12,10 +12,12 @@ import { getVersions } from 'model/CombinedManifestVersion'
 import Definitions from 'model/Definitions'
 import DefinitionsComponentNames from 'model/DefinitionsComponentNames'
 import Inventory from 'model/Inventory'
+import OfflineCache from 'model/OfflineCache'
 import Profiles from 'model/Profiles'
 import { db } from 'utility/Database'
 import Env from 'utility/Env'
 import FilterHelper from 'utility/FilterHelper'
+import Log from 'utility/Log'
 import Service, { SKIP_CLIENT } from 'utility/Service'
 import Store, { onUpdateStore } from 'utility/Store'
 
@@ -49,7 +51,7 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 	onRegistered (service) {
 		void service.broadcast.ready()
 		onUpdateStore(key => {
-			if (key === 'auth' || key === 'origins' || key === 'customApp' || key === 'destinyProfileOverrides')
+			if (key === 'auth' || key === 'origins' || key === 'customApp' || key === 'destinyProfileOverrides' || key === 'offlineCacheProgress' || key === 'offlineCacheSummary' || key === 'offlineCacheRun')
 				return
 
 			const expectedKeyType: keyof ConduitSettings = key
@@ -138,6 +140,29 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 
 		getState: event => getState(event),
 		checkUpdate: event => getState(event, true),
+		async _getOfflineCacheState (event) {
+			assertOwnOrigin(event.origin)
+			return await OfflineCache.getState()
+		},
+		async _clearOfflineCache (event) {
+			assertOwnOrigin(event.origin)
+			await OfflineCache.clear()
+		},
+		async _cacheOfflineData (event) {
+			assertOwnOrigin(event.origin)
+			return await OfflineCache.start(
+				async progress => {
+					await service.broadcast.offlineCacheProgress(origin =>
+						origin === event.origin ? progress : SKIP_CLIENT
+					)
+				},
+				async summary => {
+					await service.broadcast.offlineCacheComplete(origin =>
+						origin === event.origin ? summary : SKIP_CLIENT
+					)
+				},
+			)
+		},
 
 		////////////////////////////////////
 		//#region Private
@@ -490,7 +515,10 @@ async function getProfiles (event: ExtendableMessageEvent) {
 async function updateProfiles (forceOriginUpdate?: string) {
 	let [{ profiles, updated }, auth] = await Promise.all([
 		Profiles.get(),
-		Auth.getValid(),
+		Auth.getValid().catch(err => {
+			Log.warn('Unable to validate Bungie.net auth while updating profiles', err)
+			return undefined
+		}),
 	])
 
 	profiles.sort((a, b) => new Date(b.lastAccess).getTime() - new Date(a.lastAccess).getTime())

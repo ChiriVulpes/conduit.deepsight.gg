@@ -178,7 +178,14 @@ namespace Auth {
 				grant_type: 'refresh_token',
 				refresh_token: auth.refreshToken,
 			}),
-		}).then(res => res.json() as Promise<BungieTokenResponse>)
+		})
+			.then(res => res.json() as Promise<BungieTokenResponse>)
+			.catch(err => {
+				Log.warn('Unable to refresh Bungie.net access token', err)
+				return undefined
+			})
+		if (!tokenResponse)
+			return undefined
 
 		return handleTokenResponse(tokenRequestTime, tokenResponse)
 	}

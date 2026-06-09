@@ -79,6 +79,18 @@
 					loading-spinner-dot-4-y #{animation-time / 2}s #{ease-in} forwards
 
 	&-progress:
+		%width-100
+		height: 6px
+		background: #fff2
+		%overflow-hidden
+
+		@before:
+			%block
+			%height-100
+			width: calc(var(--progress, 0) * 100%)
+			%background-currentcolour
+			#transition: #{transition("width")}
+
 		&--unknown:
 			%hidden
 
