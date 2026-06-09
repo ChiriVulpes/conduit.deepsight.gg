@@ -13,6 +13,7 @@ import Definitions from 'model/Definitions'
 import DefinitionsComponentNames from 'model/DefinitionsComponentNames'
 import Inventory from 'model/Inventory'
 import OfflineCache from 'model/OfflineCache'
+import Pgcrs from 'model/Pgcrs'
 import Profiles from 'model/Profiles'
 import { db } from 'utility/Database'
 import Env from 'utility/Env'
@@ -83,13 +84,13 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 		async getCollections (event, displayName, displayNameCode) {
 			const profile = _
 				?? (!displayName || !displayNameCode ? undefined : await this.getProfile(event, displayName, displayNameCode))
-				?? await Profiles.getCurrentProfile(undefined)
+				?? await Profiles.getCurrentProfile(await Auth.getValid())
 			return await Collections.for(profile).get()
 		},
 		async getCollectionsVersioned (event, displayName, displayNameCode, cacheVersion) {
 			const profile = _
 				?? (!displayName || !displayNameCode ? undefined : await this.getProfile(event, displayName, displayNameCode))
-				?? await Profiles.getCurrentProfile(undefined)
+				?? await Profiles.getCurrentProfile(await Auth.getValid())
 			return await Collections.for(profile).getVersioned(cacheVersion)
 		},
 
@@ -119,6 +120,15 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 				}
 
 			return await Inventory.for(profile).getCachedVersioned(cacheVersion, inventory => broadcastInventoryUpdated(event, profile, inventory))
+		},
+		async getPgcrs (event, displayName, displayNameCode, pageSize, page) {
+			const profile = _
+				?? (!displayName || !displayNameCode ? undefined : await this.getProfile(event, displayName, displayNameCode))
+				?? await Profiles.getCurrentProfile(await Auth.getValid())
+			if (!profile?.authed)
+				return undefined
+
+			return await Pgcrs.get(profile, pageSize, page)
 		},
 
 		async vaultItem (event, item, options) {
@@ -314,6 +324,10 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 			let usedEnums: DefinitionLinks['enums'] | undefined
 			let definitions: DefinitionLinks['definitions'] | undefined
 			let defsToGrab: Map<AllComponentNames, Set<number | string>> | undefined
+			const setAugmentation = (augmentationComponent: AllComponentNames, value: object) => {
+				augmentations ??= {}
+					; (augmentations as Partial<Record<AllComponentNames, object>>)[augmentationComponent] = value
+			}
 
 			for (const link of linksDef.links ?? []) {
 				if ('enum' in link) {
@@ -340,13 +354,35 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 			await Promise.all([
 				...(linksDef.augmentations ?? [])
 					.map(async augmentationComponent => {
-						const defs = await Definitions[language][augmentationComponent].get()
-						const def = defs?.[hash as never]
-						if (!def)
+						const augmentationDefs = await Definitions[language][augmentationComponent].get()
+						const def = augmentationDefs?.[hash as never]
+						if (def && typeof def === 'object') {
+							setAugmentation(augmentationComponent, def)
+							return
+						}
+
+						const augmentationLinksDef = components[augmentationComponent]
+						const augmentationLinksToComponent = augmentationLinksDef?.links?.filter((link): link is DeepsightDefinitionLinkDefinition => !('enum' in link) && link.component === component)
+						if (!augmentationLinksToComponent?.length)
 							return
 
-						augmentations ??= {}
-						augmentations[augmentationComponent] = def
+						const matchedAugmentations: [string, object][] = []
+						for (const [key, augmentationDef] of Object.entries(augmentationDefs) as [string, object | undefined][]) {
+							if (!augmentationDef)
+								continue
+
+							for (const link of augmentationLinksToComponent) {
+								const hashes = followLinkPath(augmentationDef, link.path.split('.'))
+								if (hashes.some(augmentationHash => `${augmentationHash}` === `${hash}`)) {
+									matchedAugmentations.push([key, augmentationDef])
+									break
+								}
+							}
+						}
+						if (!matchedAugmentations.length)
+							return
+
+						setAugmentation(augmentationComponent, matchedAugmentations.toObject(([key, def]) => [key, def]))
 					}),
 				...(defsToGrab?.entries().toArray() ?? [])
 					.map(async ([component, hashes]) => {

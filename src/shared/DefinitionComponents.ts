@@ -1,5 +1,6 @@
 import type { AllDestinyManifestComponents, DestinyManifestComponentName } from 'bungie-api-ts/destiny2'
 import type { ClarityDescription } from 'Clarity'
+import type { PopularityreportManifestComponentsMap } from 'Popularityreport'
 import type { DeepsightDefinitionLinkDefinition, DeepsightEnumDefinition, DeepsightEnumLinkDefinition, DeepsightManifestComponentsMap, DeepsightVariantDefinitionEntry } from 'deepsight.gg/Interfaces'
 
 export type DeepsightManifestComponentName = keyof DeepsightManifestComponentsMap
@@ -10,19 +11,31 @@ export interface AllClarityManifestComponents {
 
 export type ClarityManifestComponentName = keyof AllClarityManifestComponents
 
+export type AllPopularityreportComponents = PopularityreportManifestComponentsMap
+
+export type PopularityreportManifestComponentName = keyof AllPopularityreportComponents
+
 export type AllComponentNames =
 	| DestinyManifestComponentName
 	| DeepsightManifestComponentName
+	| PopularityreportManifestComponentName
 	| ClarityManifestComponentName
 
 export type DefinitionsForComponentName<NAME extends AllComponentNames> = (
 	NAME extends DestinyManifestComponentName ? AllDestinyManifestComponents[NAME]
 	: NAME extends DeepsightManifestComponentName ? DeepsightManifestComponentsMap[NAME]
+	: NAME extends PopularityreportManifestComponentName ? AllPopularityreportComponents[NAME]
 	: NAME extends ClarityManifestComponentName ? AllClarityManifestComponents[NAME]
 	: never
 )
 
 export type AllDefinitions = { [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> }
+
+export type DefinitionEntryForComponentName<NAME extends AllComponentNames> = DefinitionsForComponentName<NAME>[keyof DefinitionsForComponentName<NAME>]
+
+export type DefinitionAugmentationForComponentName<NAME extends AllComponentNames> =
+	| DefinitionEntryForComponentName<NAME>
+	| Partial<DefinitionsForComponentName<NAME>>
 
 export interface DefinitionsFilter {
 	nameContainsOrHashIs?: string | string[]
@@ -49,7 +62,7 @@ export interface DefinitionReferencesPage {
 }
 
 export interface DefinitionLinks {
-	augmentations?: Partial<{ [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never }>
+	augmentations?: Partial<{ [NAME in AllComponentNames]: DefinitionAugmentationForComponentName<NAME> }>
 	variants?: DeepsightVariantDefinitionEntry[]
 	links?: (DeepsightDefinitionLinkDefinition | DeepsightEnumLinkDefinition)[]
 	definitions?: Partial<{ [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> }>

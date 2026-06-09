@@ -403,6 +403,7 @@ void (async () => {
 		'getCollections',
 		'getInventory',
 		'getInventoryCached',
+		'getPgcrs',
 		'getComponentNames',
 		'getState',
 		'checkUpdate',

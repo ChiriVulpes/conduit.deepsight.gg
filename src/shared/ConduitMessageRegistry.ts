@@ -1,4 +1,5 @@
 import type { AuthState, CustomBungieApp } from 'Auth'
+import type { DestinyHistoricalStatsPeriodGroup, DestinyPostGameCarnageReportData } from 'bungie-api-ts/destiny2'
 import type ConduitState from 'ConduitState'
 import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'DefinitionComponents'
 import type Collections from 'item/Collections'
@@ -18,6 +19,7 @@ export interface ConduitFunctionRegistry {
 	getInventoryCached (displayName: string, displayNameCode: number): Promise<Inventory | undefined>
 	getInventoryVersioned (displayName: string, displayNameCode: number, cacheVersion?: string): Promise<ConduitVersionedResponse<Inventory | undefined>>
 	getInventoryCachedVersioned (displayName: string, displayNameCode: number, cacheVersion?: string): Promise<ConduitVersionedResponse<Inventory | undefined>>
+	getPgcrs (displayName: string, displayNameCode: number, pageSize: number, page: number): Promise<PgcrsPage | undefined>
 	vaultItem (item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>
 	moveItemToCharacter (characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>
 	equipItemOnCharacter (characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>
@@ -132,6 +134,30 @@ export interface InventoryPatchEvent {
 	profile: Profile
 	patches: InventoryPatch[]
 }
+
+export interface PgcrsPage {
+	profile: Profile
+	page: number
+	pageSize: number
+	hasMore: boolean
+	totalActivities?: number
+	totalPages?: number
+	entries: PgcrsPageEntry[]
+}
+
+export interface PgcrsPageEntry {
+	characterId: string
+	activity: DestinyHistoricalStatsPeriodGroup
+	pgcr?: DestinyPostGameCarnageReportData
+	pgcrStatus: PgcrStatus
+	message?: string
+}
+
+export type PgcrStatus =
+	| 'cached'
+	| 'fetched'
+	| 'unavailable'
+	| 'failed'
 
 export interface ItemTransferFailure {
 	operationId: string

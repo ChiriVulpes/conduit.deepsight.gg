@@ -30,12 +30,12 @@ declare module 'utility/Store' {
 	}
 }
 
-interface ActivityHistoryCache {
+export interface ActivityHistoryCache {
 	cachedAt: string
 	activities: DestinyHistoricalStatsPeriodGroup[]
 }
 
-interface PgcrUnavailable {
+export interface PgcrUnavailable {
 	unavailable: true
 	cachedAt: string
 	message: string
@@ -348,7 +348,7 @@ namespace OfflineCache {
 		}
 	}
 
-	async function fetchPgcr (pgcrId: string): Promise<DestinyPostGameCarnageReportData> {
+	export async function fetchPgcr (pgcrId: string): Promise<DestinyPostGameCarnageReportData> {
 		const headers = await Auth.getHeaders()
 		const response = await Network.fetch(`${PGCR_ORIGIN}/${pgcrId}/`, { headers: { ...headers } })
 		const json = await response.json().catch(() => undefined) as ServerResponse<DestinyPostGameCarnageReportData> | undefined
@@ -364,11 +364,11 @@ namespace OfflineCache {
 		return json.Response
 	}
 
-	async function getCachedData<T> (component: string): Promise<T | undefined> {
+	export async function getCachedData<T> (component: string): Promise<T | undefined> {
 		return await db.data.get(component).then(data => data?.data as T | undefined)
 	}
 
-	async function putCachedData (component: string, data: unknown) {
+	export async function putCachedData (component: string, data: unknown) {
 		await db.data.put({ component, data })
 	}
 
@@ -401,23 +401,23 @@ namespace OfflineCache {
 		return `${profile.type}/${profile.id}`
 	}
 
-	function activityHistoryKey (profile: Profile, characterId: string) {
+	export function activityHistoryKey (profile: Profile, characterId: string) {
 		return `destiny2/activity-history:${profile.type}/${profile.id}/${characterId}`
 	}
 
-	function pgcrKey (pgcrId: string) {
+	export function pgcrKey (pgcrId: string) {
 		return `destiny2/pgcr:${pgcrId}`
 	}
 
-	function pgcrUnavailableKey (pgcrId: string) {
+	export function pgcrUnavailableKey (pgcrId: string) {
 		return `destiny2/pgcr-unavailable:${pgcrId}`
 	}
 
-	function errorMessage (err: unknown) {
+	export function errorMessage (err: unknown) {
 		return err instanceof Error ? err.message : `${err}`
 	}
 
-	function isUnavailablePgcr (err: unknown) {
+	export function isUnavailablePgcr (err: unknown) {
 		const message = errorMessage(err).toLowerCase()
 		const code = typeof err === 'object' && err !== null && 'code' in err ? `${err.code}` : ''
 		return code.startsWith('16')

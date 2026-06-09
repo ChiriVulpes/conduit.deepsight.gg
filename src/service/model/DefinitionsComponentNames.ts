@@ -17,7 +17,7 @@ export default Model<AllComponentNames[]>('DefinitionsComponentNames', {
 			// ClarityManifest.use(),
 		])
 
-		const version = `destiny:${destiny.version} deepsight:${deepsight.version} clarity:${/* clarity.version */'N/A'}`
+		const version = `destiny:${destiny.version} deepsight:${deepsight.version} popularityreport:static clarity:${/* clarity.version */'N/A'}`
 		return {
 			version,
 			value: [
@@ -25,6 +25,7 @@ export default Model<AllComponentNames[]>('DefinitionsComponentNames', {
 				...((Object.keys(deepsight.value.manifest) as (keyof DeepsightManifest | DeepsightManifestComponentName)[])
 					.filter((name): name is DeepsightManifestComponentName => name.startsWith('Deepsight'))
 				),
+				'PopularityreportQuantilesDefinition',
 				'ClarityDescriptions',
 			],
 		}

@@ -1,4 +1,5 @@
 import type { AllComponentNames, DefinitionsForComponentName } from '@shared/DefinitionComponents'
+import type { PopularityreportQuantiles } from 'deepsight.gg/Interfaces'
 import ClarityManifest from 'model/ClarityManifest'
 import DeepsightManifest from 'model/DeepsightManifest'
 import DestinyManifest from 'model/DestinyManifest'
@@ -7,6 +8,7 @@ import Broadcast from 'utility/Broadcast'
 import Clarity from 'utility/Clarity'
 import Deepsight from 'utility/Deepsight'
 import Network from 'utility/Network'
+import Popularityreport from 'utility/Popularityreport'
 
 type Definitions = {
 	[NAME in AllComponentNames]: Model<DefinitionsForComponentName<NAME>>
@@ -19,11 +21,12 @@ const Definitions = new Proxy({} as Record<string, Definitions>, {
 				const prefix = componentName.startsWith('Destiny') ? 'destiny2'
 					: componentName.startsWith('Deepsight') ? 'deepsight'
 						: componentName.startsWith('Clarity') ? 'clarity'
-							: null
+							: componentName.startsWith('Popularityreport') ? 'popularityreport'
+								: null
 				if (!prefix)
 					throw new Error(`Unsupported component name: ${componentName}`)
 
-				const componentLanguage = prefix === 'deepsight' || prefix === 'clarity' ? 'en' : language
+				const componentLanguage = prefix === 'deepsight' || prefix === 'clarity' || prefix === 'popularityreport' ? 'en' : language
 
 				return target[componentName] ??= Model<DefinitionsForComponentName<NAME>>(`${prefix}/${componentName}/${componentLanguage}`, {
 					cacheDirtyTime: 1000 * 60 * 1, // 1 minute cache time (shorter due to first getting the current version from the whole manifest)
@@ -69,6 +72,21 @@ const Definitions = new Proxy({} as Record<string, Definitions>, {
 								}
 							}
 
+							case 'popularityreport': {
+								const filename = componentName === 'PopularityreportQuantilesDefinition' ? '/popularity.report.quantiles.json'
+									: undefined
+								if (!filename)
+									throw new Error(`Unsupported Popularityreport component name: ${componentName}`)
+
+								const reportText = await Popularityreport.getText(filename)
+								const report = JSON.parse(reportText) as PopularityreportQuantiles
+								const version = hashText(reportText)
+								return {
+									version,
+									value: toPopularityreportDefinitions(report) as DefinitionsForComponentName<NAME>,
+								}
+							}
+
 							default:
 								throw new Error('This is impossible')
 						}
@@ -78,5 +96,19 @@ const Definitions = new Proxy({} as Record<string, Definitions>, {
 		}) as never
 	},
 })
+
+function toPopularityreportDefinitions (report: PopularityreportQuantiles) {
+	return report.data.toObject(entry => {
+		const hash = `${entry.director_activity}:${entry.activity}`
+		return [hash, { hash, ...entry }]
+	})
+}
+
+function hashText (text: string) {
+	let hash = 0
+	for (let i = 0; i < text.length; i++)
+		hash = Math.imul(31, hash) + text.charCodeAt(i) | 0
+	return `${text.length}:${hash >>> 0}`
+}
 
 export default Definitions

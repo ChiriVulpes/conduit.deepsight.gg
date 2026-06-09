@@ -27,8 +27,8 @@ importers:
         specifier: github:fluff4me/chiri#56e097a4050d29fc993f3a3eb4d54eb6d5b198d2
         version: https://codeload.github.com/fluff4me/chiri/tar.gz/56e097a4050d29fc993f3a3eb4d54eb6d5b198d2
       deepsight.gg:
-        specifier: 1.0.1857
-        version: 1.0.1857
+        specifier: 1.0.1862
+        version: 1.0.1862
       dexie:
         specifier: 4.0.11
         version: 4.0.11
@@ -36,8 +36,8 @@ importers:
         specifier: 10.3.0
         version: 10.3.0
       kitsui:
-        specifier: github:fluff4me/kitsui#b47ca19628a3994d5850ef4257f40f20bf1a23f0
-        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/b47ca19628a3994d5850ef4257f40f20bf1a23f0
+        specifier: github:fluff4me/kitsui#c426d908064707d9650c6100dc49cb4972dc85d5
+        version: https://codeload.github.com/fluff4me/kitsui/tar.gz/c426d908064707d9650c6100dc49cb4972dc85d5
       lint:
         specifier: github:fluff4me/lint#67c325cac44e46be0d8cad6ea5935a7ad9c6638d
         version: https://codeload.github.com/fluff4me/lint/tar.gz/67c325cac44e46be0d8cad6ea5935a7ad9c6638d(typescript@5.8.3)
@@ -67,8 +67,8 @@ importers:
         specifier: 5.10.0
         version: 5.10.0
       deepsight.gg:
-        specifier: 1.0.1856
-        version: 1.0.1856
+        specifier: 1.0.1861
+        version: 1.0.1861
 
 packages:
 
@@ -397,8 +397,8 @@ packages:
     resolution: {integrity: sha512-+fZ3LZNeiELGmimrujsDCT4CRIbq5oXdHe7chLiW8qzqyPMnn1puNstCrMNVAqwcl2FdIxkuJ4tOs/RFDBVc/Q==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@typescript-eslint/types@8.60.0':
-    resolution: {integrity: sha512-AsE7x2XaAK+CVbeih0Fvbn+r1qHxtpLDJ3XUuFcIinT318T90yHMJC+Zgv+jUuDjQQd06HKwxnDu6sz1IcTilA==}
+  '@typescript-eslint/types@8.60.1':
+    resolution: {integrity: sha512-4h0tY8ppCkdCzcrl2YM5M3my0xsE1Tf8om3owEu5oPWmXwkKRmk0j0LGDzYBGUcAlesEbxBhazqu/K4cu3Ug7w==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@typescript-eslint/typescript-estree@8.47.0':
@@ -568,11 +568,11 @@ packages:
   deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
 
-  deepsight.gg@1.0.1856:
-    resolution: {integrity: sha512-aOJpsowBXfGi9osMw4Z0t/xopGv0nxmSv1aZmCSmXxSF07rB+ODhSvAS2axBzkms7VeuVT26kgZZsSheyQ4KuA==}
+  deepsight.gg@1.0.1861:
+    resolution: {integrity: sha512-RY3p0RLWSZOIG+JPNTdsb8qndh7GX3u1NUzhaSjGxBAQiFfIW4lMlFjZ+MtZLfkZOgQ0lEErAaC6hlJxD4G9fQ==}
 
-  deepsight.gg@1.0.1857:
-    resolution: {integrity: sha512-v5Ac6z4vcCig0gLetO0YILKR/DcEeH8VzSEe8Tskrdna2y5MsB9AKCUxEpYW2H42FWzdjNtCo3hKCNSDUg+TWw==}
+  deepsight.gg@1.0.1862:
+    resolution: {integrity: sha512-3bmARp9quiUVVQGVUg5qYSa8B3pchnLQ2SDz/a12SVMDY/6KsfbcLyeGEjpsAjzWfkSerJggItzaVC0I+YXmJQ==}
 
   del-cli@7.0.0:
     resolution: {integrity: sha512-fRl4pWJYu9WFQH8jXdQUYvcD0IMtij9WEc7qmB7xOyJEweNJNuE7iKmqNeoOT1DbBUjtRjxlw8Y63qKBI/NQ1g==}
@@ -834,8 +834,8 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/b47ca19628a3994d5850ef4257f40f20bf1a23f0:
-    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/b47ca19628a3994d5850ef4257f40f20bf1a23f0}
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/c426d908064707d9650c6100dc49cb4972dc85d5:
+    resolution: {tarball: https://codeload.github.com/fluff4me/kitsui/tar.gz/c426d908064707d9650c6100dc49cb4972dc85d5}
     version: 0.0.1
 
   levn@0.4.1:
@@ -1358,7 +1358,7 @@ snapshots:
   '@stylistic/eslint-plugin@5.6.1(eslint@9.39.1)':
     dependencies:
       '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.1)
-      '@typescript-eslint/types': 8.60.0
+      '@typescript-eslint/types': 8.60.1
       eslint: 9.39.1
       eslint-visitor-keys: 4.2.1
       espree: 10.4.0
@@ -1462,7 +1462,7 @@ snapshots:
 
   '@typescript-eslint/types@8.48.1': {}
 
-  '@typescript-eslint/types@8.60.0': {}
+  '@typescript-eslint/types@8.60.1': {}
 
   '@typescript-eslint/typescript-estree@8.47.0(typescript@5.8.3)':
     dependencies:
@@ -1660,11 +1660,11 @@ snapshots:
 
   deep-is@0.1.4: {}
 
-  deepsight.gg@1.0.1856:
+  deepsight.gg@1.0.1861:
     dependencies:
       bungie-api-ts: 5.10.0
 
-  deepsight.gg@1.0.1857:
+  deepsight.gg@1.0.1862:
     dependencies:
       bungie-api-ts: 5.10.0
 
@@ -1949,7 +1949,7 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/b47ca19628a3994d5850ef4257f40f20bf1a23f0: {}
+  kitsui@https://codeload.github.com/fluff4me/kitsui/tar.gz/c426d908064707d9650c6100dc49cb4972dc85d5: {}
 
   levn@0.4.1:
     dependencies:
