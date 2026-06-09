@@ -1,10 +1,12 @@
+import Network from 'utility/Network'
+
 namespace Clarity {
 
 	const origin = 'https://database-clarity.github.io/Live-Clarity-Database'
 
 	export async function get<T> (url: string) {
 		if (!url.startsWith('/')) url = `/${url}`
-		return self.fetch(`${origin}${url}`)
+		return Network.fetch(`${origin}${url}`)
 			.then(handleClarityResponse) as Promise<T>
 	}
 

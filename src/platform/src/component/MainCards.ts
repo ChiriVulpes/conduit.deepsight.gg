@@ -154,17 +154,25 @@ export default Component(component => {
 					setProgress(null, quilt => quilt['main/advanced-card/settings/loading']())
 					const conduit = await Relic.connected
 
-					const verboseLogging = await conduit._getSetting('verboseLogging')
+					const [verboseLogging, simulateOfflineApi] = await Promise.all([
+						conduit._getSetting('verboseLogging'),
+						conduit._getSetting('simulateOfflineApi'),
+					])
 
 					return {
 						conduit,
 						verboseLogging,
+						simulateOfflineApi,
 					}
 				},
-				(slot, { conduit, verboseLogging }) => {
+				(slot, { conduit, verboseLogging, simulateOfflineApi }) => {
 					const verboseLoggingCheckbox = Checkbox()
 						.tweak(checkbox => checkbox.label.text.set(quilt => quilt['main/advanced-card/settings/verbose-logging/label']()))
 						.setChecked(!!verboseLogging)
+						.appendTo(slot)
+					const simulateOfflineApiCheckbox = Checkbox()
+						.tweak(checkbox => checkbox.label.text.set(quilt => quilt['main/advanced-card/settings/simulate-offline-api/label']()))
+						.setChecked(!!simulateOfflineApi)
 						.appendTo(slot)
 
 					const actions = ActionRow().appendTo(slot)
@@ -174,6 +182,7 @@ export default Component(component => {
 						.event.subscribe('click', async () => {
 							await Promise.all([
 								conduit._setSetting('verboseLogging', verboseLoggingCheckbox.checked.value ? true : undefined),
+								conduit._setSetting('simulateOfflineApi', simulateOfflineApiCheckbox.checked.value ? true : undefined),
 							])
 						})
 						.appendTo(actions)

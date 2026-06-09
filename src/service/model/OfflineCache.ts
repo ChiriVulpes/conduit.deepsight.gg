@@ -12,6 +12,7 @@ import Auth from 'model/Auth'
 import Bungie from 'utility/Bungie'
 import { db } from 'utility/Database'
 import Log from 'utility/Log'
+import Network from 'utility/Network'
 import Store from 'utility/Store'
 
 const ACTIVITY_PAGE_SIZE = 250
@@ -349,7 +350,7 @@ namespace OfflineCache {
 
 	async function fetchPgcr (pgcrId: string): Promise<DestinyPostGameCarnageReportData> {
 		const headers = await Auth.getHeaders()
-		const response = await self.fetch(`${PGCR_ORIGIN}/${pgcrId}/`, { headers: { ...headers } })
+		const response = await Network.fetch(`${PGCR_ORIGIN}/${pgcrId}/`, { headers: { ...headers } })
 		const json = await response.json().catch(() => undefined) as ServerResponse<DestinyPostGameCarnageReportData> | undefined
 		if (!response.ok || !json)
 			throw Object.assign(new Error(response.statusText || 'Unable to fetch PGCR'), { code: response.status })

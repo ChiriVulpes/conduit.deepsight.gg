@@ -38,6 +38,7 @@ client-secret/label: OAuth Client Secret
 title: Other settings
 loading: Getting settings state...
 verbose-logging/label: Verbose Logging
+simulate-offline-api/label: Simulate API outage
 
 ### offline-cache
 title: Offline cache

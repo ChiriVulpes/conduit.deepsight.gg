@@ -1,4 +1,5 @@
 import Env from 'utility/Env'
+import Network from 'utility/Network'
 
 namespace Deepsight {
 
@@ -26,7 +27,7 @@ namespace Deepsight {
 				}
 			}
 
-			return await self.fetch(`${origin}${url}`)
+			return await Network.fetch(`${origin}${url}`)
 				.then(handleDeepsightResponse)
 		})()
 		return promise

@@ -6,6 +6,7 @@ import Model from 'model/Model'
 import Broadcast from 'utility/Broadcast'
 import Clarity from 'utility/Clarity'
 import Deepsight from 'utility/Deepsight'
+import Network from 'utility/Network'
 
 type Definitions = {
 	[NAME in AllComponentNames]: Model<DefinitionsForComponentName<NAME>>
@@ -36,7 +37,7 @@ const Definitions = new Proxy({} as Record<string, Definitions>, {
 									value: async () => {
 										const componentURI = manifest.value[componentLanguage][componentName]
 										return Broadcast.operation('Downloading definitions', () =>
-											fetch(`https://www.bungie.net${componentURI}`)
+											Network.fetch(`https://www.bungie.net${componentURI}`)
 												.then(response => response.json()) as Promise<DefinitionsForComponentName<NAME>>
 										)
 									},

@@ -2,6 +2,7 @@ import type { ServerResponse } from 'bungie-api-ts/common'
 import { PlatformErrorCodes } from 'bungie-api-ts/common'
 import Auth from 'model/Auth'
 import Log from 'utility/Log'
+import Network from 'utility/Network'
 
 type Jsonable = string | number | boolean | null | undefined | Jsonable[] | { [key: string | number]: Jsonable }
 namespace Jsonable {
@@ -99,7 +100,7 @@ namespace Bungie {
 		if (body) url = `${url}?${mergeSearchParams(url, body)}`
 		Log.info(label, url)
 		const resolvedHeaders = await headers()
-		return self.fetch(`${origin}${url}`, {
+		return Network.fetch(`${origin}${url}`, {
 			...options,
 			headers: { ...resolvedHeaders, ...options?.headers as Record<string, string> } as HeadersInit,
 		})

@@ -2,6 +2,7 @@ import type { AccessGrant, AuthState, CustomBungieApp } from '@shared/Auth'
 import type { BungieMembershipType } from 'bungie-api-ts/destiny2'
 import Env from 'utility/Env'
 import Log from 'utility/Log'
+import Network from 'utility/Network'
 import Store from 'utility/Store'
 
 interface Auth {
@@ -168,7 +169,7 @@ namespace Auth {
 		// refresh access token
 		Log.info('Refreshing Bungie.net access token...')
 		const tokenRequestTime = Date.now()
-		const tokenResponse = await fetch('https://www.bungie.net/Platform/App/OAuth/Token/', {
+		const tokenResponse = await Network.fetch('https://www.bungie.net/Platform/App/OAuth/Token/', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
@@ -211,7 +212,7 @@ namespace Auth {
 		const authorisation = await getAuthorisation()
 
 		const tokenRequestTime = Date.now()
-		const tokenResponse = await fetch('https://www.bungie.net/Platform/App/OAuth/Token/', {
+		const tokenResponse = await Network.fetch('https://www.bungie.net/Platform/App/OAuth/Token/', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
