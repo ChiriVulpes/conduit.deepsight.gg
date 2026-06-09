@@ -149,6 +149,7 @@ declare module "conduit.deepsight.gg/item/Collections" {
 declare module "conduit.deepsight.gg/Settings" {
     export interface ConduitSettings {
         verboseLogging: true | undefined;
+        simulateOfflineApi: true | undefined;
     }
 }
 declare module "conduit.deepsight.gg/Profile" {
@@ -182,20 +183,28 @@ declare module "conduit.deepsight.gg/Profile" {
         name: string;
     }
 }
+declare module "conduit.deepsight.gg/Popularityreport" {
+    export type { PopularityreportManifestComponentsMap, PopularityreportQuantilesDefinition, PopularityreportQuantileEntry, PopularityreportQuantiles, PopularityreportQuantilesMetaEntry, PopularityreportQuantileTuple, } from 'deepsight.gg/Interfaces';
+}
 declare module "conduit.deepsight.gg/DefinitionComponents" {
     import type { AllDestinyManifestComponents, DestinyManifestComponentName } from 'bungie-api-ts/destiny2';
     import type { ClarityDescription } from 'conduit.deepsight.gg/Clarity';
+    import type { PopularityreportManifestComponentsMap } from 'conduit.deepsight.gg/Popularityreport';
     import type { DeepsightDefinitionLinkDefinition, DeepsightEnumDefinition, DeepsightEnumLinkDefinition, DeepsightManifestComponentsMap, DeepsightVariantDefinitionEntry } from 'deepsight.gg/Interfaces';
     export type DeepsightManifestComponentName = keyof DeepsightManifestComponentsMap;
     export interface AllClarityManifestComponents {
         ClarityDescriptions: Record<number, ClarityDescription>;
     }
     export type ClarityManifestComponentName = keyof AllClarityManifestComponents;
-    export type AllComponentNames = DestinyManifestComponentName | DeepsightManifestComponentName | ClarityManifestComponentName;
-    export type DefinitionsForComponentName<NAME extends AllComponentNames> = (NAME extends DestinyManifestComponentName ? AllDestinyManifestComponents[NAME] : NAME extends DeepsightManifestComponentName ? DeepsightManifestComponentsMap[NAME] : NAME extends ClarityManifestComponentName ? AllClarityManifestComponents[NAME] : never);
+    export type AllPopularityreportComponents = PopularityreportManifestComponentsMap;
+    export type PopularityreportManifestComponentName = keyof AllPopularityreportComponents;
+    export type AllComponentNames = DestinyManifestComponentName | DeepsightManifestComponentName | PopularityreportManifestComponentName | ClarityManifestComponentName;
+    export type DefinitionsForComponentName<NAME extends AllComponentNames> = (NAME extends DestinyManifestComponentName ? AllDestinyManifestComponents[NAME] : NAME extends DeepsightManifestComponentName ? DeepsightManifestComponentsMap[NAME] : NAME extends PopularityreportManifestComponentName ? AllPopularityreportComponents[NAME] : NAME extends ClarityManifestComponentName ? AllClarityManifestComponents[NAME] : never);
     export type AllDefinitions = {
         [NAME in AllComponentNames]: DefinitionsForComponentName<NAME>;
     };
+    export type DefinitionEntryForComponentName<NAME extends AllComponentNames> = DefinitionsForComponentName<NAME>[keyof DefinitionsForComponentName<NAME>];
+    export type DefinitionAugmentationForComponentName<NAME extends AllComponentNames> = DefinitionEntryForComponentName<NAME> | Partial<DefinitionsForComponentName<NAME>>;
     export interface DefinitionsFilter {
         nameContainsOrHashIs?: string | string[];
         deepContains?: string | string[];
@@ -219,7 +228,7 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
     }
     export interface DefinitionLinks {
         augmentations?: Partial<{
-            [NAME in AllComponentNames]: DefinitionsForComponentName<NAME> extends infer D ? D[keyof D] : never;
+            [NAME in AllComponentNames]: DefinitionAugmentationForComponentName<NAME>;
         }>;
         variants?: DeepsightVariantDefinitionEntry[];
         links?: (DeepsightDefinitionLinkDefinition | DeepsightEnumLinkDefinition)[];
@@ -249,6 +258,7 @@ declare module "conduit.deepsight.gg/ConduitState" {
 }
 declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type { AuthState, CustomBungieApp } from 'conduit.deepsight.gg/Auth';
+    import type { DestinyHistoricalStatsPeriodGroup, DestinyPostGameCarnageReportData } from 'bungie-api-ts/destiny2';
     import type ConduitState from 'conduit.deepsight.gg/ConduitState';
     import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type Collections from 'conduit.deepsight.gg/item/Collections';
@@ -267,6 +277,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         getInventoryCached(displayName: string, displayNameCode: number): Promise<Inventory | undefined>;
         getInventoryVersioned(displayName: string, displayNameCode: number, cacheVersion?: string): Promise<ConduitVersionedResponse<Inventory | undefined>>;
         getInventoryCachedVersioned(displayName: string, displayNameCode: number, cacheVersion?: string): Promise<ConduitVersionedResponse<Inventory | undefined>>;
+        getPgcrs(displayName: string, displayNameCode: number, pageSize: number, page: number): Promise<PgcrsPage | undefined>;
         vaultItem(item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>;
         moveItemToCharacter(characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>;
         equipItemOnCharacter(characterId: string, item: ItemTransferReference, options?: ItemTransferOptions): Promise<ItemTransferAction[]>;
@@ -280,6 +291,9 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         getState(): Promise<ConduitState>;
         /** Perform a hard defs update check, ignoring how recently they were cached */
         checkUpdate(): Promise<ConduitState>;
+        _getOfflineCacheState(): Promise<OfflineCacheState>;
+        _cacheOfflineData(): Promise<OfflineCacheRun>;
+        _clearOfflineCache(): Promise<void>;
     }
     export interface ItemTransferReference {
         instanceId?: string;
@@ -343,6 +357,23 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         profile: Profile;
         patches: InventoryPatch[];
     }
+    export interface PgcrsPage {
+        profile: Profile;
+        page: number;
+        pageSize: number;
+        hasMore: boolean;
+        totalActivities?: number;
+        totalPages?: number;
+        entries: PgcrsPageEntry[];
+    }
+    export interface PgcrsPageEntry {
+        characterId: string;
+        activity: DestinyHistoricalStatsPeriodGroup;
+        pgcr?: DestinyPostGameCarnageReportData;
+        pgcrStatus: PgcrStatus;
+        message?: string;
+    }
+    export type PgcrStatus = 'cached' | 'fetched' | 'unavailable' | 'failed';
     export interface ItemTransferFailure {
         operationId: string;
         failedStep: string;
@@ -384,6 +415,53 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         profile: Profile;
         inventory: Inventory;
     }
+    export type OfflineCacheStage = 'versions' | 'definitions' | 'profiles' | 'inventory' | 'collections' | 'activity-history' | 'pgcr' | 'complete';
+    export interface OfflineCacheCounts {
+        profiles: number;
+        definitionsTotal: number;
+        definitionsCached: number;
+        inventoriesCached: number;
+        collectionsCached: number;
+        activityHistoryPages: number;
+        activityHistoryActivities: number;
+        pgcrsDiscovered: number;
+        pgcrsCached: number;
+        pgcrsDownloaded: number;
+        pgcrsUnavailable: number;
+        failures: number;
+    }
+    export interface OfflineCacheProgress {
+        runId: string;
+        stage: OfflineCacheStage;
+        label: string;
+        current: number;
+        total?: number;
+        detail?: string;
+        counts: OfflineCacheCounts;
+    }
+    export interface OfflineCacheFailure {
+        stage: OfflineCacheStage;
+        key: string;
+        message: string;
+    }
+    export interface OfflineCacheSummary {
+        runId: string;
+        startedAt: string;
+        finishedAt: string;
+        counts: OfflineCacheCounts;
+        failures: OfflineCacheFailure[];
+    }
+    export interface OfflineCacheRun {
+        runId: string;
+        startedAt: string;
+        running: boolean;
+        alreadyRunning?: true;
+    }
+    export interface OfflineCacheState {
+        run?: OfflineCacheRun;
+        progress?: OfflineCacheProgress;
+        summary?: OfflineCacheSummary;
+    }
     export interface ConduitBroadcastRegistry {
         ready: void;
         profilesUpdated: Profile[];
@@ -396,6 +474,8 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
         startOperation: ConduitOperation;
         endOperation: string;
         _updateSettings: void;
+        offlineCacheProgress: OfflineCacheProgress;
+        offlineCacheComplete: OfflineCacheSummary;
     }
     export type ConduitVersionedResponse<T> = {
         version: string;
