@@ -27,8 +27,8 @@ importers:
         specifier: github:fluff4me/chiri#56e097a4050d29fc993f3a3eb4d54eb6d5b198d2
         version: https://codeload.github.com/fluff4me/chiri/tar.gz/56e097a4050d29fc993f3a3eb4d54eb6d5b198d2
       deepsight.gg:
-        specifier: 1.0.1862
-        version: 1.0.1862
+        specifier: 1.0.1863
+        version: 1.0.1863
       dexie:
         specifier: 4.0.11
         version: 4.0.11
@@ -67,8 +67,8 @@ importers:
         specifier: 5.10.0
         version: 5.10.0
       deepsight.gg:
-        specifier: 1.0.1861
-        version: 1.0.1861
+        specifier: 1.0.1862
+        version: 1.0.1862
 
 packages:
 
@@ -568,11 +568,11 @@ packages:
   deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
 
-  deepsight.gg@1.0.1861:
-    resolution: {integrity: sha512-RY3p0RLWSZOIG+JPNTdsb8qndh7GX3u1NUzhaSjGxBAQiFfIW4lMlFjZ+MtZLfkZOgQ0lEErAaC6hlJxD4G9fQ==}
-
   deepsight.gg@1.0.1862:
     resolution: {integrity: sha512-3bmARp9quiUVVQGVUg5qYSa8B3pchnLQ2SDz/a12SVMDY/6KsfbcLyeGEjpsAjzWfkSerJggItzaVC0I+YXmJQ==}
+
+  deepsight.gg@1.0.1863:
+    resolution: {integrity: sha512-aHuOP7jEMKQJe/fcxB/xRDfQVnDHZ8G6oSkEuhe2u3KZBIWhLKx0pxFy49t+MG+dQuqJnhkpdQkCnivydZdRnA==}
 
   del-cli@7.0.0:
     resolution: {integrity: sha512-fRl4pWJYu9WFQH8jXdQUYvcD0IMtij9WEc7qmB7xOyJEweNJNuE7iKmqNeoOT1DbBUjtRjxlw8Y63qKBI/NQ1g==}
@@ -1660,11 +1660,11 @@ snapshots:
 
   deep-is@0.1.4: {}
 
-  deepsight.gg@1.0.1861:
+  deepsight.gg@1.0.1862:
     dependencies:
       bungie-api-ts: 5.10.0
 
-  deepsight.gg@1.0.1862:
+  deepsight.gg@1.0.1863:
     dependencies:
       bungie-api-ts: 5.10.0
 

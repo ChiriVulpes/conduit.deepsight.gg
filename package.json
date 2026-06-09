@@ -25,7 +25,7 @@
 	"dependencies": {
 		"bungie-api-ts": "5.10.0",
 		"chiri": "github:fluff4me/chiri#56e097a4050d29fc993f3a3eb4d54eb6d5b198d2",
-		"deepsight.gg": "1.0.1862",
+		"deepsight.gg": "1.0.1863",
 		"dexie": "4.0.11",
 		"jsonpath-plus": "10.3.0",
 		"kitsui": "github:fluff4me/kitsui#c426d908064707d9650c6100dc49cb4972dc85d5",
