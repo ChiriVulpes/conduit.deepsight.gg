@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<title>deepsight.gg conduit</title>
+<meta charset="UTF-8">
+<style>:root { color-scheme: light dark }</style>
+
+<script>
+const params =new URLSearchParams(location.search)
+const code = params.get('code')
+let state = params.get('state')
+state = state && atob(state.replaceAll('.', '/').replaceAll('_', '=').replaceAll('-', '+') ?? '')
+const storedState = localStorage.getItem('bungieAuthState')
+if (code && (state === 'popup' || state && storedState === state)) {
+	localStorage.setItem('bungieCode', code)
+	localStorage.removeItem('bungieAuthState')
+	if (params.get('state') === 'popup')
+		window.close()
+	else
+		location.href = storedState
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.gstatic.com" />
+<link rel="stylesheet" href="./style/index.css">
+<script src="./platform.js"></script>
+<script src="./client.js"></script>
+<script src="./lang/index.js"></script>
+<script src="./style/index.js"></script>
+<script src="./kitsui.js"></script>
+<script>document.addEventListener('DOMContentLoaded', () => getModule('index').default())</script>
+</head>
+
+<body>
+	<noscript>
+		<p>Please enable JavaScript!</p>
+	</noscript>
+</body>
+
+</html>
