@@ -162,7 +162,7 @@ namespace Items {
 				previewImage: def.screenshot,
 				foundryHash: Object.values(DeepsightWeaponFoundryDefinition).find(foundry => foundry.overlay === def.secondaryIcon)?.hash,
 				categoryHashes: [
-					...def.itemCategoryHashes as ItemCategoryHashes[],
+					...(def.itemCategoryHashes ?? []) as ItemCategoryHashes[],
 					(!def.itemCategoryHashes?.includes(ItemCategoryHashes.Engrams) && def.uiItemDisplayStyle === 'ui_display_style_engram'
 						&& ItemCategoryHashes.Engrams
 					),
