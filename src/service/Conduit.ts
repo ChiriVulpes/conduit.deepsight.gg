@@ -438,24 +438,88 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 		async _getDefinitionsReferencingPage (event, language, component, hash, pageSize, page) {
 			const { components } = await Definitions.en.DeepsightLinksDefinition.get()
 			const componentsReferencing = Object.entries(components).filter(([_, linksDef]) => linksDef.links?.some(link => !('enum' in link) && link.component === component))
-			const result: [string, number | string, object][] = []
-			await Promise.all(componentsReferencing.map(async ([referencingComponent, linksDef]) => {
+			const augmentationBaseComponents = new Map<AllComponentNames, AllComponentNames[]>()
+			for (const [baseComponent, linksDef] of Object.entries(components) as [AllComponentNames, NonNullable<typeof components[keyof typeof components]>][]) {
+				for (const augmentationComponent of linksDef.augmentations ?? []) {
+					let baseComponents = augmentationBaseComponents.get(augmentationComponent as AllComponentNames)
+					if (!baseComponents) {
+						baseComponents = []
+						augmentationBaseComponents.set(augmentationComponent as AllComponentNames, baseComponents)
+					}
+
+					baseComponents.push(baseComponent)
+				}
+			}
+
+			type ReferenceResult = [component: AllComponentNames, key: number | string, def: object]
+			const defsCache = new Map<AllComponentNames, Promise<Record<string | number, object | undefined>>>()
+			const getDefs = (component: AllComponentNames) => {
+				let defs = defsCache.get(component)
+				if (!defs) {
+					defs = Definitions[language][component].get() as Promise<Record<string | number, object | undefined>>
+					defsCache.set(component, defs)
+				}
+
+				return defs
+			}
+
+			const rawResult = (await Promise.all(componentsReferencing.map(async ([referencingComponent, linksDef]) => {
+				const result: ReferenceResult[] = []
 				const linksReferencing = linksDef.links!.filter((link): link is DeepsightDefinitionLinkDefinition => !('enum' in link) && link.component === component)
-				const defs = await Definitions[language][referencingComponent as AllComponentNames].get()
+				const defs = await getDefs(referencingComponent as AllComponentNames)
 				for (const key of Object.keys(defs)) {
-					const def = defs[key as keyof typeof defs]
+					const def = defs[key]
 					if (!def)
 						continue
 
 					for (const link of linksReferencing) {
 						const hashes = followLinkPath(def, link.path.split('.'))
 						if (hashes.some(defHash => `${defHash}` === `${hash}`)) {
-							result.push([referencingComponent, key, def])
+							result.push([referencingComponent as AllComponentNames, key, def])
 							break // next def
 						}
 					}
 				}
+				return result
+			}))).flat()
+
+			const result: ReferenceResult[] = []
+			const resultKeys = new Set<string>()
+			const addResult = (component: AllComponentNames, key: number | string, def: object) => {
+				const resultKey = `${component}:${key}`
+				if (resultKeys.has(resultKey))
+					return
+
+				resultKeys.add(resultKey)
+				result.push([component, key, def])
+			}
+
+			await Promise.all(rawResult.map(async ([referencingComponent, key, def]) => {
+				const baseComponents = augmentationBaseComponents.get(referencingComponent)
+				if (!baseComponents?.length) {
+					addResult(referencingComponent, key, def)
+					return
+				}
+
+				let projected = false
+				await Promise.all(baseComponents.map(async baseComponent => {
+					const defs = await getDefs(baseComponent)
+					const def = defs[key]
+					if (!def)
+						return
+
+					projected = true
+					addResult(baseComponent, key, def)
+				}))
+
+				if (!projected)
+					addResult(referencingComponent, key, def)
 			}))
+
+			result.sort(([aComponent, aKey], [bComponent, bKey]) => 0
+				|| aComponent.localeCompare(bComponent)
+				|| `${aKey}`.localeCompare(`${bKey}`, undefined, { numeric: true })
+			)
 
 			return {
 				page,
