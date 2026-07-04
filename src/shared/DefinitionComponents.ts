@@ -41,6 +41,7 @@ export interface DefinitionsFilter {
 	nameContainsOrHashIs?: string | string[]
 	deepContains?: string | string[]
 	jsonPathExpression?: string | string[]
+	imageCategories?: number[]
 	/** @deprecated This is only available when the client page has been granted permission by the user. When no permission is granted, it does nothing. */
 	evalExpression?: string
 }
@@ -51,6 +52,29 @@ export interface DefinitionsPage<DEFINITION> {
 	pageSize: number
 	totalPages: number
 	totalDefinitions: number
+}
+
+export const enum DefinitionImageFraming {
+	CropSafe,
+	Complete,
+}
+
+export interface DefinitionImage {
+	url: string
+	framing: DefinitionImageFraming
+	categories: number[]
+	visualHash?: string
+}
+
+export interface DefinitionImageLayout {
+	slots: number
+	columns: number
+	rows: number
+}
+
+export interface DefinitionsImagePage<DEFINITION> extends DefinitionsPage<DEFINITION> {
+	images: Record<string | number, DefinitionImage[]>
+	layout: DefinitionImageLayout
 }
 
 export interface DefinitionReferencesPage {

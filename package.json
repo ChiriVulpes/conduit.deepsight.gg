@@ -8,29 +8,15 @@
 		"tinyglobby": "0.2.14",
 		"typescript": "5.8.3"
 	},
-	"pnpm": {
-		"overrides": {
-			"express": "-",
-			"diff@>=4.0.0 <4.0.4": "^4.0.4",
-			"minimatch@>=9.0.0 <9.0.7": "^9.0.7",
-			"minimatch@<3.1.4": "^3.1.4",
-			"ajv@<6.14.0": "^6.14.0",
-			"flatted@<=3.4.1": "^3.4.2",
-			"brace-expansion@<1.1.13": "^1.1.13",
-			"brace-expansion@>=2.0.0 <2.0.3": "^2.0.3",
-			"picomatch@<2.3.2": "^2.3.2",
-			"picomatch@>=4.0.0 <4.0.4": "^4.0.4"
-		}
-	},
 	"dependencies": {
 		"bungie-api-ts": "5.10.0",
-		"chiri": "github:fluff4me/chiri#56e097a4050d29fc993f3a3eb4d54eb6d5b198d2",
-		"deepsight.gg": "1.0.1863",
+		"chiri": "github:fluff4me/chiri#5564e0e6728ad1a384f1fc89ae2d703b9360d708",
+		"deepsight.gg": "1.0.1881",
 		"dexie": "4.0.11",
 		"jsonpath-plus": "10.3.0",
-		"kitsui": "github:fluff4me/kitsui#c426d908064707d9650c6100dc49cb4972dc85d5",
+		"kitsui": "github:fluff4me/kitsui#e9287911dc7c5d6649d4997610ee5a7460fa614b",
 		"lint": "github:fluff4me/lint#67c325cac44e46be0d8cad6ea5935a7ad9c6638d",
-		"task": "github:chirivulpes/task#4743b1177d35a1fa751de5fed6362e5d4e36ce0e",
-		"weaving": "github:chirivulpes/weaving#105ed29c4bdbae5570ca486298024426575c26af"
+		"task": "github:chirivulpes/task#286a31e479712e3e79725cbe45acd0496de7bcc4",
+		"weaving": "github:chirivulpes/weaving#56af36742e4b7b9672cd9e6c75d1e82da4d4111d"
 	}
 }

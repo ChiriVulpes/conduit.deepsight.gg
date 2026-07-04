@@ -1,4 +1,5 @@
 import type { OfflineCacheCounts, OfflineCacheFailure, OfflineCacheProgress, OfflineCacheRun, OfflineCacheStage, OfflineCacheSummary } from '@shared/ConduitMessageRegistry'
+import type { AllComponentNames } from '@shared/DefinitionComponents'
 import type { Profile } from '@shared/Profile'
 import { PlatformErrorCodes, type ServerResponse } from 'bungie-api-ts/common'
 import type { DestinyActivityHistoryResults, DestinyHistoricalStatsPeriodGroup, DestinyPostGameCarnageReportData } from 'bungie-api-ts/destiny2'
@@ -75,8 +76,8 @@ namespace OfflineCache {
 				.primaryKeys()
 
 			await Promise.all([
-				db.data.bulkDelete(dataKeys as string[]),
-				db.versions.bulkDelete(versionKeys as string[]),
+				db.data.bulkDelete(dataKeys),
+				db.versions.bulkDelete(versionKeys),
 			])
 		})
 
@@ -164,7 +165,7 @@ namespace OfflineCache {
 		let definitionsComplete = 0
 		await progress('definitions', 'Caching definitions', definitionsComplete, componentNames.length)
 		await parallelLimit(componentNames, DEFINITION_CONCURRENCY, async componentName => {
-			await (Definitions.en[componentName] as any).get()
+			await getDefinitionModel(componentName).get()
 				.then(() => counts.definitionsCached++)
 				.catch((err: unknown) => fail('definitions', componentName, err))
 			definitionsComplete++
@@ -414,17 +415,21 @@ namespace OfflineCache {
 	}
 
 	export function errorMessage (err: unknown) {
-		return err instanceof Error ? err.message : `${err}`
+		return err instanceof Error ? err.message : String(err)
 	}
 
 	export function isUnavailablePgcr (err: unknown) {
 		const message = errorMessage(err).toLowerCase()
-		const code = typeof err === 'object' && err !== null && 'code' in err ? `${err.code}` : ''
+		const code = typeof err === 'object' && err !== null && 'code' in err ? String(err.code) : ''
 		return code.startsWith('16')
 			|| message.includes('privilege')
 			|| message.includes('privacy')
 			|| message.includes('not found')
 			|| message.includes('unavailable')
+	}
+
+	function getDefinitionModel<NAME extends AllComponentNames> (componentName: NAME) {
+		return Definitions.en[componentName]
 	}
 
 }

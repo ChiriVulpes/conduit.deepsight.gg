@@ -1,5 +1,5 @@
 import type Conduit from 'conduit.deepsight.gg/Conduit'
-import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter as DefinitionsFilterSerialised, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents'
+import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter as DefinitionsFilterSerialised, DefinitionsForComponentName, DefinitionsImagePage, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents'
 
 export interface DefinitionsFilter<DEFINITION> extends Omit<DefinitionsFilterSerialised, 'evalExpression'> {
 	/** @deprecated This is only available when the client page has been granted permission by the user. When no permission is granted, it does nothing. */
@@ -9,6 +9,7 @@ export interface DefinitionsFilter<DEFINITION> extends Omit<DefinitionsFilterSer
 interface DefinitionsProvider<DEFINITION> {
 	all (filter?: DefinitionsFilter<DEFINITION[keyof DEFINITION]>): Promise<DEFINITION>
 	page (pageSize: number, page: number, filter?: DefinitionsFilter<DEFINITION[keyof DEFINITION]>): Promise<DefinitionsPage<DEFINITION>>
+	imagePage (pageSize: number, page: number, filter?: DefinitionsFilter<DEFINITION[keyof DEFINITION]>): Promise<DefinitionsImagePage<DEFINITION>>
 	get (hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>
 	links (hash?: number | string): Promise<DefinitionLinks | undefined>
 	getWithLinks (hash?: number | string): Promise<DefinitionWithLinks<Exclude<DEFINITION[keyof DEFINITION], undefined>> | undefined>
@@ -32,6 +33,9 @@ function Definitions (conduit: Conduit) {
 						},
 						async page (pageSize: number, page: number, filter?: DefinitionsFilter<unknown>) {
 							return await conduit._getDefinitionsComponentPage<NAME>(languageName, componentName, pageSize, page, !filter ? undefined : { ...filter, evalExpression: filter?.evalExpression?.toString() })
+						},
+						async imagePage (pageSize: number, page: number, filter?: DefinitionsFilter<unknown>) {
+							return await conduit._getDefinitionsComponentImagePage<NAME>(languageName, componentName, pageSize, page, !filter ? undefined : { ...filter, evalExpression: filter?.evalExpression?.toString() })
 						},
 						async get (hash?: number | string) {
 							return hash === undefined ? undefined : await conduit._getDefinition<NAME>(languageName, componentName, hash)

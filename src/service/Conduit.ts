@@ -1,10 +1,10 @@
 import type { ConduitBroadcastRegistry, ConduitFunctionRegistry } from '@shared/ConduitMessageRegistry'
-import type { AllComponentNames, AllDefinitions, DefinitionLinks, DefinitionReferencesPage, DefinitionWithLinks, DefinitionsForComponentName } from '@shared/DefinitionComponents'
+import type { AllComponentNames, AllDefinitions, DefinitionLinks, DefinitionReferencesPage, DefinitionWithLinks, DefinitionsFilter, DefinitionsForComponentName, DefinitionsImagePage } from '@shared/DefinitionComponents'
 import type InventoryData from '@shared/item/Inventory'
 import type { Profile } from '@shared/Profile'
 import type { ConduitSettings } from '@shared/Settings'
 import ItemTransfer from 'action/ItemTransfer'
-import type { DeepsightDefinitionLinkDefinition } from 'deepsight.gg'
+import type { DeepsightComponentLinksDefinition, DeepsightDefinitionLinkDefinition, LinksSourceComponentName } from 'deepsight.gg'
 import type { InventoryItemHashes } from 'deepsight.gg/Enums'
 import Auth from 'model/Auth'
 import Collections from 'model/Collections'
@@ -18,6 +18,7 @@ import Profiles from 'model/Profiles'
 import { db } from 'utility/Database'
 import Env from 'utility/Env'
 import FilterHelper from 'utility/FilterHelper'
+import { discoverDefinitionImages, getImageLayout, imageCategoriesMatch, toDefinitionImage, type ImageDefinitionData } from 'utility/ImageCategorisation'
 import Log from 'utility/Log'
 import Service, { SKIP_CLIENT } from 'utility/Service'
 import Store, { onUpdateStore } from 'utility/Store'
@@ -26,6 +27,15 @@ if (!Env.BUNGIE_API_KEY)
 	throw new Error('BUNGIE_API_KEY is not set')
 
 const _ = undefined
+
+interface DefinitionsLanguageWithImageData {
+	DeepsightImageAnalysisDefinition: {
+		get (): Promise<ImageDefinitionData['imageAnalyses']>
+	}
+	DeepsightImageCategoryDefinition: {
+		get (): Promise<ImageDefinitionData['categoryDefinitions']>
+	}
+}
 
 class ConduitPrivateFunctionError extends Error {
 
@@ -240,11 +250,17 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 				throw new ConduitFunctionRequiresTrustedOriginError()
 			// filter.evalExpression = undefined
 
-			const defs = await Definitions[language][component].get()
-			if (!filter || (!filter.nameContainsOrHashIs && !filter.deepContains && !filter.jsonPathExpression && !filter.evalExpression))
+			let defs = await Definitions[language][component].get()
+			if (!filter || !hasDefinitionsFilter(filter))
 				return defs
 
-			return Object.fromEntries(FilterHelper.filter(defs as Record<string, unknown>, filter))
+			if (hasTextDefinitionsFilter(filter))
+				defs = Object.fromEntries(FilterHelper.filter(defs as Record<string, unknown>, filter)) as never
+
+			if (filter.imageCategories?.length)
+				defs = await filterDefinitionsByImageCategories(language, component, defs as Record<string, object>, filter.imageCategories) as never
+
+			return defs
 		},
 
 		////////////////////////////////////
@@ -265,14 +281,25 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 
 			let defs = await Definitions[language][component].get()
 			let filtered = false
-			if (filter && (filter.nameContainsOrHashIs || filter.deepContains || filter.jsonPathExpression || filter.evalExpression)) {
+			const imageCategories = filter?.imageCategories
+			const imageFiltered = !!imageCategories?.length
+			if (filter && hasTextDefinitionsFilter(filter)) {
 				filtered = true
-				defs = Object.fromEntries(FilterHelper.filter(defs as Record<string, unknown>, filter).drop(page * pageSize).take(pageSize + 1)) as never
+				defs = Object.fromEntries(imageFiltered
+					? FilterHelper.filter(defs as Record<string, unknown>, filter)
+					: FilterHelper.filter(defs as Record<string, unknown>, filter).drop(page * pageSize).take(pageSize + 1)
+				) as never
+			}
+
+			if (imageFiltered) {
+				filtered = true
+				defs = await filterDefinitionsByImageCategories(language, component, defs as Record<string, object>, imageCategories) as never
 			}
 
 			const keys = Object.keys(defs)
-			const totalPages = (filtered ? page : 0) + Math.ceil(keys.length / pageSize)
-			if (totalPages === 1)
+			const preciseFiltered = imageFiltered || !filtered
+			const totalPages = (preciseFiltered ? 0 : page) + Math.ceil(keys.length / pageSize)
+			if (totalPages === 1 && page === 0)
 				return {
 					definitions: defs as never,
 					page: 0,
@@ -291,7 +318,7 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 				}
 
 			const pageDefs = Object.fromEntries(keys
-				.slice(filtered ? 0 : page * pageSize, filtered ? -1 : (page + 1) * pageSize)
+				.slice(preciseFiltered ? page * pageSize : 0, preciseFiltered ? (page + 1) * pageSize : -1)
 				.map(key => [key, defs[key as keyof typeof defs]] as const)
 			)
 			return {
@@ -301,6 +328,78 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 				totalPages,
 				totalDefinitions: keys.length,
 			}
+		},
+		async _getDefinitionsComponentImagePage (event, language, component, pageSize, page, filter) {
+			if (page < 0 || pageSize <= 0)
+				return {
+					definitions: {} as never,
+					images: {},
+					layout: getImageLayout([], false),
+					page,
+					pageSize,
+					totalPages: 0,
+					totalDefinitions: 0,
+				}
+
+			if (filter?.evalExpression && !await Auth.isOriginTrusted(event.origin))
+				throw new ConduitFunctionRequiresTrustedOriginError()
+
+			let defs = await Definitions[language][component].get()
+			const imageCategories = filter?.imageCategories ?? []
+			const imageFiltered = !!imageCategories.length
+			let textFiltered = false
+			if (filter && hasTextDefinitionsFilter(filter)) {
+				textFiltered = true
+				defs = Object.fromEntries(imageFiltered
+					? FilterHelper.filter(defs as Record<string, unknown>, filter)
+					: FilterHelper.filter(defs as Record<string, unknown>, filter).drop(page * pageSize).take(pageSize + 1)
+				) as never
+			}
+
+			const rawEntries = Object.entries(defs as Record<string, object>)
+				.filter((entry): entry is [string, object] => !!entry[1] && typeof entry[1] === 'object')
+			const imageData = await getImageDefinitionData(language)
+			if (!imageFiltered) {
+				const preciseFiltered = !textFiltered
+				const totalPages = (preciseFiltered ? 0 : page) + Math.ceil(rawEntries.length / pageSize)
+				const pageEntries = page >= totalPages ? [] : rawEntries
+					.slice(preciseFiltered ? page * pageSize : 0, preciseFiltered ? (page + 1) * pageSize : pageSize)
+				const entriesWithImages = await getDefinitionEntriesImages(component, pageEntries, imageData, imageCategories)
+
+				return {
+					definitions: Object.fromEntries(pageEntries) as never,
+					images: Object.fromEntries(entriesWithImages.map(([key, , images]) => [key, images.map(toDefinitionImage)])),
+					layout: getImageLayout(entriesWithImages.flatMap(([, , images]) => images), false),
+					page,
+					pageSize,
+					totalPages,
+					totalDefinitions: rawEntries.length,
+				} satisfies DefinitionsImagePage<never>
+			}
+
+			const matchingEntries: DefinitionEntryImages[] = []
+			for (const [key, def] of rawEntries) {
+				const images = await getMatchingDefinitionImages(component, def, imageData, imageCategories)
+				if (!images.length)
+					continue
+
+				matchingEntries.push([key, def, images])
+			}
+
+			const totalPages = Math.ceil(matchingEntries.length / pageSize)
+			const pageEntries = page >= totalPages ? [] : matchingEntries.slice(page * pageSize, (page + 1) * pageSize)
+			const definitions = Object.fromEntries(pageEntries.map(([key, def]) => [key, def]))
+			const images = Object.fromEntries(pageEntries.map(([key, , images]) => [key, images.map(toDefinitionImage)]))
+			const layout = getImageLayout(matchingEntries.flatMap(([, , images]) => images), imageFiltered)
+			return {
+				definitions: definitions as never,
+				images,
+				layout,
+				page,
+				pageSize,
+				totalPages,
+				totalDefinitions: matchingEntries.length,
+			} satisfies DefinitionsImagePage<never>
 		},
 		//#endregion
 		////////////////////////////////////
@@ -337,6 +436,9 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 				else {
 					const hashes = followLinkPath(def, link.path.split('.'))
 					if (!hashes.length)
+						continue
+
+					if (link.component === 'profiles' || link.component === 'pgcrs')
 						continue
 
 					defsToGrab ??= new Map()
@@ -437,14 +539,19 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 		//#region References
 		async _getDefinitionsReferencingPage (event, language, component, hash, pageSize, page) {
 			const { components } = await Definitions.en.DeepsightLinksDefinition.get()
-			const componentsReferencing = Object.entries(components).filter(([_, linksDef]) => linksDef.links?.some(link => !('enum' in link) && link.component === component))
-			const augmentationBaseComponents = new Map<AllComponentNames, AllComponentNames[]>()
-			for (const [baseComponent, linksDef] of Object.entries(components) as [AllComponentNames, NonNullable<typeof components[keyof typeof components]>][]) {
+			const componentsReferencing = (Object.entries(components)
+				.filter(([_, linksDef]) => linksDef.links?.some(link => !('enum' in link) && link.component === component))
+			) as [LinksSourceComponentName, DeepsightComponentLinksDefinition][]
+			const augmentationBaseComponents = new Map<LinksSourceComponentName, AllComponentNames[]>()
+			for (const [baseComponent, linksDef] of Object.entries(components) as [LinksSourceComponentName, NonNullable<typeof components[keyof typeof components]>][]) {
+				if (baseComponent === 'profiles' || baseComponent === 'pgcrs')
+					continue
+
 				for (const augmentationComponent of linksDef.augmentations ?? []) {
-					let baseComponents = augmentationBaseComponents.get(augmentationComponent as AllComponentNames)
+					let baseComponents = augmentationBaseComponents.get(augmentationComponent)
 					if (!baseComponents) {
 						baseComponents = []
-						augmentationBaseComponents.set(augmentationComponent as AllComponentNames, baseComponents)
+						augmentationBaseComponents.set(augmentationComponent, baseComponents)
 					}
 
 					baseComponents.push(baseComponent)
@@ -465,8 +572,12 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 
 			const rawResult = (await Promise.all(componentsReferencing.map(async ([referencingComponent, linksDef]) => {
 				const result: ReferenceResult[] = []
+
+				if (referencingComponent === 'profiles' || referencingComponent === 'pgcrs')
+					return result
+
 				const linksReferencing = linksDef.links!.filter((link): link is DeepsightDefinitionLinkDefinition => !('enum' in link) && link.component === component)
-				const defs = await getDefs(referencingComponent as AllComponentNames)
+				const defs = await getDefs(referencingComponent)
 				for (const key of Object.keys(defs)) {
 					const def = defs[key]
 					if (!def)
@@ -475,7 +586,7 @@ const service: Service<ConduitBroadcastRegistry> = Service<ConduitFunctionRegist
 					for (const link of linksReferencing) {
 						const hashes = followLinkPath(def, link.path.split('.'))
 						if (hashes.some(defHash => `${defHash}` === `${hash}`)) {
-							result.push([referencingComponent as AllComponentNames, key, def])
+							result.push([referencingComponent, key, def])
 							break // next def
 						}
 					}
@@ -667,6 +778,86 @@ async function getProfilesForOrigin (profiles: Profile[], origin: string): Promi
 		...profile,
 		authed: undefined,
 	}))
+}
+
+function hasTextDefinitionsFilter (filter: DefinitionsFilter) {
+	return !!(filter.nameContainsOrHashIs || filter.deepContains || filter.jsonPathExpression || filter.evalExpression)
+}
+
+function hasDefinitionsFilter (filter: DefinitionsFilter) {
+	return !!(hasTextDefinitionsFilter(filter) || filter.imageCategories?.length)
+}
+
+type DefinitionEntryImages = [key: string, definition: object, images: Awaited<ReturnType<typeof getMatchingDefinitionImages>>]
+
+async function filterDefinitionsByImageCategories<DEFINITION extends Record<string | number, object>> (
+	language: string,
+	component: AllComponentNames,
+	defs: DEFINITION,
+	imageCategories: NonNullable<DefinitionsFilter['imageCategories']>,
+) {
+	if (!imageCategories.length)
+		return defs
+
+	const imageData = await getImageDefinitionData(language)
+	const entries: [string, object][] = []
+	for (const [key, def] of Object.entries(defs)) {
+		if (def && typeof def === 'object' && await definitionMatchesImageCategories(component, def, imageCategories, imageData))
+			entries.push([key, def])
+	}
+
+	return Object.fromEntries(entries) as DEFINITION
+}
+
+async function definitionMatchesImageCategories (
+	component: AllComponentNames,
+	definition: object,
+	imageCategories: NonNullable<DefinitionsFilter['imageCategories']>,
+	imageData: ImageDefinitionData,
+) {
+	const images = await discoverDefinitionImages(component, definition, imageData, getDeepsightImageBaseUrl())
+	for (const image of images) {
+		if (imageCategoriesMatch(image, imageCategories))
+			return true
+	}
+
+	return false
+}
+
+async function getDefinitionEntriesImages (
+	component: AllComponentNames,
+	entries: readonly [string, object][],
+	imageData: ImageDefinitionData,
+	imageCategories: readonly number[],
+): Promise<DefinitionEntryImages[]> {
+	return await Promise.all(entries.map(async ([key, definition]) => [
+		key,
+		definition,
+		await getMatchingDefinitionImages(component, definition, imageData, imageCategories),
+	] satisfies DefinitionEntryImages))
+}
+
+async function getMatchingDefinitionImages (
+	component: AllComponentNames,
+	definition: object,
+	imageData: ImageDefinitionData,
+	imageCategories: readonly number[],
+) {
+	return (await discoverDefinitionImages(component, definition, imageData, getDeepsightImageBaseUrl()))
+		.filter(image => imageCategoriesMatch(image, imageCategories))
+}
+
+async function getImageDefinitionData (language: string): Promise<ImageDefinitionData> {
+	const definitions = Definitions[language] as unknown as DefinitionsLanguageWithImageData
+	const [categoryDefinitions, imageAnalyses] = await Promise.all([
+		definitions.DeepsightImageCategoryDefinition.get(),
+		definitions.DeepsightImageAnalysisDefinition.get(),
+	])
+	return { categoryDefinitions, imageAnalyses }
+}
+
+function getDeepsightImageBaseUrl () {
+	return Env.LOCAL_DEEPSIGHT_MANIFEST_ORIGIN || 'https://deepsight.gg'
 }
 
 function broadcastInventoryUpdated (event: ExtendableMessageEvent, profile: Profile, inventory: InventoryData | undefined) {

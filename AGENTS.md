@@ -10,7 +10,7 @@ The normal host flow is:
 ## Project Map
 
 Primary areas:
-- `src/shared`: shared types and API contracts.
+- `src/shared`: shared types and API contracts only. Do not put runtime helpers, hashing, URL parsing, scanning, service-worker logic, browser APIs, or implementation utilities here.
 - `src/client`: public client package loaded by host pages. It creates the hidden conduit iframe and exposes the public API.
 - `src/frame`: iframe bridge. It registers the service worker and forwards messages between host pages and the service worker.
 - `src/service`: service worker implementation, Bungie/deepsight data models, auth, IndexedDB cache, definitions, inventory, collections, and item transfer.
@@ -54,7 +54,11 @@ High-risk files for auth and permissions include:
 When editing public service methods, check the `event.origin` path and preserve the relevant Level 0, Level 1, or Level 2 boundary at the service entrypoint. Do not rely on UI flow or client-side TypeScript types as the permission boundary.
 
 ## Validation
-Run these validation commands in parallel:
+Before TypeScript validation, run these dry source-generation checks in parallel:
+- From `src/platform/style`: `pnpm exec chiri index.chiri --dry`
+- From `src/platform/lang/en-nz`: `pnpm exec weaving index.quilt --dry`
+
+After the dry checks pass, run these validation commands in parallel:
 - `pnpm exec lint`
 - `pnpm exec task typecheck`
 
