@@ -209,6 +209,7 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
         nameContainsOrHashIs?: string | string[];
         deepContains?: string | string[];
         jsonPathExpression?: string | string[];
+        imageCategories?: number[];
         /** @deprecated This is only available when the client page has been granted permission by the user. When no permission is granted, it does nothing. */
         evalExpression?: string;
     }
@@ -218,6 +219,25 @@ declare module "conduit.deepsight.gg/DefinitionComponents" {
         pageSize: number;
         totalPages: number;
         totalDefinitions: number;
+    }
+    export declare const enum DefinitionImageFraming {
+        CropSafe = 0,
+        Complete = 1
+    }
+    export interface DefinitionImage {
+        url: string;
+        framing: DefinitionImageFraming;
+        categories: number[];
+        visualHash?: string;
+    }
+    export interface DefinitionImageLayout {
+        slots: number;
+        columns: number;
+        rows: number;
+    }
+    export interface DefinitionsImagePage<DEFINITION> extends DefinitionsPage<DEFINITION> {
+        images: Record<string | number, DefinitionImage[]>;
+        layout: DefinitionImageLayout;
     }
     export interface DefinitionReferencesPage {
         references: AllDefinitions;
@@ -260,7 +280,7 @@ declare module "conduit.deepsight.gg/ConduitMessageRegistry" {
     import type { AuthState, CustomBungieApp } from 'conduit.deepsight.gg/Auth';
     import type { DestinyHistoricalStatsPeriodGroup, DestinyPostGameCarnageReportData } from 'bungie-api-ts/destiny2';
     import type ConduitState from 'conduit.deepsight.gg/ConduitState';
-    import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
+    import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter, DefinitionsForComponentName, DefinitionsImagePage, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     import type Collections from 'conduit.deepsight.gg/item/Collections';
     import type Inventory from 'conduit.deepsight.gg/item/Inventory';
     import type { Profile } from 'conduit.deepsight.gg/Profile';
@@ -663,7 +683,7 @@ declare module "conduit.deepsight.gg/Inventory" {
 }
 declare module "conduit.deepsight.gg/Definitions" {
     import type Conduit from "conduit.deepsight.gg/Conduit";
-    import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter as DefinitionsFilterSerialised, DefinitionsForComponentName, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
+    import type { AllComponentNames, DefinitionLinks, DefinitionReferencesPage, DefinitionsFilter as DefinitionsFilterSerialised, DefinitionsForComponentName, DefinitionsImagePage, DefinitionsPage, DefinitionWithLinks } from 'conduit.deepsight.gg/DefinitionComponents';
     export interface DefinitionsFilter<DEFINITION> extends Omit<DefinitionsFilterSerialised, 'evalExpression'> {
         /** @deprecated This is only available when the client page has been granted permission by the user. When no permission is granted, it does nothing. */
         evalExpression?(def: DEFINITION): unknown;
@@ -671,6 +691,7 @@ declare module "conduit.deepsight.gg/Definitions" {
     interface DefinitionsProvider<DEFINITION> {
         all(filter?: DefinitionsFilter<DEFINITION[keyof DEFINITION]>): Promise<DEFINITION>;
         page(pageSize: number, page: number, filter?: DefinitionsFilter<DEFINITION[keyof DEFINITION]>): Promise<DefinitionsPage<DEFINITION>>;
+        imagePage(pageSize: number, page: number, filter?: DefinitionsFilter<DEFINITION[keyof DEFINITION]>): Promise<DefinitionsImagePage<DEFINITION>>;
         get(hash?: number | string): Promise<DEFINITION[keyof DEFINITION] | undefined>;
         links(hash?: number | string): Promise<DefinitionLinks | undefined>;
         getWithLinks(hash?: number | string): Promise<DefinitionWithLinks<Exclude<DEFINITION[keyof DEFINITION], undefined>> | undefined>;
